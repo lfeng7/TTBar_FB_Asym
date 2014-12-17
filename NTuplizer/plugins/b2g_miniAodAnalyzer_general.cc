@@ -79,12 +79,14 @@ b2g_miniAodAnalyzer_general::b2g_miniAodAnalyzer_general(const edm::ParameterSet
 	produces<unsigned int>    ("numGoodPV");
 	produces<std::vector<reco::Candidate::PolarLorentzVector> > ("met");
 	produces<std::vector<reco::Candidate::PolarLorentzVector> > ("electrons");
+	produces<std::vector<float> > ("electronCharge");
 	produces<std::vector<float> > ("electronRelIso");
 	produces<std::vector<float> > ("electronRelIsoBetaCorr");
 	produces<std::vector<float> > ("electronSuperClusterEta");
 	produces<std::vector<float> > ("electronFull5by5");
 	produces<std::vector<bool> > ("electronpassConversionVeto");
 	produces<std::vector<reco::Candidate::PolarLorentzVector> > ("muons");
+	produces<std::vector<float> > ("muonCharge");
 	produces<std::vector<float> > ("muonRelIso");
 	produces<std::vector<float> > ("muonRelIsoBetaCorr");
 	produces<std::vector<bool> > ("muonIsLoose");
@@ -97,6 +99,7 @@ b2g_miniAodAnalyzer_general::b2g_miniAodAnalyzer_general(const edm::ParameterSet
 	produces<std::vector<reco::Candidate::PolarLorentzVector> > ("AK8slimmedjets");
 	produces<std::vector<double> > ("AK4jetsCSV");
 	produces<std::vector<double> > ("AK4jetsISV");
+	produces<std::vector<float> > ("AK4jetsFlavor");
 	if (ak8grommedMasses_) {
 	    produces<std::vector<float> > ("AK8prunedMass");
 	    produces<std::vector<float> > ("AK8trimmedMass");
@@ -116,12 +119,14 @@ bool b2g_miniAodAnalyzer_general::filter(edm::Event& iEvent, const edm::EventSet
   	std::auto_ptr<unsigned int> ngpv( new unsigned int() );
 	std::auto_ptr<p4_vector> met( new p4_vector() );
 	std::auto_ptr<p4_vector> electron( new p4_vector() );
+	std::auto_ptr<std::vector<float>> electronCharge( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> electronRelIso( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> electronRelIsoBetaCorr( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> electronSuperClusterEta( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> electronFull5by5( new std::vector<float> );
 	std::auto_ptr<std::vector<bool>> electronpassConversionVeto( new std::vector<bool> );
 	std::auto_ptr<p4_vector> muon( new p4_vector() );
+	std::auto_ptr<std::vector<float>> muonCharge( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> muonRelIso( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> muonRelIsoBetaCorr( new std::vector<float> );
 	std::auto_ptr<std::vector<bool>> muonIsLoose( new std::vector<bool> );
@@ -134,6 +139,7 @@ bool b2g_miniAodAnalyzer_general::filter(edm::Event& iEvent, const edm::EventSet
 	std::auto_ptr<p4_vector> ak8slimmedjet( new p4_vector() );
 	std::auto_ptr<std::vector<double>> AK4jetsCSV( new std::vector<double> );
 	std::auto_ptr<std::vector<double>> AK4jetsISV( new std::vector<double> );
+	std::auto_ptr<std::vector<float>> AK4jetsFlavor( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> AK8prunedMass( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> AK8trimmedMass( new std::vector<float> );
 	std::auto_ptr<std::vector<float>> AK8filteredMass( new std::vector<float> );
@@ -244,6 +250,8 @@ bool b2g_miniAodAnalyzer_general::filter(edm::Event& iEvent, const edm::EventSet
 	        float reliso_corr = (charged + std::max(0.0, neutral-0.5*pileup)) / (iel.pt());
 		electronRelIso->push_back(reliso);
 		electronRelIsoBetaCorr->push_back(reliso_corr);	
+		//write out electron charge
+		electronCharge->push_back(iel.charge());
 		}
 	}
 
@@ -309,6 +317,8 @@ bool b2g_miniAodAnalyzer_general::filter(edm::Event& iEvent, const edm::EventSet
 	        float reliso_corr = (charged + std::max(0.0, neutral-0.5*pileup)) / (imu.pt());
 		muonRelIso->push_back(reliso);
 		muonRelIsoBetaCorr->push_back(reliso_corr);
+		//Write out muon charge
+		muonCharge->push_back(imu.charge());
 		}
 	}
 
@@ -329,6 +339,7 @@ bool b2g_miniAodAnalyzer_general::filter(edm::Event& iEvent, const edm::EventSet
 		ak4slimmedjet->push_back(ak4jet4);
 		AK4jetsCSV->push_back(std::max(0.f,iak4jet.bDiscriminator("combinedSecondaryVertexBJetTags")));
 		AK4jetsISV->push_back(std::max(0.f,iak4jet.bDiscriminator("combinedInclusiveSecondaryVertexBJetTags")));
+		AK4jetsFlavor->push_back(iak4jet.partonFlavour());
 	}
 
 	/// slimmed fat jets (ak8)
@@ -350,12 +361,14 @@ bool b2g_miniAodAnalyzer_general::filter(edm::Event& iEvent, const edm::EventSet
   	iEvent.put( met, "met");
   	iEvent.put( photon, "photons");
   	iEvent.put( electron, "electrons");
+  	iEvent.put( electronCharge, "electronCharge");
   	iEvent.put( electronRelIso, "electronRelIso");
   	iEvent.put( electronRelIsoBetaCorr, "electronRelIsoBetaCorr");
   	iEvent.put( electronSuperClusterEta, "electronSuperClusterEta");
   	iEvent.put( electronFull5by5, "electronFull5by5");
   	iEvent.put( electronpassConversionVeto, "electronpassConversionVeto");
   	iEvent.put( muon, "muons");
+  	iEvent.put( muonCharge, "muonCharge");
   	iEvent.put( muonRelIsoBetaCorr, "muonRelIsoBetaCorr");
   	iEvent.put( muonRelIso, "muonRelIso");
   	iEvent.put( muonIsLoose, "muonIsLoose");
@@ -367,6 +380,7 @@ bool b2g_miniAodAnalyzer_general::filter(edm::Event& iEvent, const edm::EventSet
   	iEvent.put( ak8slimmedjet, "AK8slimmedjets");
   	iEvent.put( AK4jetsCSV, "AK4jetsCSV");
   	iEvent.put( AK4jetsISV, "AK4jetsISV");
+  	iEvent.put( AK4jetsFlavor, "AK4jetsFlavor");
         if (ak8grommedMasses_) {
   		iEvent.put( AK8prunedMass, "AK8prunedMass");
 	  	iEvent.put( AK8trimmedMass, "AK8trimmedMass");
