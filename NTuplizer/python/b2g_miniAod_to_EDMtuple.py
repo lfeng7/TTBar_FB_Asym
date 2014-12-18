@@ -34,7 +34,7 @@ print options
 # Input file
 process.source = cms.Source("PoolSource",
 	fileNames = cms.untracked.vstring(
-	'/store/mc/Phys14DR/TBarToLeptons_t-channel_Tune4C_CSA14_13TeV-aMCatNLO-tauola/MINIAODSIM/PU20bx25_PHYS14_25_V1-v1/00000/E873348E-BC70-E411-BFA8-0025907B4FD6.root'
+	'/store/mc/Phys14DR/TT_Tune4C_13TeV-pythia8-tauola/MINIAODSIM/PU40bx25_tsg_PHYS14_25_V1-v1/00000/06E41ADB-7870-E411-8850-0025905A605E.root'
 ))
 # Max events
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(3000))
