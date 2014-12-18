@@ -37,10 +37,10 @@ process.source = cms.Source("PoolSource",
 	'/store/mc/Phys14DR/TT_Tune4C_13TeV-pythia8-tauola/MINIAODSIM/PU40bx25_tsg_PHYS14_25_V1-v1/00000/06E41ADB-7870-E411-8850-0025905A605E.root'
 ))
 # Max events
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(3000))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(300))
 # Message Service
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+process.MessageLogger.cerr.FwkReport.reportEvery = 10
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 # Output file
 process.out = cms.OutputModule("PoolOutputModule",
