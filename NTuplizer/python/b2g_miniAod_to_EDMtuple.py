@@ -181,8 +181,8 @@ process.pdfWeights = cms.EDProducer("PdfWeightProducer",
       PdfSetNames = cms.untracked.vstring( 
                                              "CT10.LHgrid",   # This is for POWHEG with tune CT10 and LO, which is the tune for /TT_CT10_TuneZ2star_8TeV-powheg-tauola/
                                              "GJR08VFnloE.LHgrid", #This is for GJR
-                                             "cteq66.LHgrid",  # This is for Madgraph sample with tune cteq66
-                                            # "CT10nlo.LHgrid" # This is for POWHEG with tune CT10 and NLO
+                                             "cteq6L1.LHgrid",  # This is for Madgraph sample with tune cteq66
+                                             #"CT10nlo.LHgrid" # This is for POWHEG with tune CT10 and NLO
 
         )
     )
