@@ -68,7 +68,7 @@ hltElectronFilterLabel  = "hltL1sL1Mu3p5EG12ORL1MuOpenEG12L3Filtered8"
 lheLabel = "source"
 
 
-process = cms.Process("ttDManalysisEDMNtuples")
+process = cms.Process("B2GEDMNtuples")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.categories.append('HLTrigReport')
@@ -99,7 +99,7 @@ for pset in process.GlobalTag.toGet.value():
 process.skimmedPatMuons = cms.EDFilter(
     "PATMuonSelector",
     src = cms.InputTag(muLabel),
-    cut = cms.string("pt > 30 && abs(eta) < 2.4")
+    cut = cms.string("pt > 26 && abs(eta) < 2.1")
     )
 
 process.skimmedPatElectrons = cms.EDFilter(
@@ -118,7 +118,7 @@ process.skimmedPatMET = cms.EDFilter(
 process.skimmedPatJets = cms.EDFilter(
     "PATJetSelector",
     src = cms.InputTag(jLabel),
-    cut = cms.string(" pt > 25 && abs(eta) < 4.")
+    cut = cms.string(" pt > 20 && abs(eta) < 2.5")
 )
 
 

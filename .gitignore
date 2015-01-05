@@ -1,3 +1,1 @@
-NTuplizer/test/crab_TT_Tune4C_13TeV-pythia8-tauola
-.DS_Store
-NTuplizer/.DS_Store
+NTuplizer/test/*Ntuples.root
