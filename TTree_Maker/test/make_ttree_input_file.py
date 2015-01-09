@@ -10,6 +10,6 @@ FILES = options.directory + '/*.root'
 print FILES
 files = glob.glob(FILES)
 for fname in files :
-    cmd = 'echo '+fname+' >> input_files_list.txt'
+    cmd = 'echo '+fname+' >> input.txt'
     print cmd
     os.system(cmd)

@@ -26,12 +26,11 @@ events = Events(files)
 
 #Set up handles and labels for use
 #MC GenParticle variables
-GenEventHandle = Handle( "GenEventInfoProduct" )
-GenEventLabel = ( "generator", "" )
 GenHandle = Handle( "vector<reco::GenParticle>" )
 GenLabel = ( "prunedGenParticles", "" )
 
-ids = [(2212,'p'),(1,'d'),(2,'u'),(3,'s'),(4,'c'),(5,'b'),(6,'t'),(11,'e'),(12,'ve'),(13,'mu'),(14,'vmu'),(15,'tau'),(16,'vtau'),(21,'g'),(22,'photon'),(23,'Z'),(24,'W')]
+ids = ( [(2212,'p'),(1,'d'),(2,'u'),(3,'s'),(4,'c'),(5,'b'),(6,'t'),(11,'e'),(12,'ve'),(13,'mu'),(14,'vmu'),(15,'tau'),(16,'vtau'),(21,'g'),
+		 (22,'photon'),(23,'Z'),(24,'W'),(310,'K_S'),(513,'B*0'),(511,'B0'),(413,'D*(2010)+'),(421,'D0'),(411,'D+'),(111,'pi0'),(521,'B+')] )
 def getId(pdgid) :
 	name = ''
 	if pdgid < 0 :
@@ -56,7 +55,7 @@ count_W_LFJets = 0
 count_positive_weights = 0
 count_negative_weights = 0
 for event in events :
-	if count == 1500 :
+	if count == 100 :
 		break
 	if count!=0 and count%50000 == 0 :
 		print '-----------------------------------------------------------------------'
@@ -77,132 +76,127 @@ for event in events :
 		print '---negative weights: '+str(count_negative_weights)+' (%.4f%%)'%(100.0*count_negative_weights/count)
 	count = count + 1
 
-	#print '----------------------------------------------------------------'
-	#print 'NEW EVENT'
-	#open genEvent Information
-	event.getByLabel(GenEventLabel,GenEventHandle)
-	if GenEventHandle.isValid() :
-		GenEvent = GenEventHandle.product()
-		#print 'EVENT WEIGHT = '+str(GenEvent.weight())
+	print '----------------------------------------------------------------'
+	print 'NEW EVENT'
 
-	#find out whether the event was qqbar or not
-	mother_ids = []
-	event.getByLabel( GenLabel, GenHandle )
-	lep_charge = 0
-	is_qq = False
-	is_semilep = False
-	if GenHandle.isValid() :
-		GenParticles = GenHandle.product()
-		for ig in GenParticles :
-			#is it a t or a tbar?
-			if math.fabs(ig.pdgId()) == 6 and ig.status() == 3 :
-				#look through all the daughters for Ws.
-				for i in range(ig.numberOfDaughters()) :
-					dau = ig.daughter(i)
-					if math.fabs(dau.pdgId()) == 24 :
-						#if the W doesn't have two daughters, I don't know what the hell happened.
-						if dau.numberOfDaughters() != 2 :
-							info = 'W without two daughters. PARTICLE: ' + getId(ig.pdgId()) + ', DAUGHTERS : '
-							for j in range(ig.numberOfDaughters()) :
-								info = info + getId(ig.daughter(i)) + ' '
-							print info
-							continue
-						#check if the W decayed leptonically. If it did, add the charge of the lepton to the running total.
-						dau1_is_lep = math.fabs(dau.daughter(0).pdgId()) == 11 or math.fabs(dau.daughter(0).pdgId()) == 13 or math.fabs(dau.daughter(0).pdgId()) == 15
-						dau2_is_lep = math.fabs(dau.daughter(1).pdgId()) == 11 or math.fabs(dau.daughter(1).pdgId()) == 13 or math.fabs(dau.daughter(1).pdgId()) == 15
-						if dau1_is_lep or dau2_is_lep :
-							if not is_semilep :
-								is_semilep = True
-							else :
-								is_semilep = False
-			#Mother Checking
-			#Powheg/Madgraph algorithm
-			if options.ismcatnlo == 'no' :
-				#check if it's a proton
-				if ig.pdgId() == 2212 :
-					mother_ids.append(ig.daughter(0).pdgId())
-			#mcatnlo algorithm
-			if options.ismcatnlo == 'yes' and math.fabs(ig.pdgId()) != 6 and ig.status() == 3 :
-				#check if its daughters include the ttbar pair
-					ntopdaus = 0
-					for i in range(ig.numberOfDaughters()) :
-						if math.fabs(ig.daughter(i).pdgId()) == 6 :
-							ntopdaus+=1
-					#if yes, it's one of the mother particles
-					if ntopdaus == 2 :
-						mother_ids.append(ig.pdgId())
-
-	#add event to counts of stuff
-	if is_semilep : 
-		count_semilep+=1
-	if not is_semilep :
-		count_not_semilep+=1
-	if len(mother_ids) != 2 :
-		print 'did not find two protons. daughters of protons: '
-		print mother_ids
-	else :
-		if math.fabs(mother_ids[0]) < 6 and math.fabs(mother_ids[1]) < 6 and mother_ids[0] + mother_ids[1] == 0 :
-			is_qq = True
-			count_qq+=1
-		else :
-			count_not_qq+=1
-
-	if not is_qq :
-		continue
-
-	isWQQ    = False
-	isWc     = False
-	isWlight = False 
-
-	event.getByLabel( GenLabel, GenHandle )
-	if GenHandle.isValid() :
-		GenParticles = GenHandle.product()
-		extraJets = []
-		#get the list of mothers of the W
-		Wmothers = []
-		for ig in GenParticles :
-			if ig.pt()<0 or ig.status() != 3 :
-				continue
-			if math.fabs(ig.pdgId()) == 24 :
-				Wmothers.append(ig.mother(0))
-				Wmothers.append(ig.mother(1))
-		#loop again to find extra jet particles
-		for ig in GenParticles :
-			if ig.pt()<0 or ig.status() != 3 :
-				continue
-			if math.fabs(ig.pdgId()) == 24 or (math.fabs(ig.pdgId()) > 10 and math.fabs(ig.pdgId()) < 19):
-				continue
-			if ig.numberOfDaughters() == 0 :
-				extraJets.append(getId(ig.pdgId()))
-			else :
-				checkDaughters = []
-				for i in range(ig.numberOfDaughters()) :
-					if math.fabs(ig.daughter(i).pdgId()) < 11 or math.fabs(ig.daughter(i).pdgId()) > 18 or math.fabs(ig.daughter(i).pdgId()) == 24 :
-						checkDaughters.append(getId(ig.daughter(i).pdgId()))
-				if len(checkDaughters) == 0 :
-					extraJets.append(getId(ig.pdgId()))
-
-	#identify the type of W event
-	if ('b' in extraJets and '~b' in extraJets) or ('c' in extraJets and '~c' in extraJets) :
-		isWQQ = True
-	elif ('c' in extraJets and '~c' not in extraJets) or ('~c' in extraJets and 'c' not in extraJets) :
-		isWc = True
-	else :
-		isWlight = True
-
-	if GenEventHandle.isValid() :
-		GenEvent = GenEventHandle.product()
-		if GenEvent.weight() < 0 :
-			count_negative_weights+=1
-		else :
-			count_positive_weights+=1
+#	#find out whether the event was qqbar or not
+#	mother_ids = []
+#	event.getByLabel( GenLabel, GenHandle )
+#	lep_charge = 0
+#	is_qq = False
+#	is_semilep = False
+#	if GenHandle.isValid() :
+#		GenParticles = GenHandle.product()
+#		for ig in GenParticles :
+#			#is it a t or a tbar?
+#			if math.fabs(ig.pdgId()) == 6 and ig.status() == 3 :
+#				#look through all the daughters for Ws.
+#				for i in range(ig.numberOfDaughters()) :
+#					dau = ig.daughter(i)
+#					if math.fabs(dau.pdgId()) == 24 :
+#						#if the W doesn't have two daughters, I don't know what the hell happened.
+#						if dau.numberOfDaughters() != 2 :
+#							info = 'W without two daughters. PARTICLE: ' + getId(ig.pdgId()) + ', DAUGHTERS : '
+#							for j in range(ig.numberOfDaughters()) :
+#								info = info + getId(ig.daughter(i)) + ' '
+#							print info
+#							continue
+#						#check if the W decayed leptonically. If it did, add the charge of the lepton to the running total.
+#						dau1_is_lep = math.fabs(dau.daughter(0).pdgId()) == 11 or math.fabs(dau.daughter(0).pdgId()) == 13 or math.fabs(dau.daughter(0).pdgId()) == 15
+#						dau2_is_lep = math.fabs(dau.daughter(1).pdgId()) == 11 or math.fabs(dau.daughter(1).pdgId()) == 13 or math.fabs(dau.daughter(1).pdgId()) == 15
+#						if dau1_is_lep or dau2_is_lep :
+#							if not is_semilep :
+#								is_semilep = True
+#							else :
+#								is_semilep = False
+#			#Mother Checking
+#			#Powheg/Madgraph algorithm
+#			if options.ismcatnlo == 'no' :
+#				#check if it's a proton
+#				if ig.pdgId() == 2212 :
+#					mother_ids.append(ig.daughter(0).pdgId())
+#			#mcatnlo algorithm
+#			if options.ismcatnlo == 'yes' and math.fabs(ig.pdgId()) != 6 and ig.status() == 3 :
+#				#check if its daughters include the ttbar pair
+#					ntopdaus = 0
+#					for i in range(ig.numberOfDaughters()) :
+#						if math.fabs(ig.daughter(i).pdgId()) == 6 :
+#							ntopdaus+=1
+#					#if yes, it's one of the mother particles
+#					if ntopdaus == 2 :
+#						mother_ids.append(ig.pdgId())
+#
+#	#add event to counts of stuff
+#	if is_semilep : 
+#		count_semilep+=1
+#	if not is_semilep :
+#		count_not_semilep+=1
+#	if len(mother_ids) != 2 :
+#		print 'did not find two protons. daughters of protons: '
+#		print mother_ids
+#	else :
+#		if math.fabs(mother_ids[0]) < 6 and math.fabs(mother_ids[1]) < 6 and mother_ids[0] + mother_ids[1] == 0 :
+#			is_qq = True
+#			count_qq+=1
+#		else :
+#			count_not_qq+=1
+#
+#	if not is_qq :
+#		continue
+#
+#	isWQQ    = False
+#	isWc     = False
+#	isWlight = False 
+#
+#	event.getByLabel( GenLabel, GenHandle )
+#	if GenHandle.isValid() :
+#		GenParticles = GenHandle.product()
+#		extraJets = []
+#		#get the list of mothers of the W
+#		Wmothers = []
+#		for ig in GenParticles :
+#			if ig.pt()<0 or ig.status() != 3 :
+#				continue
+#			if math.fabs(ig.pdgId()) == 24 :
+#				Wmothers.append(ig.mother(0))
+#				Wmothers.append(ig.mother(1))
+#		#loop again to find extra jet particles
+#		for ig in GenParticles :
+#			if ig.pt()<0 or ig.status() != 3 :
+#				continue
+#			if math.fabs(ig.pdgId()) == 24 or (math.fabs(ig.pdgId()) > 10 and math.fabs(ig.pdgId()) < 19):
+#				continue
+#			if ig.numberOfDaughters() == 0 :
+#				extraJets.append(getId(ig.pdgId()))
+#			else :
+#				checkDaughters = []
+#				for i in range(ig.numberOfDaughters()) :
+#					if math.fabs(ig.daughter(i).pdgId()) < 11 or math.fabs(ig.daughter(i).pdgId()) > 18 or math.fabs(ig.daughter(i).pdgId()) == 24 :
+#						checkDaughters.append(getId(ig.daughter(i).pdgId()))
+#				if len(checkDaughters) == 0 :
+#					extraJets.append(getId(ig.pdgId()))
+#
+#	#identify the type of W event
+#	if ('b' in extraJets and '~b' in extraJets) or ('c' in extraJets and '~c' in extraJets) :
+#		isWQQ = True
+#	elif ('c' in extraJets and '~c' not in extraJets) or ('~c' in extraJets and 'c' not in extraJets) :
+#		isWc = True
+#	else :
+#		isWlight = True
+#
+#	if GenEventHandle.isValid() :
+#		GenEvent = GenEventHandle.product()
+#		if GenEvent.weight() < 0 :
+#			count_negative_weights+=1
+#		else :
+#			count_positive_weights+=1
 
 	#Open genparticles information from the file
 	event.getByLabel( GenLabel, GenHandle )
 	if GenHandle.isValid() :
 		GenParticles = GenHandle.product()
 		for ig in GenParticles :
-			if ig.pt()<0 or ig.status() != 3 :
+			if ig.pt()<0 : #or (ig.status() not in range(20,30) and ig.status() not in range(70,80)) :
 				continue
 			ist = ig.pdgId() == 6 and ig.status() == 3
 			istbar = ig.pdgId() == -6 and ig.status() == 3
@@ -224,7 +218,7 @@ for event in events :
 				s = s + getId(ig.daughter(i).pdgId()) + ' '
 			if nDaughters != 0 :
 				s = s + '}'
-			print s
+			print s + ' status: '+str(ig.status())
 #            for i in range(nDaughters) :
 #                s = '   [ '
 #                nOtherMothers   = ig.daughter(i).numberOfMothers()
@@ -243,24 +237,24 @@ for event in events :
 #                    s = s + '}'
 #                print s
 #	
-		print 'is_semilep = '+str(is_semilep)
-		print 'is_qq = '+str(is_qq)
-		print '-----------------------------------------------------------------------'
+		#print 'is_semilep = '+str(is_semilep)
+		#print 'is_qq = '+str(is_qq)
+		#print '-----------------------------------------------------------------------'
 		
-		#print 'EXTRA JETS: ' + str(extraJets)
-		if 'b' in extraJets or '~b' in extraJets :
-			count_W_bJets += 1
-			#print 'event classified as W+b-Jets'
-		elif 'c' in extraJets or '~c' in extraJets :
-			count_W_cJets += 1
-			#print 'event classified as W+c-Jets'
-		elif len(extraJets) > 0 :
-			count_W_LFJets += 1
-			#print 'event classified as W+LF-Jets'
-		else :
-			count_W_noJets += 1
-			#print 'event classified as W, no jets'
-		#print ''
+#		#print 'EXTRA JETS: ' + str(extraJets)
+#		if 'b' in extraJets or '~b' in extraJets :
+#			count_W_bJets += 1
+#			#print 'event classified as W+b-Jets'
+#		elif 'c' in extraJets or '~c' in extraJets :
+#			count_W_cJets += 1
+#			#print 'event classified as W+c-Jets'
+#		elif len(extraJets) > 0 :
+#			count_W_LFJets += 1
+#			#print 'event classified as W+LF-Jets'
+#		else :
+#			count_W_noJets += 1
+#			#print 'event classified as W, no jets'
+#		#print ''
 
 
 

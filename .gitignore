@@ -1,7 +1,8 @@
 NTuplizer/test/*Ntuples.root
 NTuplizer/test/crab_TT_Tune4C_13TeV-pythia8-tauola/
 TTree_Maker/test/*.txt
-TTree_Maker/test/pythia_qq_semilep_TT/
-TTree_Maker/test/pythia_gg_semilep_TT/
-TTree_Maker/test/pythia_dilep_TT/
-TTree_Maker/test/pythia_had_TT/
+TTree_Maker/test/pythia8_qq_semilep_TT/
+TTree_Maker/test/pythia8_gg_semilep_TT/
+TTree_Maker/test/pythia8_dilep_TT/
+TTree_Maker/test/pythia8_had_TT/
+TTree_Maker/test/Powheg_8TeV_qq_semilep_TT_TEST/

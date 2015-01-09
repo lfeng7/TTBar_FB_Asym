@@ -6,5 +6,5 @@ import ROOT
 #returns:
 #	1) a list of selected jet indices for the analysis, ordered by pT OR
 #	2) 1-element list of negative value of a cutflow failure point
-def selectJets(jetvars) :
+def selectJets(toptype,jetvars) :
 	return [0,0,0,0] #DEBUG RETURN

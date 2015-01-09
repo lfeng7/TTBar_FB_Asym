@@ -8,7 +8,7 @@ ERR_NONE = 0 		   #	0 = no Error
 ERR_INVALID_INIT = 1   #	1 = invalid initialization options
 ERR_INVALID_HANDLE = 2 #	2 = invalid Handle for event
 #Beam energy
-SQRT_S=13000.0
+SQRT_S=8000.0
 BEAM_ENERGY=SQRT_S/2.0
 
 ##############################################################################################
@@ -42,14 +42,15 @@ class treemaker :
 	#muons
 	muHandles = []; muLabels = []
 	muPtHandle  	= Handle('vector<float>'); muHandles.append(muPtHandle); 	  muPtLabel  	 = ('muons','muPt'); 				 muLabels.append(muPtLabel)
-	muEtaHandle 	= Handle('vector<float>'); muHandles.append(muEtaHandle); 	  muEtaLabel 	 = ('muons','muEta'); 			     muLabels.append(muEtaLabel)
-	muPhiHandle 	= Handle('vector<float>'); muHandles.append(muPhiHandle); 	  muPhiLabel 	 = ('muons','muPhi'); 			     muLabels.append(muPhiLabel)
-	muMHandle   	= Handle('vector<float>'); muHandles.append(muMHandle); 	  muMLabel   	 = ('muons','muMass'); 			     muLabels.append(muMLabel)
+	muEtaHandle 	= Handle('vector<float>'); muHandles.append(muEtaHandle); 	  muEtaLabel 	 = ('muons','muEta'); 				 muLabels.append(muEtaLabel)
+	muPhiHandle 	= Handle('vector<float>'); muHandles.append(muPhiHandle); 	  muPhiLabel 	 = ('muons','muPhi'); 				 muLabels.append(muPhiLabel)
+	muMHandle   	= Handle('vector<float>'); muHandles.append(muMHandle); 	  muMLabel   	 = ('muons','muMass'); 				 muLabels.append(muMLabel)
 	muChargeHandle  = Handle('vector<float>'); muHandles.append(muChargeHandle);  muChargeLabel  = ('muons','muCharge'); 			 muLabels.append(muChargeLabel)
 	muSumCHPtHandle = Handle('vector<float>'); muHandles.append(muSumCHPtHandle); muSumCHPtLabel = ('muons','muSumChargedHadronPt'); muLabels.append(muSumCHPtLabel)
 	muSumNHPtHandle = Handle('vector<float>'); muHandles.append(muSumNHPtHandle); muSumNHPtLabel = ('muons','muSumNeutralHadronPt'); muLabels.append(muSumNHPtLabel)
-	muSumPhPtHandle = Handle('vector<float>'); muHandles.append(muSumPhPtHandle); muSumPhPtLabel = ('muons','muSumPhotonPt'); 	     muLabels.append(muSumPhPtLabel)
-	muSumPUPtHandle = Handle('vector<float>'); muHandles.append(muSumPUPtHandle); muSumPUPtLabel = ('muons','muSumPUPt'); 		     muLabels.append(muSumPUPtLabel)
+	muSumPhPtHandle = Handle('vector<float>'); muHandles.append(muSumPhPtHandle); muSumPhPtLabel = ('muons','muSumPhotonPt'); 		 muLabels.append(muSumPhPtLabel)
+	muSumPUPtHandle = Handle('vector<float>'); muHandles.append(muSumPUPtHandle); muSumPUPtLabel = ('muons','muSumPUPt'); 			 muLabels.append(muSumPUPtLabel)
+	muIsTightHandle = Handle('vector<float>'); muHandles.append(muIsTightHandle); muIsTightLabel = ('muons','muIsTightMuon'); 		 muLabels.append(muIsTightLabel)
 	#electrons
 	elHandles = []; elLabels = []
 	elPtHandle  	= Handle('vector<float>'); elHandles.append(elPtHandle);     elPtLabel     = ('electrons','elPt');     elLabels.append(elPtLabel)
@@ -82,13 +83,12 @@ class treemaker :
 				return self.ERR_CODE
 			GenParticles = self.genHandle.product()
 			if self.event_type != 4 :
-				keepEvent = eventTypeCheck(GenParticles,self.event_type) #function in eventTypeHelper.py
-				print 'eventTypeCheck returned '+str(keepEvent)
+				keepEvent = eventTypeCheck(self.MC_generator,GenParticles,self.event_type) #function in eventTypeHelper.py
 		if not keepEvent :
 			return ERR_NONE
 		#Mother particle (and MC truth top) assignment
 		if self.is_data == 0 : #MC truth values only relevant for semileptonic qqbar->ttbar
-			q_vec 	 = findInitialQuark(GenParticles) #function in eventTypeHelper.py
+			q_vec 	 = findInitialQuark(self.MC_generator,GenParticles) #function in eventTypeHelper.py
 			qbar_vec = ROOT.TLorentzVector(q_vec.X(),q_vec.Y(),-1.0*q_vec.Z(),q_vec.E())
 			MCt_vec, MCtbar_vec = findMCTops(GenParticles) #function in eventTypeHelper.py
 		else : #if we don't have the MC truth information, we have to assign which is which later when we do the boost
@@ -100,7 +100,8 @@ class treemaker :
 		self.qbar_pt[0],   self.qbar_eta[0],   self.qbar_phi[0],   self.qbar_M[0]   = qbar_vec.Pt(),   qbar_vec.Eta(),   qbar_vec.Phi(),   qbar_vec.M()
 		self.MCt_pt[0],    self.MCt_eta[0],    self.MCt_phi[0],    self.MCt_M[0]    = MCt_vec.Pt(),    MCt_vec.Eta(),    MCt_vec.Phi(),    MCt_vec.M()
 		self.MCtbar_pt[0], self.MCtbar_eta[0], self.MCtbar_phi[0], self.MCtbar_M[0] = MCtbar_vec.Pt(), MCtbar_vec.Eta(), MCtbar_vec.Phi(), MCtbar_vec.M()
-		#lepton selection
+		#get all the info from the event
+		#leptons
 		muVars = [];	elVars = []
 		for i in range(len(self.muHandles)) :
 			event.getByLabel(self.muLabels[i],self.muHandles[i])
@@ -114,12 +115,7 @@ class treemaker :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			elVars.append(self.elHandles[i].product())
-		#get the index of the ONE valid lepton OR the cutflow failpoint
-		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars) #function in lepHelper.py
-		#set the fourvector of the lepton
-		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
-		self.lep_pt[0], self.lep_eta[0], self.lep_phi[0], self.lep_M[0] = lep_vec.Pt(), lep_vec.Eta(), lep_vec.Phi(), lep_vec.M()
-		#neutrino handling and setup for fit
+		#MET
 		metVars = []
 		for i in range(len(self.metHandles)) :
 			event.getByLabel(self.metLabels[i],self.metHandles[i])
@@ -127,9 +123,7 @@ class treemaker :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			metVars.append(self.metHandles[i].product())
-		met_vec = setupMET(lep_vec,metVars) #function in metHelper.py
-		self.met_pt[0], self.met_eta[0], self.met_phi[0], self.met_M[0] = met_vec.Pt(), met_vec.Eta(), met_vec.Phi(), met_vec.M()
-		#jet selection
+		#Jets
 		jetVars = []
 		for i in range(len(self.jetHandles)) :
 			event.getByLabel(self.jetLabels[i],self.jetHandles[i])
@@ -137,8 +131,21 @@ class treemaker :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			jetVars.append(self.jetHandles[i].product())
-		jetCandIndices = selectJets(jetVars) #function in jetHelper.py
-		self.nJets[0] = len(jetCandIndices)
+		#met cleaning
+		met_cut = metCut(metVars) #function in metHelper.py
+		if met_cut!=0 :
+			return self.__closeout__(-1*met_cut)
+		#lepton selection
+		#get the index of the ONE valid lepton OR the cutflow failpoint
+		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars,jetVars) #function in lepHelper.py
+		#set the fourvector of the lepton
+		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
+		self.lep_pt[0], self.lep_eta[0], self.lep_phi[0], self.lep_M[0] = lep_vec.Pt(), lep_vec.Eta(), lep_vec.Phi(), lep_vec.M()
+		#neutrino handling and setup for fit
+		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
+		self.met_pt[0], self.met_eta[0], self.met_phi[0], self.met_M[0] = met1_vec.Pt(), met1_vec.Eta(), met1_vec.Phi(), met1_vec.M()
+		#jet selection
+		jetCandIndices = selectJets(self.top_type,jetVars) #function in jetHelper.py
 		jetTuples = []
 		for i in range(len(jetCandIndices)) :
 			jetTuples.append((ROOT.TLorentzVector(1.0,0.0,0.0,1.0),jetVars[4][jetCandIndices[i]]))
@@ -147,7 +154,13 @@ class treemaker :
 		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met_vec,jetTuples) #function in ttbarReconstructor.py
 		self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0],jetTuples[3][0]) #populate the TTree with the fourvector variables
 		#angle and differential cross section variable reconstruction
-		self.cstar[0], self.x_F[0], self.M[0] = ( getObservables(ROOT.TLorentzVector(0.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
+		if self.top_type == 1 :
+			self.cstar[0], self.x_F[0], self.M[0] = ( getObservables(ROOT.TLorentzVector(0.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
+																 ROOT.TLorentzVector(0.0,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
+																 lep_vec+met_vec+jetTuples[0][0],
+																 jetTuples[1][0]+jetTuples[2][0]+jetTuples[3][0],self.Q_l[0]) ) #function in angleReconstructor.py
+		elif self.top_type == 2 :
+			self.cstar[0], self.x_F[0], self.M[0] = ( getObservables(ROOT.TLorentzVector(0.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
 																 ROOT.TLorentzVector(0.0,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
 																 lep_vec+met_vec+jetTuples[0][0],
 																 jetTuples[1][0]+jetTuples[2][0]+jetTuples[3][0],self.Q_l[0]) ) #function in angleReconstructor.py
@@ -158,23 +171,19 @@ class treemaker :
 				self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
 		#scale factor and reweighting calculations
 			#These are going to have to get added as we go with them, functions in eventWeightCalculator.py
-		#update error code
-		self.error_code[0] = self.ERR_CODE
-		#writeout and closeout
-		self.tree.Fill()
-		return self.ERR_CODE
+		self.__closeout__(0) #yay! A successful event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,isData,eventType,sideband,lepType,reweight) :
+	def __init__(self,fileName,isData,generator,eventType,sideband,lepType,topType,reweight) :
 		self.ERR_CODE = ERR_NONE
 		#handle input options
-		self.__handleInput__(fileName,isData,eventType,sideband,lepType,reweight)
+		self.__handleInput__(fileName,isData,generator,eventType,sideband,lepType,reweight)
 		#book TTree
 		self.__book__()
 	
 	##################################   #__handleInput__   ##################################   
 	#############################   __init__ helper function   ###############################
-	def __handleInput__(self,fileName,isData,eventType,sideband,lepType,reweight) :
+	def __handleInput__(self,fileName,isData,generator,eventType,sideband,lepType,topType,reweight) :
 		#output file name
 		self.file_name = fileName
 		#data or MC?
@@ -186,6 +195,8 @@ class treemaker :
 			print 'ERROR: cannot determine if inputted file is a data or MC file!'
 			print '	options.data = '+isData+''
 			self.ERR_CODE = ERR_INVALID_INIT
+		#MC generator?
+		self.MC_generator = generator
 		#event type?
 		if eventType == 'qq_semilep' or eventType == 'qqbar_semilep' or eventType == 'qq' or eventType == 'qqbar' :
 			print 'only SEMILEPTONIC qqbar EVENTS will be analyzed from this file'
@@ -221,12 +232,23 @@ class treemaker :
 		if lepType == 'muons' or lepType == 'muon' or lepType == 'mu' :
 			print 'File will be analyzed using MUON selection'
 			self.lep_type = 0
-		elif (options.leptons == 'electrons' or options.leptons == 'electron' or options.leptons == 'ele') :
+		elif (lepType == 'electrons' or lepType == 'electron' or lepType == 'ele') :
 			print 'File will be analyzed using ELECTRON selection'
 			self.lep_type = 1
 		else :
 			print 'ERROR: cannot determine if muon or electron analysis is being performed!'
-			print '	options.leptons = '+lepType+''
+			print '	lepType = '+lepType+''
+			self.ERR_CODE = ERR_INVALID_INIT
+		#top type?
+		if topType == 1 :
+			print 'File will be analyzed using TYPE 1 (FULLY MERGED) TOPS'
+			self.top_type = 0
+		elif topType == 2 :
+			print 'File will be analyzed using TYPE 2 (PARTIALLY MERGED) TOPS'
+			self.top_type = 1
+		else :
+			print 'ERROR: cannot determine if top type 1 or top type 2 analysis is being performed!'
+			print '	topType = '+topType+''
 			self.ERR_CODE = ERR_INVALID_INIT
 		#event scaling?
 		self.w = reweight
@@ -259,8 +281,6 @@ class treemaker :
 		self.error_code = array('I',[self.ERR_CODE]); self.addBranch('error_code',self.error_code,'i',self.ERR_CODE)
 		#lepton charge
 		self.Q_l = array('i',[0]); self.addBranch('Q_l',self.Q_l,'I',0)
-		#jet multiplicity
-		self.nJets = array('I',[0]); self.addBranch('nJets',self.nJets,'i',0)
 		#kinematic fit chi2
 		self.chi2 = array('d',[0.0]); self.addBranch('chi2',self.chi2,'D',0.0)
 		#initial quark vector
@@ -293,16 +313,6 @@ class treemaker :
 		self.lepb_eta = array('d',[100.0]); self.addBranch('lepb_eta',self.lepb_eta,'D',100.0)
 		self.lepb_phi = array('d',[100.0]); self.addBranch('lepb_phi',self.lepb_phi,'D',100.0)
 		self.lepb_M   = array('d',[-1.0]);  self.addBranch('lepb_M',  self.lepb_M,  'D',-1.0)
-		#W subjet 1 vector (higher pT)
-		self.Wsub1_pt  = array('d',[-1.0]);  self.addBranch('Wsub1_pt', self.Wsub1_pt, 'D',-1.0)
-		self.Wsub1_eta = array('d',[100.0]); self.addBranch('Wsub1_eta',self.Wsub1_eta,'D',100.0)
-		self.Wsub1_phi = array('d',[100.0]); self.addBranch('Wsub1_phi',self.Wsub1_phi,'D',100.0)
-		self.Wsub1_M   = array('d',[-1.0]);  self.addBranch('Wsub1_M',  self.Wsub1_M,  'D',-1.0)
-		#W subjet 2 vector (lower pT)
-		self.Wsub2_pt  = array('d',[-1.0]);  self.addBranch('Wsub2_pt', self.Wsub2_pt, 'D',-1.0)
-		self.Wsub2_eta = array('d',[100.0]); self.addBranch('Wsub2_eta',self.Wsub2_eta,'D',100.0)
-		self.Wsub2_phi = array('d',[100.0]); self.addBranch('Wsub2_phi',self.Wsub2_phi,'D',100.0)
-		self.Wsub2_M   = array('d',[-1.0]);  self.addBranch('Wsub2_M',  self.Wsub2_M,  'D',-1.0)
 		#hadronic W vector
 		self.hadW_pt  = array('d',[-1.0]);  self.addBranch('hadW_pt', self.hadW_pt, 'D',-1.0)
 		self.hadW_eta = array('d',[100.0]); self.addBranch('hadW_eta',self.hadW_eta,'D',100.0)
@@ -356,16 +366,13 @@ class treemaker :
 		self.tree.Branch(name,var,name+'/'+vartype)
 		self.initial_branches.append((var,ini_val))
 
-	############ function to fill fourvector branch values because it's cluttery ###########
-	def __fillFourVecs__(self,lepton,met,lepb,hadWs1,hadWs2,hadb) :
+	################ function to fill fourvector branch values (type 2 tops) ###############
+	def __fillFourVecs__(self,lepton,met,lepb,hadW,hadb) :
 		self.lep_pt[0]   = lepton.Pt();	self.lep_eta[0]   = lepton.Eta(); self.lep_phi[0]   = lepton.Phi(); self.lep_M[0]   = lepton.M()
 		self.met_pt[0]   = met.Pt();	self.met_eta[0]   = met.Eta();	  self.met_phi[0]   = met.Phi();	self.met_M[0]   = met.M()
 		lepW = lepton+met
 		self.lepW_pt[0]  = lepW.Pt();	self.lepW_eta[0]  = lepW.Eta();	  self.lepW_phi[0]  = lepW.Phi();   self.lepW_M[0]  = lepW.M()
 		self.lepb_pt[0]  = lepb.Pt();	self.lepb_eta[0]  = lepb.Eta();	  self.lepb_phi[0]  = lepb.Phi();   self.lepb_M[0]  = lepb.M()
-		self.Wsub1_pt[0] = hadWs1.Pt();	self.Wsub1_eta[0] = hadWs1.Eta(); self.Wsub1_phi[0] = hadWs1.Phi();	self.Wsub1_M[0] = hadWs1.M()
-		self.Wsub2_pt[0] = hadWs2.Pt();	self.Wsub2_eta[0] = hadWs2.Eta(); self.Wsub2_phi[0] = hadWs2.Phi();	self.Wsub2_M[0] = hadWs2.M()
-		hadW = hadWs1+hadWs2
 		self.hadW_pt[0]  = hadW.Pt();	self.hadW_eta[0]  = hadW.Eta();   self.hadW_phi[0]  = hadW.Phi();	self.hadW_M[0]  = hadW.M()
 		self.hadb_pt[0]  = hadb.Pt();	self.hadb_eta[0]  = hadb.Eta();   self.hadb_phi[0]  = hadb.Phi();	self.hadb_M[0]  = hadb.M()
 		lept = lepW+lepb
@@ -373,10 +380,30 @@ class treemaker :
 		hadt = hadW+hadb
 		self.hadt_pt[0]  = hadt.Pt();	self.hadt_eta[0]  = hadt.Eta();   self.hadt_phi[0]  = hadt.Phi();	self.hadt_M[0]  = hadt.M()
 
+	################ function to fill fourvector branch values (type 2 tops) ###############
+	def __fillFourVecs__(self,lepton,met,lepb,hadt) :
+		self.lep_pt[0]   = lepton.Pt();	self.lep_eta[0]   = lepton.Eta(); self.lep_phi[0]   = lepton.Phi(); self.lep_M[0]   = lepton.M()
+		self.met_pt[0]   = met.Pt();	self.met_eta[0]   = met.Eta();	  self.met_phi[0]   = met.Phi();	self.met_M[0]   = met.M()
+		lepW = lepton+met
+		self.lepW_pt[0]  = lepW.Pt();	self.lepW_eta[0]  = lepW.Eta();	  self.lepW_phi[0]  = lepW.Phi();   self.lepW_M[0]  = lepW.M()
+		self.lepb_pt[0]  = lepb.Pt();	self.lepb_eta[0]  = lepb.Eta();	  self.lepb_phi[0]  = lepb.Phi();   self.lepb_M[0]  = lepb.M()
+		lept = lepW+lepb
+		self.lept_pt[0]  = lept.Pt();	self.lept_eta[0]  = lept.Eta();   self.lept_phi[0]  = lept.Phi();	self.lept_M[0]  = lept.M()
+		self.hadt_pt[0]  = hadt.Pt();	self.hadt_eta[0]  = hadt.Eta();   self.hadt_phi[0]  = hadt.Phi();	self.hadt_M[0]  = hadt.M()
+
+	########## function to close out the event, called before kicking back to runner #########
+	def __closeout__(self,cut_flow) :
+		#update cutflow
+		self.cutflow[0] = cut_flow
+		#update error code
+		self.error_code[0] = self.ERR_CODE
+		#fill ttree
+		self.tree.Fill()
+		#return error code
+		return self.ERR_CODE
+
 	################################## __del__ function  ###################################
 	def __del__(self) :
 		self.f.cd()
 		self.f.Write()
 		self.f.Close()
-
-
