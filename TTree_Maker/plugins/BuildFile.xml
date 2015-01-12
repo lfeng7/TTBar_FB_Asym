@@ -1,4 +1,0 @@
-<use name="FWCore/Framework"/>
-<use name="root"/>
-<use name="rootcore"/>
-<flags EDM_PLUGIN="1"/>
