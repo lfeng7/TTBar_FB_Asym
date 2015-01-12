@@ -8,7 +8,7 @@ ERR_NONE = 0 		   #	0 = no Error
 ERR_INVALID_INIT = 1   #	1 = invalid initialization options
 ERR_INVALID_HANDLE = 2 #	2 = invalid Handle for event
 #Beam energy
-SQRT_S=8000.0
+SQRT_S=13000.0
 BEAM_ENERGY=SQRT_S/2.0
 
 ##############################################################################################
@@ -63,13 +63,23 @@ class treemaker :
 	metHandles = []; metLabels = []
 	metPtHandle  = Handle('vector<float>'); metHandles.append(metPtHandle);  metPtLabel  = ('met','metPt');  metLabels.append(metPtLabel)
 	metPhiHandle = Handle('vector<float>'); metHandles.append(metPhiHandle); metPhiLabel = ('met','metPhi'); metLabels.append(metPhiLabel)
-	#Jets
-	jetHandles = [];	jetLabels = []
-	jetPtHandle   = Handle('vector<float>'); jetHandles.append(jetPtHandle);  jetPtLabel  = ('jets','jetPt');   jetLabels.append(jetPtLabel)
-	jetEtaHandle  = Handle('vector<float>'); jetHandles.append(jetEtaHandle); jetEtaLabel = ('jets','jetEta');  jetLabels.append(jetEtaLabel)
-	jetPhiHandle  = Handle('vector<float>'); jetHandles.append(jetPhiHandle); jetPhiLabel = ('jets','jetPhi');  jetLabels.append(jetPhiLabel)
-	jetMHandle    = Handle('vector<float>'); jetHandles.append(jetMHandle);   jetMLabel   = ('jets','jetMass'); jetLabels.append(jetMLabel)
-	jetCSVHandle  = Handle('vector<float>'); jetHandles.append(jetCSVHandle); jetCSVLabel = ('jets','jetCSV');  jetLabels.append(jetCSVLabel)
+	#AK4 Jets
+	jetHandles_AK4 = [];	jetLabels_AK4 = []
+	AK4jetPtHandle   = Handle('vector<float>'); jetHandles_AK4.append(jetPtHandle);  AK4jetPtLabel  = ('jets','jetPt');   jetLabels_AK4.append(jetPtLabel)
+	AK4jetEtaHandle  = Handle('vector<float>'); jetHandles_AK4.append(jetEtaHandle); AK4jetEtaLabel = ('jets','jetEta');  jetLabels_AK4.append(jetEtaLabel)
+	AK4jetPhiHandle  = Handle('vector<float>'); jetHandles_AK4.append(jetPhiHandle); AK4jetPhiLabel = ('jets','jetPhi');  jetLabels_AK4.append(jetPhiLabel)
+	AK4jetMHandle    = Handle('vector<float>'); jetHandles_AK4.append(jetMHandle);   AK4jetMLabel   = ('jets','jetMass'); jetLabels_AK4.append(jetMLabel)
+	AK4jetCSVHandle  = Handle('vector<float>'); jetHandles_AK4.append(jetCSVHandle); AK4jetCSVLabel = ('jets','jetCSV');  jetLabels_AK4.append(jetCSVLabel)
+	#AK8 Jets
+	jetHandles_AK8 = [];	jetLabels_AK8 = []
+	AK8jetPtHandle	  = Handle('vector<float>'); jetHandles_AK8.append(jetPtHandle);   AK8jetPtLabel   = ('jetsAK8','jetAK8Pt');    jetLabels_AK8.append(jetPtLabel)
+	AK8jetEtaHandle	  = Handle('vector<float>'); jetHandles_AK8.append(jetEtaHandle);  AK8jetEtaLabel  = ('jetsAK8','jetAK8Eta');   jetLabels_AK8.append(jetEtaLabel)
+	AK8jetPhiHandle	  = Handle('vector<float>'); jetHandles_AK8.append(jetPhiHandle);  AK8jetPhiLabel  = ('jetsAK8','jetAK8Phi');   jetLabels_AK8.append(jetPhiLabel)
+	AK8jetMHandle	  = Handle('vector<float>'); jetHandles_AK8.append(jetMHandle);	   AK8jetMLabel    = ('jetsAK8','jetAK8Mass');  jetLabels_AK8.append(jetMLabel)
+	AK8jetCSVHandle	  = Handle('vector<float>'); jetHandles_AK8.append(jetCSVHandle);  AK8jetCSVLabel  = ('jetsAK8','jetAK8CSV');   jetLabels_AK8.append(jetCSVLabel)
+	AK8jettau1Handle  = Handle('vector<float>'); jetHandles_AK8.append(jettau1Handle); AK8jettau1Label = ('jetsAK8','jetAK8tau1');  jetLabels_AK8.append(jettau1Label)
+	AK8jettau2Handle  = Handle('vector<float>'); jetHandles_AK8.append(jettau2Handle); AK8jettau2Label = ('jetsAK8','jetAK8tau2');  jetLabels_AK8.append(jettau2Label)
+	AK8jettau3Handle  = Handle('vector<float>'); jetHandles_AK8.append(jettau3Handle); AK8jettau3Label = ('jetsAK8','jetAK8tau3');  jetLabels_AK8.append(jettau3Label)
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,event) :
@@ -123,14 +133,22 @@ class treemaker :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			metVars.append(self.metHandles[i].product())
-		#Jets
-		jetVars = []
-		for i in range(len(self.jetHandles)) :
-			event.getByLabel(self.jetLabels[i],self.jetHandles[i])
-			if not self.jetHandles[i].isValid() :
+		#AK4 Jets
+		jetVars_AK4 = []
+		for i in range(len(self.jetHandles_AK4)) :
+			event.getByLabel(self.jetLabels_AK4[i],self.jetHandles_AK4[i])
+			if not self.jetHandles_AK4[i].isValid() :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
-			jetVars.append(self.jetHandles[i].product())
+			jetVars_AK4.append(self.jetHandles_AK4[i].product())
+		#AK8 Jets
+		jetVars_AK8 = []
+		for i in range(len(self.jetHandles_AK8)) :
+			event.getByLabel(self.jetLabels_AK8[i],self.jetHandles_AK8[i])
+			if not self.jetHandles_AK8[i].isValid() :
+				self.ERR_CODE = ERR_INVALID_HANDLE
+				return self.ERR_CODE
+			jetVars_AK8.append(self.jetHandles_AK8[i].product())
 		#met cleaning
 		met_cut = metCut(metVars) #function in metHelper.py
 		if met_cut!=0 :
@@ -144,26 +162,22 @@ class treemaker :
 		#neutrino handling and setup for fit
 		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
 		self.met_pt[0], self.met_eta[0], self.met_phi[0], self.met_M[0] = met1_vec.Pt(), met1_vec.Eta(), met1_vec.Phi(), met1_vec.M()
+		if met1_vec.Pz() == met2_vec.Pz() :
+			self.nFits[0] = 2
+		else :
+			self.nFits[0] = 1
 		#jet selection
-		jetCandIndices = selectJets(self.top_type,jetVars) #function in jetHelper.py
-		jetTuples = []
-		for i in range(len(jetCandIndices)) :
-			jetTuples.append((ROOT.TLorentzVector(1.0,0.0,0.0,1.0),jetVars[4][jetCandIndices[i]]))
-			jetTuples[i][0].SetPtEtaPhiM(jetVars[0][jetCandIndices[i]],jetVars[1][jetCandIndices[i]],jetVars[2][jetCandIndices[i]],jetVars[3][jetCandIndices[i]])
+		jetTuples = selectJets(self.top_type,lep_vec,met1_vec,met2_vec,jetVars_AK4,jetVars_AK8) #function in jetHelper.py
 		#event reconstruction
-		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met_vec,jetTuples) #function in ttbarReconstructor.py
-		self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0],jetTuples[3][0]) #populate the TTree with the fourvector variables
-		#angle and differential cross section variable reconstruction
+		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) #function in ttbarReconstructor.py
+		#populate the TTree with the fourvector variables, and angle and differential cross section variable reconstruction
 		if self.top_type == 1 :
-			self.cstar[0], self.x_F[0], self.M[0] = ( getObservables(ROOT.TLorentzVector(0.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
-																 ROOT.TLorentzVector(0.0,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
-																 lep_vec+met_vec+jetTuples[0][0],
-																 jetTuples[1][0]+jetTuples[2][0]+jetTuples[3][0],self.Q_l[0]) ) #function in angleReconstructor.py
+			self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0]) 
+		
+			self.cstar[0], self.x_F[0], self.M[0] = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0],self.Q_l[0]) #function in angleReconstructor.py
 		elif self.top_type == 2 :
-			self.cstar[0], self.x_F[0], self.M[0] = ( getObservables(ROOT.TLorentzVector(0.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
-																 ROOT.TLorentzVector(0.0,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY),
-																 lep_vec+met_vec+jetTuples[0][0],
-																 jetTuples[1][0]+jetTuples[2][0]+jetTuples[3][0],self.Q_l[0]) ) #function in angleReconstructor.py
+			self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0])
+			self.cstar[0], self.x_F[0], self.M[0] = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],self.Q_l[0]) #function in angleReconstructor.py
 		#MC Truth observable and reweighting calculation
 		if self.is_data==0 :
 			( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
@@ -283,6 +297,8 @@ class treemaker :
 		self.Q_l = array('i',[0]); self.addBranch('Q_l',self.Q_l,'I',0)
 		#kinematic fit chi2
 		self.chi2 = array('d',[0.0]); self.addBranch('chi2',self.chi2,'D',0.0)
+		#number of kinematic fits performed
+		self.nFits = array('I',[0.0]); self.addBranch('nFits',self.nFits,'i',0.0)
 		#initial quark vector
 		self.q_pt  = array('d',[-1.0]);  self.addBranch('q_pt', self.q_pt, 'D',-1.0)
 		self.q_eta = array('d',[100.0]); self.addBranch('q_eta',self.q_eta,'D',100.0)
