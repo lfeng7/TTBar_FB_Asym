@@ -1,8 +1,7 @@
-#! /usr/bin/env python
+#run_ttree.py: helper code to run the tree_maker workhorse code that produces ttrees from nTuples
+#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
+#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
 
-##############################################################################################
-##########								   Imports  								##########
-##############################################################################################
 import os
 import sys
 from DataFormats.FWLite import Events, Handle
@@ -10,9 +9,7 @@ import ROOT
 from optparse import OptionParser
 from ttree_maker import treemaker
 
-##############################################################################################
 ##########								Parser Options								##########
-##############################################################################################
 
 parser = OptionParser()
 #Run options
@@ -34,9 +31,7 @@ parser.add_option('--cross_section', type='float',  action='store', default=1.0,
 parser.add_option('--n_events', 	 type='float',  action='store', default=1.0,  	dest='n_events', 	    help='Number of events generated')
 (options, args) = parser.parse_args()
 
-##############################################################################################
 ##########							Set Up Event Loop								##########
-##############################################################################################
 
 print 'Opening files for sample '+options.name+' . . .'  
 #Build path to input file
@@ -71,9 +66,7 @@ analyzer = treemaker(filename, options.data, options.generator, options.event_ty
 real_count = 0
 count = 0
 
-##############################################################################################
 ##########								Main Event Loop								##########
-##############################################################################################
 
 print 'Files opened, starting event loop'
 for event in events:

@@ -1,7 +1,9 @@
+#metHelper: contains helper functions for dealing with the MET/neutrino
+#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
+#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
+
 import ROOT
 from math import *
-
-#metHelper: contains helper functions for dealing with the MET/neutrino
 
 #Global variables
 #cutflow

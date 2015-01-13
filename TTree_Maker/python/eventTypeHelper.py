@@ -1,9 +1,11 @@
-import ROOT
-from math import *
-
 #eventTypeHelper: holds helper functions for doing the event type split 
 #and for setting the fourvector of the initial state quark if the file 
 #is a Monte Carlo file
+#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
+#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
+
+import ROOT
+from math import *
 
 #global variables
 #Beam energy
@@ -35,7 +37,7 @@ def eventTypeCheck(generator,GenParticles,event_type) :
 		return typeCheckPythia8(GenParticles,event_type)
 	else :
 		print 'ERROR: GENERATOR '+generator+' NOT RECOGNIZED!!!'
-		return False
+		return (False,0)
 
 #findInitialQuark
 #takes in GenParticle tree
@@ -87,10 +89,12 @@ def typeCheckPowheg(GenParticles,event_type) :
 				initial_state_parton_ids.append(p.daughter(0).pdgId())
 		#is it a qqbar event?
 		is_qq = len(initial_state_parton_ids) == 2 and initial_state_parton_ids[0]+initial_state_parton_ids[1]==0
+		#regardless, did it have an initially symmetric state
+		addTwice = event_type==0 or (len(initial_state_parton_ids)==2 and initial_state_parton_ids[0] == initial_state_parton_ids[1])
 		#return false if the event type is incorrect
 		if (event_type == 0 and not is_qq) or (event_type == 1 and is_qq) :
-			return False
-	return semilepCheck(GenParticles,event_type)
+			return False,addTwice
+	return semilepCheck(GenParticles,event_type),addTwice
 	#return True #DEBUG RETURN
 
 #MC@NLO eventTypeCheck function
@@ -110,10 +114,12 @@ def typeCheckMCAtNLO(GenParticles,event_type) :
 				initial_state_parton_ids.append(p.pdgId())
 		#is it a qqbar event?
 		is_qq = len(initial_state_parton_ids) == 2 and initial_state_parton_ids[0]+initial_state_parton_ids[1]==0
+		#regardless, did it have an initially symmetric state
+		addTwice = event_type==0 or (len(initial_state_parton_ids)==2 and initial_state_parton_ids[0] == initial_state_parton_ids[1])
 		#return false if the event type is incorrect
 		if (event_type == 0 and not is_qq) or (event_type == 1 and is_qq) :
-			return False
-	return semilepCheck(GenParticles,event_type)
+			return False,addTwice
+	return semilepCheck(GenParticles,event_type),addTwice
 	#return True #DEBUG RETURN
 
 #pythia8 eventTypeCheck function

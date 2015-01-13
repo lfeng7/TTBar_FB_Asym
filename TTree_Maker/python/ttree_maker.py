@@ -1,6 +1,8 @@
-#! /usr/bin/env python
 
 #TTree Maker workhorse code
+#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
+#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
+
 
 #Global variables
 #Error codes:
@@ -11,9 +13,7 @@ ERR_INVALID_HANDLE = 2 #	2 = invalid Handle for event
 SQRT_S=13000.0
 BEAM_ENERGY=SQRT_S/2.0
 
-##############################################################################################
 ##########								   Imports  								##########
-##############################################################################################
 
 import ROOT
 from DataFormats.FWLite import Events, Handle
@@ -28,9 +28,7 @@ from ttbarReconstructor import reconstruct
 from angleReconstructor import getObservables, getMCObservables
 from eventWeightCalculator import *
 
-##############################################################################################
 ##########							   Treemaker Class 								##########
-##############################################################################################
 
 class treemaker :
 	##################################		#__doc__		##################################
@@ -93,7 +91,9 @@ class treemaker :
 				return self.ERR_CODE
 			GenParticles = self.genHandle.product()
 			if self.event_type != 4 :
-				keepEvent = eventTypeCheck(self.MC_generator,GenParticles,self.event_type) #function in eventTypeHelper.py
+				keepEvent,add_twice = eventTypeCheck(self.MC_generator,GenParticles,self.event_type) #function in eventTypeHelper.py
+				if add_twice :
+					self.addTwice[0] = 1
 		if not keepEvent :
 			return ERR_NONE
 		#Mother particle (and MC truth top) assignment
@@ -298,7 +298,10 @@ class treemaker :
 		#kinematic fit chi2
 		self.chi2 = array('d',[0.0]); self.addBranch('chi2',self.chi2,'D',0.0)
 		#number of kinematic fits performed
-		self.nFits = array('I',[0.0]); self.addBranch('nFits',self.nFits,'i',0.0)
+		self.nFits = array('I',[0]); self.addBranch('nFits',self.nFits,'i',0)
+		#whether or not this event should be added twice and have its weight halved based on whether its initial state
+		#was symmetric (this will only be nonzero for qqbar and some gg events)
+		self.addTwice = array('I',[0]); self.addBranch('addTwice',self.addTwice,'i',0)
 		#initial quark vector
 		self.q_pt  = array('d',[-1.0]);  self.addBranch('q_pt', self.q_pt, 'D',-1.0)
 		self.q_eta = array('d',[100.0]); self.addBranch('q_eta',self.q_eta,'D',100.0)

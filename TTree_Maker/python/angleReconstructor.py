@@ -1,6 +1,9 @@
-import ROOT
-
 #angleReconstructor calculates differential cross section observables given event fourvectors
+#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
+#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
+
+import ROOT
+from math import *
 
 #Global variables
 #Alpha value for adjustment due to longitudinal gluon polarization

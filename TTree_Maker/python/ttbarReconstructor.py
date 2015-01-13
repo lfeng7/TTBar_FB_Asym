@@ -1,8 +1,10 @@
+#ttbar Reconstructor contains helper functions to reconstruct the ttbar system
+#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
+#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
+
 import ROOT
 from math import *
 from array import array
-
-#ttbar Reconstructor contains helper functions to reconstruct the ttbar system
 
 #Global variables
 MINF = 1000000000.

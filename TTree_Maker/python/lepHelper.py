@@ -1,7 +1,9 @@
+#lepHelper: contains helper functions for lepton selection
+#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
+#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
+
 import ROOT
 from math import *
-
-#lepHelper: contains helper functions for lepton selection
 
 #Global variables
 #cutflow
