@@ -7,3 +7,4 @@ TTree_Maker/test/pythia8_dilep_TT/
 TTree_Maker/test/pythia8_had_TT/
 TTree_Maker/test/Powheg_8TeV_qq_semilep_TT_TEST/
 Template_Maker/test/*_input.txt
+Fitter_Plotter/test/*_input.txt

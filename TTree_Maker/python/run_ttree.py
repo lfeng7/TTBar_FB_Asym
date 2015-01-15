@@ -14,7 +14,7 @@ from ttree_maker import treemaker
 parser = OptionParser()
 #Run options
 parser.add_option('--input', 	  type='string', action='store', default='input', dest='input',	   	  help='Path to input file holding list of files to run on')
-parser.add_option('--on_grid', 	  type='string', action='store', default='no',	  dest='on_grid',	  help='Changes everything to relative paths if running on the grid, default is "yes"')
+parser.add_option('--on_grid', 	  type='string', action='store', default='no',	  dest='on_grid',	  help='Changes everything to relative paths if running on the grid, default is "no"')
 parser.add_option('--event_type', type='string', action='store', default='none',  dest='event_type',  help='ttbar event type: "qq_semilep","gg_semilep","dilep", or "had", or "none" for background files (default "none")')
 parser.add_option('--sideband',	  type='string', action='store', default='no',    dest='sideband',    help='Perform analysis in a sideband? "yes" or "no" (default: "no")')
 parser.add_option('--leptons', 	  type='string', action='store', default='muons', dest='leptons',	  help='Specify "muons" or "electrons" lepton type, default is "muons"')

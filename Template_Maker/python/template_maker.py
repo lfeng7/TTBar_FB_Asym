@@ -68,7 +68,7 @@ class template_file :
 		#define where to put all the branch variables we need
 		self.__initializeBranchesToRead__(tree)
 		#loop over all events in the tree
-		for event in tree.GetEntriesFast() :
+		for entry in tree.GetEntriesFast() :
 			tree.GetEntry(entry)
 			#skip the event if the cutflow isn't zero
 			if self.cutflow[0] != 0 :
@@ -209,11 +209,11 @@ class template_file :
 		#was symmetric (this will only be nonzero for qqbar and some gg events)
 		self.addTwice = array('I',[0]); tree->SetBranchAddress('addTwice',self.addTwice)
 		#cosine(theta)
-		self.cstar     = array('d',[100.0]); tree->SetBranchAddress('cstar',   self.cstar,   'D',100.0)
+		self.cstar = array('d',[100.0]); tree->SetBranchAddress('cstar',self.cstar)
 		#Feynman x
-		self.x_F  	 = array('d',[100.0]); tree->SetBranchAddress('x_F',   self.x_F,   'D',100.0)
+		self.x_F = array('d',[100.0]); tree->SetBranchAddress('x_F',self.x_F)
 		#ttbar invariant mass
-		self.M     = array('d',[-1.0]); tree->SetBranchAddress('M',   self.M,   'D',-1.0)
+		self.M = array('d',[-1.0]); tree->SetBranchAddress('M',self.M)
 
 	#__Fill__ function just fills the 3D histo and its 1D projections
 	def Fill(self,i,c,x,m,w) :

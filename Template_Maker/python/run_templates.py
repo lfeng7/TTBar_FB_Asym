@@ -10,7 +10,7 @@ from template_maker import background_template, signal_template, template_file
 
 parser = OptionParser()
 parser.add_option('--input', 	  type='string', action='store', default='input',	 dest='input',		help='Path to input file holding list of files to run on')
-parser.add_option('--on_grid', 	  type='string', action='store', default='no',		 dest='on_grid',	help='Changes everything to relative paths if running on the grid, default is "yes"')
+parser.add_option('--on_grid', 	  type='string', action='store', default='no',		 dest='on_grid',	help='Changes everything to relative paths if running on the grid, default is "no"')
 parser.add_option('--out_name',	  type='string', action='store', default='templates',dest='out_name',   help='Name of output file that will have all the templates in it')
 parser.add_option('--sum_charges',type='string', action='store', default='no',		 dest='sum_charges',help='Whether or not to integrate over the lepton charge in building templates')
 (options, args) = parser.parse_args()
