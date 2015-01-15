@@ -182,17 +182,17 @@ class fitter :
 
 	def __loadDataTreeBranches__(self) :
 		#cutflow
-		cutflow = array('I',[0]); tree->SetBranchAddress('cutflow',cutflow)
+		cutflow = array('I',[0]); tree.SetBranchAddress('cutflow',cutflow)
 		#lepton charge
-		Q_l = array('i',[0]); tree->SetBranchAddress('Q_l',Q_l)
+		Q_l = array('i',[0]); tree.SetBranchAddress('Q_l',Q_l)
 		#kinematic fit chi2
-		chi2 = array('d',[0.0]); tree->SetBranchAddress('chi2',chi2)
+		chi2 = array('d',[0.0]); tree.SetBranchAddress('chi2',chi2)
 		#cosine(theta)
-		cstar = array('d',[100.0]); tree->SetBranchAddress('cstar',cstar)
+		cstar = array('d',[100.0]); tree.SetBranchAddress('cstar',cstar)
 		#Feynman x
-		x_F = array('d',[100.0]); tree->SetBranchAddress('x_F',x_F)
+		x_F = array('d',[100.0]); tree.SetBranchAddress('x_F',x_F)
 		#ttbar invariant mass
-		M = array('d',[-1.0]); tree->SetBranchAddress('M',M)
+		M = array('d',[-1.0]); tree.SetBranchAddress('M',M)
 
 	#newParam function adds a parameter to a whole bunch of lists and stuff
 	def newParam(self,name,tex_name,val,err,ini_val,min_val,max_val,fix) :
@@ -293,12 +293,12 @@ class fitter :
 			summary_csv_file.close()
 		summary_csv_file = open(refdir+'summary.csv','a')
 		new_line = ''
-			for i in range(len(self.pars)) :
-				new_line+='%.3f,%.3f'%(pars[i],par_errs[i])
-				if i<len(self.pars)-1 :
-					new_line+=','
-			new_line+='\n'
-			summary_csv_file.write(new_line)
+		for i in range(len(self.pars)) :
+			new_line+='%.3f,%.3f'%(pars[i],par_errs[i])
+			if i<len(self.pars)-1 :
+				new_line+=','
+		new_line+='\n'
+		summary_csv_file.write(new_line)
 		summary_csv_file.close()
 			
 

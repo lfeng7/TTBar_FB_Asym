@@ -64,7 +64,7 @@ class template_file :
 		new_histo_z  = ROOT.TH1D(name+'_z',formatted_name+' distribution Z Projection; M (GeV)',		  ZBINS,ZMIN,ZMAX)
 		#open the ttree file
 		ttree_file = TFile(ttree_filepath)
-		tree = ttree_file->Get('tree')
+		tree = ttree_file.Get('tree')
 		#define where to put all the branch variables we need
 		self.__initializeBranchesToRead__(tree)
 		#loop over all events in the tree
@@ -188,32 +188,32 @@ class template_file :
 
 	#__initializeBranchesToRead__ function just puts all the variables from the inputted TTree into variables we can use
 	def __initializeBranchesToRead__(self,tree) :
-		self.cutflow = array('I',[0]); tree->SetBranchAddress('cutflow',self.cutflow)
+		self.cutflow = array('I',[0]); tree.SetBranchAddress('cutflow',self.cutflow)
 		#weights (renormalization, scale factors, analysis)
-		self.weight    = array('d',[self.w]); tree->SetBranchAddress('weight',self.weight)
-		self.w_a 	   	   = array('d',[1.0]); tree->SetBranchAddress('w_a',		  self.w_a)
-		self.w_s_xi    	   = array('d',[1.0]); tree->SetBranchAddress('w_s_xi',	      self.w_s_xi)
-		self.w_a_xi    	   = array('d',[1.0]); tree->SetBranchAddress('w_a_xi',	      self.w_a_xi)
-		self.w_s_delta 	   = array('d',[1.0]); tree->SetBranchAddress('w_s_delta',    self.w_s_delta)
-		self.w_a_delta 	   = array('d',[1.0]); tree->SetBranchAddress('w_a_delta',    self.w_a_delta)
-		self.w_a_opp 	   = array('d',[1.0]); tree->SetBranchAddress('w_a_opp',	  self.w_a_opp)
-		self.w_s_xi_opp    = array('d',[1.0]); tree->SetBranchAddress('w_s_xi_opp',	  self.w_s_xi_opp)
-		self.w_a_xi_opp    = array('d',[1.0]); tree->SetBranchAddress('w_a_xi_opp',	  self.w_a_xi_opp)
-		self.w_s_delta_opp = array('d',[1.0]); tree->SetBranchAddress('w_s_delta_opp',self.w_s_delta_opp)
-		self.w_a_delta_opp = array('d',[1.0]); tree->SetBranchAddress('w_a_delta_opp',self.w_a_delta_opp)
+		self.weight    = array('d',[self.w]); tree.SetBranchAddress('weight',self.weight)
+		self.w_a 	   	   = array('d',[1.0]); tree.SetBranchAddress('w_a',		  self.w_a)
+		self.w_s_xi    	   = array('d',[1.0]); tree.SetBranchAddress('w_s_xi',	      self.w_s_xi)
+		self.w_a_xi    	   = array('d',[1.0]); tree.SetBranchAddress('w_a_xi',	      self.w_a_xi)
+		self.w_s_delta 	   = array('d',[1.0]); tree.SetBranchAddress('w_s_delta',    self.w_s_delta)
+		self.w_a_delta 	   = array('d',[1.0]); tree.SetBranchAddress('w_a_delta',    self.w_a_delta)
+		self.w_a_opp 	   = array('d',[1.0]); tree.SetBranchAddress('w_a_opp',	  self.w_a_opp)
+		self.w_s_xi_opp    = array('d',[1.0]); tree.SetBranchAddress('w_s_xi_opp',	  self.w_s_xi_opp)
+		self.w_a_xi_opp    = array('d',[1.0]); tree.SetBranchAddress('w_a_xi_opp',	  self.w_a_xi_opp)
+		self.w_s_delta_opp = array('d',[1.0]); tree.SetBranchAddress('w_s_delta_opp',self.w_s_delta_opp)
+		self.w_a_delta_opp = array('d',[1.0]); tree.SetBranchAddress('w_a_delta_opp',self.w_a_delta_opp)
 		#lepton charge
-		self.Q_l = array('i',[0]); tree->SetBranchAddress('Q_l',self.Q_l)
+		self.Q_l = array('i',[0]); tree.SetBranchAddress('Q_l',self.Q_l)
 		#kinematic fit chi2
-		self.chi2 = array('d',[0.0]); tree->SetBranchAddress('chi2',self.chi2)
+		self.chi2 = array('d',[0.0]); tree.SetBranchAddress('chi2',self.chi2)
 		#whether or not this event should be added twice and have its weight halved based on whether its initial state
 		#was symmetric (this will only be nonzero for qqbar and some gg events)
-		self.addTwice = array('I',[0]); tree->SetBranchAddress('addTwice',self.addTwice)
+		self.addTwice = array('I',[0]); tree.SetBranchAddress('addTwice',self.addTwice)
 		#cosine(theta)
-		self.cstar = array('d',[100.0]); tree->SetBranchAddress('cstar',self.cstar)
+		self.cstar = array('d',[100.0]); tree.SetBranchAddress('cstar',self.cstar)
 		#Feynman x
-		self.x_F = array('d',[100.0]); tree->SetBranchAddress('x_F',self.x_F)
+		self.x_F = array('d',[100.0]); tree.SetBranchAddress('x_F',self.x_F)
 		#ttbar invariant mass
-		self.M = array('d',[-1.0]); tree->SetBranchAddress('M',self.M)
+		self.M = array('d',[-1.0]); tree.SetBranchAddress('M',self.M)
 
 	#__Fill__ function just fills the 3D histo and its 1D projections
 	def Fill(self,i,c,x,m,w) :
