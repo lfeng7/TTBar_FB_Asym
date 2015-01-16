@@ -9,7 +9,7 @@ from math import *
 #cutflow
 CUTFLOW_MINIMUM_MET = 1
 #cut values
-MET_PT_MIN = 10 #GeV
+MET_PT_MIN = 10. #GeV
 #constants
 MW = 80.4
 

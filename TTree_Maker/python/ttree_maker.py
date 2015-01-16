@@ -382,20 +382,22 @@ class treemaker :
 		self.M     = array('d',[-1.0]); self.addBranch('M',   self.M,   'D',-1.0)
 		self.M_MC  = array('d',[-1.0]); self.addBranch('M_MC',self.M_MC,'D',-1.0)
 
+		self.control_plots_folder = self.f.mkdir('control_plots_folder','control_plots')
+		self.control_plots_folder.cd()
 		#control plots for optimising cuts
 		self.MET_control_plots = []; self.lepton_control_plots = []; self.jet_control_plots = []
 		#MET
-		self.MET_control_plots.append(ROOT.TH1('met_pt','p_{T} of MET; GeV',50,0.,500.))
+		self.MET_control_plots.append(ROOT.TH1F('met_pt','p_{T} of MET; GeV',60,0.,300.))
 		#leptons
-		self.lepton_control_plots.append(ROOT.TH1('l1_pt','p_{T} of first lepton; GeV',50,0.,500.))
-		self.lepton_control_plots.append(ROOT.TH1('l1_eta','#eta of first lepton',50,-2.5,2.5))
-		self.lepton_control_plots.append(ROOT.TH1('l2_pt','p_{T} of second lepton; GeV',50,0.,500.))
-		self.lepton_control_plots.append(ROOT.TH1('l2_eta','#eta of second lepton',50,-2.5,2.5))
-		self.lepton_control_plots.append(ROOT.TH1('ol1_pt','p_{T} of first "other" lepton; GeV',50,0.,500.))
-		self.lepton_control_plots.append(ROOT.TH1('ol1_eta','#eta of first "other" lepton',50,-2.5,2.5))
-		self.lepton_control_plots.append(ROOT.TH1('ol2_pt','p_{T} of second "other" lepton; GeV',50,0.,500.))
-		self.lepton_control_plots.append(ROOT.TH1('ol2_eta','#eta of second "other" lepton',50,-2.5,2.5))
-		self.lepton_control_plots.append(ROOT.TH2('2D_cut','selected lepton #Delta R and p_{T,rel} from nearest jet',20,0.,1.0,30,0.,30.))
+		self.lepton_control_plots.append(ROOT.TH1F('lep1_pt','p_{T} of first lepton; p_{T} (GeV)',60,0.,300.))
+		self.lepton_control_plots.append(ROOT.TH1F('lep1_eta','#eta of first lepton; #eta',50,-2.5,2.5))
+		self.lepton_control_plots.append(ROOT.TH1F('lep2_pt','p_{T} of second lepton; p_{T} (GeV)',60,0.,300.))
+		self.lepton_control_plots.append(ROOT.TH1F('lep2_eta','#eta of second lepton; #eta',50,-2.5,2.5))
+		self.lepton_control_plots.append(ROOT.TH1F('other_lep1_pt','p_{T} of first "other" lepton; p_{T} (GeV)',60,0.,300.))
+		self.lepton_control_plots.append(ROOT.TH1F('other_lep1_eta','#eta of first "other" lepton; #eta',50,-2.5,2.5))
+		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_pt','p_{T} of second "other" lepton; p_{T} (GeV)',60,0.,300.))
+		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_eta','#eta of second "other" lepton; #eta',50,-2.5,2.5))
+		self.lepton_control_plots.append(ROOT.TH2F('lep_2D_cut','selected lepton #Delta R and p_{T,rel} from nearest jet; #Delta R; p_{T,rel} (GeV)',20,0.,0.4,30,0.,30.))
 		self.all_control_plots = self.MET_control_plots + self.lepton_control_plots + self.jet_control_plots 
 
 	##################################   reset function   ##################################
@@ -450,10 +452,5 @@ class treemaker :
 	################################## __del__ function  ###################################
 	def __del__(self) :
 		self.f.cd()
-		#write control plots
-		control_plots_folder = ROOT.TFolder('control_plots_folder','control_plots')
-		for plot in self.all_control_plots :
-			control_plots_folder.Add(self.all_control_plots)
-		control_plots_folder.Write()
 		self.f.Write()
 		self.f.Close()

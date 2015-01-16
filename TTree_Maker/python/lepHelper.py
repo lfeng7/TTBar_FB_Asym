@@ -20,8 +20,8 @@ OTHER_MU_ETA_MAX = 2.1
 OTHER_EL_PT_MIN = 35 #GeV
 OTHER_EL_ETA_MAX = 2.5
 JET_PT_MIN = 25. #GeV
-DR_MIN = 0.5
-REL_PT_MIN = 25. #GeV
+DR_MIN = 0.#0.5
+REL_PT_MIN = 0.#25. #GeV
 
 #leptonCuts
 #takes in lepton type, sideband switch, lists of muon and electron variables
@@ -54,23 +54,23 @@ def leptonCuts(lep_type,sideband,muVars,elVars,jetVars,control_plots) :
 #			else : #DEBUGGING
 #				s+= 'FAILED ('+str(muVars[1][i])+')' #DEBUGGING
 #			print s  #DEBUGGING
-			if muVars[9][i] == 1 :
+			if i<2 and muVars[9][i] == 1 :
 				control_plots[2*i].Fill(muVars[0][i]); control_plots[2*i+1].Fill(muVars[1][i])
 			if muVars[0][i] > MU_PT_MIN and fabs(muVars[1][i]) < MU_ETA_MAX and muVars[9][i] == 1 :
 				lep_cands.append(i)
 		for i in range(len(elVars[0])) :
-			if elVars[7][i] == 1 :
+			if i<2 and elVars[7][i] == 1 :
 				control_plots[4+2*i].Fill(elVars[0][i]); control_plots[5+2*i].Fill(elVars[1][i])
 			if elVars[0][i] > OTHER_EL_PT_MIN and fabs(elVars[1][i]) < OTHER_EL_ETA_MAX and elVars[7][i] ==1 :
 				other_leps.append(i)
 	elif lep_type == 1 : #electrons
 		for i in range(len(elVars[0])) :
-			if elVars[6][i] == 1 :
+			if i<2 and elVars[6][i] == 1 :
 				control_plots[2*i].Fill(elVars[0][i]); control_plots[2*i+1].Fill(elVars[1][i])
 			if elVars[0][i] > EL_PT_MIN and fabs(elVars[1][i]) < EL_ETA_MAX and elVars[6][i] ==1 :
 				lep_cands.append(i)
 		for i in range(len(muVars[0])) :
-			if muVars[10][i] == 1 :
+			if i<2 and muVars[10][i] == 1 :
 				control_plots[4+2*i].Fill(muVars[0][i]); control_plots[5+2*i].Fill(muVars[1][i])
 			if muVars[0][i] > OTHER_MU_PT_MIN and fabs(muVars[1][i]) < OTHER_MU_ETA_MAX and muVars[10][i] == 1 :
 				other_leps.append(i)
