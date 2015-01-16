@@ -68,9 +68,9 @@ def findMCTops(GenParticles) :
 		if found_t and found_tbar :
 			break
 		if p.pdgId() == TOP_ID and not found_t :
-			tvec.SetPtEtaPhiM(p.pt(),p.eta(),p.phi(),p.M())
+			tvec.SetPtEtaPhiM(p.pt(),p.eta(),p.phi(),p.mass())
 		elif p.pdgId() == -1*TOP_ID and not found_tbar :
-			tbarvec.SetPtEtaPhiM(p.pt(),p.eta(),p.phi(),p.M())
+			tbarvec.SetPtEtaPhiM(p.pt(),p.eta(),p.phi(),p.mass())
 	return (tvec,tbarvec)
 	#return (ROOT.TLorentzVector(1.0,0.0,0.0,1.0),ROOT.TLorentzVector(1.0,0.0,0.0,1.0)) #DEBUG RETURN
 
@@ -124,6 +124,7 @@ def typeCheckMCAtNLO(GenParticles,event_type) :
 
 #pythia8 eventTypeCheck function
 def typeCheckPythia8(GenParticles,event_type) :
+#	print 'new event---------------------------------' #DEBUGGING
 	#check the initial state partons if necessary
 	if event_type<2 :
 		initial_state_parton_ids = []
@@ -131,20 +132,22 @@ def typeCheckPythia8(GenParticles,event_type) :
 		#is it a qqbar event?
 		is_qq = len(initial_state_parton_ids) == 2 and initial_state_parton_ids[0]+initial_state_parton_ids[1]==0
 		#if (event_type == 0 and not is_qq) or (event_type == 1 and is_qq) :
-		#	return False
+		#	return (False,0)
 
 	#check the decay type
 	n_leps_from_Ws = 0
 	for p in GenParticles :
-		if p.pt()<0 or p.status()!=23 :
+		#look only for valid daughters of Ws
+		if p.pt()<0 or (p.status()!=23 and p.status()!=1 and p.status()!=2) or p.numberOfMothers()!=1 or fabs(p.mother(0).pdgId()) != W_ID :
 			continue
 		#look for leptons
-		if fabs(p.pdgId()) in range(ELECTRON_ID,TAU_NEUTRINO_ID+1) and fabs(p.mother(0).pdgId()) :
+		if fabs(p.pdgId()) in range(ELECTRON_ID,TAU_NEUTRINO_ID+1) :
 			n_leps_from_Ws+=1
+#	print '	n_leps_from_Ws = '+str(n_leps_from_Ws)+'' #DEBUGGING
 	if (n_leps_from_Ws == 2 and event_type > 1) or (n_leps_from_Ws == 4 and event_type != 2) or (n_leps_from_Ws == 0 and event_type != 3) :
-		return False
+		return (False,0)
 	
-	return True #DEBUG RETURN
+	return (True,0) #DEBUG RETURN
 
 #semileptonic checker
 def semilepCheck(GenParticles,event_type) :

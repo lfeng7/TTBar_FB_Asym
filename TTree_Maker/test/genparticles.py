@@ -196,7 +196,7 @@ for event in events :
 	if GenHandle.isValid() :
 		GenParticles = GenHandle.product()
 		for ig in GenParticles :
-			if ig.pt()<0 : #or (ig.status() not in range(20,30) and ig.status() not in range(70,80)) :
+			if ig.pt()<0 or ig.status() != 23 :# not in range(20,30) and ig.status() not in range(70,80)) :
 				continue
 			ist = ig.pdgId() == 6 and ig.status() == 3
 			istbar = ig.pdgId() == -6 and ig.status() == 3
@@ -218,7 +218,7 @@ for event in events :
 				s = s + getId(ig.daughter(i).pdgId()) + ' '
 			if nDaughters != 0 :
 				s = s + '}'
-			print s + ' status: '+str(ig.status())
+			print s #+ ' status: '+str(ig.status())
 #            for i in range(nDaughters) :
 #                s = '   [ '
 #                nOtherMothers   = ig.daughter(i).numberOfMothers()
