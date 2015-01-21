@@ -43,6 +43,7 @@ def setupMET(lep_vec,metVars) :
 	pPhi   = lep_vec.Px()*phivec[0]+lep_vec.Py()*phivec[1]
 	arg0   = MW*MW+plep*plep-Elep*Elep+2.*pTv*pPhi
 	arg    = Elep*Elep*(4.*pTv*pTv*(pZlep*pZlep-Elep*Elep)+arg0*arg0) #discriminant in the quadratic equation solution
+#	print ' arg = %.4f = (%.4f)^2*(4*(%.4f)^2*((%.4f)^2-(%.4f)^2)+(%.4f)^2'%(arg,Elep,pTv,pZlep,Elep,arg0) #DEBUGGING
 	if not arg > 0 : #If discriminant is imaginary
 		pzv1 = pZlep*arg0/(2.*(Elep*Elep-pZlep*pZlep))
 		met1.SetPz(pzv1)

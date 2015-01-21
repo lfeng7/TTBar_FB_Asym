@@ -196,7 +196,7 @@ for event in events :
 	if GenHandle.isValid() :
 		GenParticles = GenHandle.product()
 		for ig in GenParticles :
-			if ig.pt()<0 or ig.status() != 23 :# not in range(20,30) and ig.status() not in range(70,80)) :
+			if ig.pt()<0 :#or ig.status() != 23 :# not in range(20,30) and ig.status() not in range(70,80)) :
 				continue
 			ist = ig.pdgId() == 6 and ig.status() == 3
 			istbar = ig.pdgId() == -6 and ig.status() == 3
@@ -207,15 +207,15 @@ for event in events :
 			nDaughters = ig.numberOfDaughters()
 			s = '[ '
 			for i in range(nMothers) :
-				s = s + getId(ig.mother(i).pdgId()) + ' '
+				s = s + getId(ig.mother(i).pdgId()) + '('+str(ig.mother(i).status())+') '
 			s = s + '] '
 			if nMothers != 0 :
 				s = s + '-> '
-			s = s + '(' + getId(ig.pdgId()) + ') '
+			s = s + '(' + getId(ig.pdgId()) +'('+str(ig.status())+')'+') '
 			if nDaughters != 0 :
 				s = s + '-> { '
 			for i in range(nDaughters) :
-				s = s + getId(ig.daughter(i).pdgId()) + ' '
+				s = s + getId(ig.daughter(i).pdgId()) + '('+str(ig.daughter(i).status())+') '
 			if nDaughters != 0 :
 				s = s + '}'
 			print s #+ ' status: '+str(ig.status())

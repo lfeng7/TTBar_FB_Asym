@@ -21,7 +21,7 @@ from array import array
 from math import *
 import sys
 from eventTypeHelper import eventTypeCheck, findInitialQuark, findMCTops
-from lepHelper import leptonCuts, getLeptonFourVec
+from lepHelper import leptonCleaningKludge, leptonCuts, getLeptonFourVec
 from metHelper import metCut, setupMET
 from jetHelper import selectJets
 from ttbarReconstructor import reconstruct
@@ -34,54 +34,89 @@ class treemaker :
 	##################################		#__doc__		##################################
 	"""treemaker class; calculates and outputs all TTree variables for an event"""
 
-	##################################  Handles and Labels  ##################################
+	##################################  13TeV Handles and Labels  ##################################
 	#MC GenEvent info
 	genHandle = Handle('vector<reco::GenParticle>'); genLabel  = ('prunedGenParticles','')
 	#muons
 	muHandles = []; muLabels = []
-	muPtHandle  	= Handle('vector<float>'); muHandles.append(muPtHandle); 	  muPtLabel  	 = ('muons','muPt'); 				 muLabels.append(muPtLabel)
-	muEtaHandle 	= Handle('vector<float>'); muHandles.append(muEtaHandle); 	  muEtaLabel 	 = ('muons','muEta'); 				 muLabels.append(muEtaLabel)
-	muPhiHandle 	= Handle('vector<float>'); muHandles.append(muPhiHandle); 	  muPhiLabel 	 = ('muons','muPhi'); 				 muLabels.append(muPhiLabel)
-	muMHandle   	= Handle('vector<float>'); muHandles.append(muMHandle); 	  muMLabel   	 = ('muons','muMass'); 				 muLabels.append(muMLabel)
-	muChargeHandle  = Handle('vector<float>'); muHandles.append(muChargeHandle);  muChargeLabel  = ('muons','muCharge'); 			 muLabels.append(muChargeLabel)
-	muSumCHPtHandle = Handle('vector<float>'); muHandles.append(muSumCHPtHandle); muSumCHPtLabel = ('muons','muSumChargedHadronPt'); muLabels.append(muSumCHPtLabel)
-	muSumNHPtHandle = Handle('vector<float>'); muHandles.append(muSumNHPtHandle); muSumNHPtLabel = ('muons','muSumNeutralHadronPt'); muLabels.append(muSumNHPtLabel)
-	muSumPhPtHandle = Handle('vector<float>'); muHandles.append(muSumPhPtHandle); muSumPhPtLabel = ('muons','muSumPhotonPt'); 		 muLabels.append(muSumPhPtLabel)
-	muSumPUPtHandle = Handle('vector<float>'); muHandles.append(muSumPUPtHandle); muSumPUPtLabel = ('muons','muSumPUPt'); 			 muLabels.append(muSumPUPtLabel)
-	muIsTightHandle = Handle('vector<float>'); muHandles.append(muIsTightHandle); muIsTightLabel = ('muons','muIsTightMuon'); 		 muLabels.append(muIsTightLabel)
-	muIsLooseHandle = Handle('vector<float>'); muHandles.append(muIsLooseHandle); muIsLooseLabel = ('muons','muIsLooseMuon'); 		 muLabels.append(muIsLooseLabel)
-	muGenMuonEHandle = Handle('vector<float>'); muHandles.append(muGenMuonEHandle); muGenMuonELabel = ('muons','muGenMuonE'); 		 muLabels.append(muGenMuonELabel)
+	muLabels.append(('muons','muPt')); 				   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muEta')); 			   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muPhi')); 			   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muMass')); 			   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muCharge')); 			   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muSumChargedHadronPt')); muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muSumNeutralHadronPt')); muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muSumPhotonPt')); 	   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muSumPUPt')); 		   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muIsTightMuon')); 	   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muIsLooseMuon')); 	   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('muons','muGenMuonE')); 		   muHandles.append(Handle('vector<float>'))
 	#electrons
 	elHandles = []; elLabels = []
-	elPtHandle  	= Handle('vector<float>'); elHandles.append(elPtHandle);     elPtLabel     = ('electrons','elPt');     elLabels.append(elPtLabel)
-	elEtaHandle 	= Handle('vector<float>'); elHandles.append(elEtaHandle);    elEtaLabel    = ('electrons','elEta');    elLabels.append(elEtaLabel)
-	elPhiHandle 	= Handle('vector<float>'); elHandles.append(elPhiHandle);    elPhiLabel    = ('electrons','elPhi');    elLabels.append(elPhiLabel)
-	elMHandle   	= Handle('vector<float>'); elHandles.append(elMHandle);      elMLabel      = ('electrons','elMass');   elLabels.append(elMLabel)
-	elChargeHandle  = Handle('vector<float>'); elHandles.append(elChargeHandle); elChargeLabel = ('electrons','elCharge'); elLabels.append(elChargeLabel)
-	elIso03Handle   = Handle('vector<float>'); elHandles.append(elIso03Handle);  elIso03Label  = ('electrons','elIso03');  elLabels.append(elIso03Label)
-	elisTightHandle   = Handle('vector<float>'); elHandles.append(elisTightHandle);  elisTightLabel  = ('electrons','elisTight');  elLabels.append(elisTightLabel)
-	elisLooseHandle   = Handle('vector<float>'); elHandles.append(elisLooseHandle);  elisLooseLabel  = ('electrons','elisLoose');  elLabels.append(elisLooseLabel)
+	elLabels.append(('electrons','elPt')); 	    elHandles.append(Handle('vector<float>'))
+	elLabels.append(('electrons','elEta')); 	elHandles.append(Handle('vector<float>'))
+	elLabels.append(('electrons','elPhi')); 	elHandles.append(Handle('vector<float>'))
+	elLabels.append(('electrons','elMass'));    elHandles.append(Handle('vector<float>'))
+	elLabels.append(('electrons','elCharge'));  elHandles.append(Handle('vector<float>'))
+	elLabels.append(('electrons','elIso03'));   elHandles.append(Handle('vector<float>'))
+	elLabels.append(('electrons','elisTight')); elHandles.append(Handle('vector<float>'))
+	elLabels.append(('electrons','elisLoose')); elHandles.append(Handle('vector<float>'))
 	#MET
 	metHandles = []; metLabels = []
-	metPtHandle  = Handle('vector<float>'); metHandles.append(metPtHandle);  metPtLabel  = ('met','metPt');  metLabels.append(metPtLabel)
-	metPhiHandle = Handle('vector<float>'); metHandles.append(metPhiHandle); metPhiLabel = ('met','metPhi'); metLabels.append(metPhiLabel)
+	metLabels.append(('met','metPt'));  metHandles.append(Handle('vector<float>'))
+	metLabels.append(('met','metPhi')); metHandles.append(Handle('vector<float>'))
 	#AK4 Jets
 	jetHandles_AK4 = [];	jetLabels_AK4 = []
-	AK4jetPtHandle   = Handle('vector<float>'); jetHandles_AK4.append(AK4jetPtHandle);  AK4jetPtLabel  = ('jetsAK4','jetAK4Pt');   jetLabels_AK4.append(AK4jetPtLabel)
-	AK4jetEtaHandle  = Handle('vector<float>'); jetHandles_AK4.append(AK4jetEtaHandle); AK4jetEtaLabel = ('jetsAK4','jetAK4Eta');  jetLabels_AK4.append(AK4jetEtaLabel)
-	AK4jetPhiHandle  = Handle('vector<float>'); jetHandles_AK4.append(AK4jetPhiHandle); AK4jetPhiLabel = ('jetsAK4','jetAK4Phi');  jetLabels_AK4.append(AK4jetPhiLabel)
-	AK4jetMHandle    = Handle('vector<float>'); jetHandles_AK4.append(AK4jetMHandle);   AK4jetMLabel   = ('jetsAK4','jetAK4Mass'); jetLabels_AK4.append(AK4jetMLabel)
-	AK4jetCSVHandle  = Handle('vector<float>'); jetHandles_AK4.append(AK4jetCSVHandle); AK4jetCSVLabel = ('jetsAK4','jetAK4CSV');  jetLabels_AK4.append(AK4jetCSVLabel)
+	jetLabels_AK4.append(('jetsAK4','jetAK4Pt'));   jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4Eta'));  jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4Phi'));  jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4Mass')); jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4CSV'));  jetHandles_AK4.append(Handle('vector<float>'))
 	#AK8 Jets
 	jetHandles_AK8 = [];	jetLabels_AK8 = []
-	AK8jetPtHandle	  = Handle('vector<float>'); jetHandles_AK8.append(AK8jetPtHandle);   AK8jetPtLabel   = ('patjets','patjetPt');    jetLabels_AK8.append(AK8jetPtLabel)
-	AK8jetEtaHandle	  = Handle('vector<float>'); jetHandles_AK8.append(AK8jetEtaHandle);  AK8jetEtaLabel  = ('patjets','patjetEta');   jetLabels_AK8.append(AK8jetEtaLabel)
-	AK8jetPhiHandle	  = Handle('vector<float>'); jetHandles_AK8.append(AK8jetPhiHandle);  AK8jetPhiLabel  = ('patjets','patjetPhi');   jetLabels_AK8.append(AK8jetPhiLabel)
-	AK8jetMHandle	  = Handle('vector<float>'); jetHandles_AK8.append(AK8jetMHandle);	  AK8jetMLabel    = ('patjets','patjetMass');  jetLabels_AK8.append(AK8jetMLabel)
-	AK8jetCSVHandle	  = Handle('vector<float>'); jetHandles_AK8.append(AK8jetCSVHandle);  AK8jetCSVLabel  = ('patjets','patjetCSV');   jetLabels_AK8.append(AK8jetCSVLabel)
-	AK8jettau1Handle  = Handle('vector<float>'); jetHandles_AK8.append(AK8jettau1Handle); AK8jettau1Label = ('patjets','patjettau1');  jetLabels_AK8.append(AK8jettau1Label)
-	AK8jettau2Handle  = Handle('vector<float>'); jetHandles_AK8.append(AK8jettau2Handle); AK8jettau2Label = ('patjets','patjettau2');  jetLabels_AK8.append(AK8jettau2Label)
-	AK8jettau3Handle  = Handle('vector<float>'); jetHandles_AK8.append(AK8jettau3Handle); AK8jettau3Label = ('patjets','patjettau3');  jetLabels_AK8.append(AK8jettau3Label)
+	jetLabels_AK8.append(('jetsAK8','jetsAK8Pt'));   jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('jetsAK8','jetsAK8Eta'));  jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('jetsAK8','jetsAK8Phi'));  jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('jetsAK8','jetsAK8Mass')); jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('jetsAK8','jetsAK8CSV'));  jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('jetsAK8','jetsAK8tau1')); jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('jetsAK8','jetsAK8tau2')); jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('jetsAK8','jetsAK8tau3')); jetHandles_AK8.append(Handle('vector<float>'))
+	#pythia8 nTuple GenParticles
+	genPartHandles = [];	genPartLabels = []
+	genPartLabels.append(('genPart','genPartPt')); 	   genPartHandles.append(Handle('vector<float>'))
+	genPartLabels.append(('genPart','genPartEta'));    genPartHandles.append(Handle('vector<float>'))
+	genPartLabels.append(('genPart','genPartPhi'));    genPartHandles.append(Handle('vector<float>'))
+	genPartLabels.append(('genPart','genPartMass'));   genPartHandles.append(Handle('vector<float>'))
+	genPartLabels.append(('genPart','genPartID')); 	   genPartHandles.append(Handle('vector<float>'))
+	genPartLabels.append(('genPart','genPartMomID'));  genPartHandles.append(Handle('vector<float>'))
+	genPartLabels.append(('genPart','genPartStatus')); genPartHandles.append(Handle('vector<float>'))
+
+#	##################################  8TeV Handles and Labels  ##################################
+#	#MC GenEvent info
+#	genHandle = Handle('vector<reco::GenParticle>'); genLabel  = ('prunedGenParticles','')
+#	#muons
+#	muHandles = []; muLabels = []
+#	muLabels.append(('pfShyftTupleMuons','pt')); 	 muHandles.append(Handle('vector<float>'))
+#	muLabels.append(('pfShyftTupleMuons','eta')); 	 muHandles.append(Handle('vector<float>'))
+#	muLabels.append(('pfShyftTupleMuons','phi')); 	 muHandles.append(Handle('vector<float>'))
+#	muLabels.append(('pfShyftTupleMuons','charge')); muHandles.append(Handle('vector<float>'))
+#	#electrons
+#	elHandles = []; elLabels = []
+#	elLabels.append(('pfShyftTupleElectrons','pt')); 	 elHandles.append(Handle('vector<float>'))
+#	elLabels.append(('pfShyftTupleElectrons','eta')); 	 elHandles.append(Handle('vector<float>'))
+#	elLabels.append(('pfShyftTupleElectrons','phi')); 	 elHandles.append(Handle('vector<float>'))
+#	elLabels.append(('pfShyftTupleElectrons','charge')); elHandles.append(Handle('vector<float>'))
+#	#MET
+#	metHandles = []; metLabels = []
+#	metLabels.append(('pfShyftTupleMET','pt'));  metHandles.append(Handle('vector<float>'))
+#	metLabels.append(('pfShyftTupleMET','phi')); metHandles.append(Handle('vector<float>'))
+#	#AK4 Jets
+#	jetHandles_AK4 = [];	jetLabels_AK4 = []
+#	jetLabels_AK4.append(('pfShyftTupleJets','pt'));   jetHandles_AK4.append(Handle('vector<float>'))
+#	jetLabels_AK4.append(('pfShyftTupleJets','eta'));  jetHandles_AK4.append(Handle('vector<float>'))
+#	jetLabels_AK4.append(('pfShyftTupleJets','phi'));  jetHandles_AK4.append(Handle('vector<float>'))
+#	jetLabels_AK4.append(('pfShyftTupleJets','mass')); jetHandles_AK4.append(Handle('vector<float>'))
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,event) :
@@ -90,31 +125,45 @@ class treemaker :
 		keepEvent = True
 		#event type split
 		if self.is_data == 0 :
+			#GenParticles
 			event.getByLabel(self.genLabel,self.genHandle)
 			if not self.genHandle.isValid() :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			GenParticles = self.genHandle.product()
+			#pythia8 nTuple genParticles
+			genPartVars = []
+			for i in range(len(self.genPartHandles)) :
+				event.getByLabel(self.genPartLabels[i],self.genPartHandles[i])
+				if not self.genPartHandles[i].isValid() :
+					self.ERR_CODE = ERR_INVALID_HANDLE
+					return self.ERR_CODE
+				genPartVars.append(self.genPartHandles[i].product())
 			if self.event_type != 4 :
-				keepEvent,add_twice = eventTypeCheck(self.MC_generator,GenParticles,self.event_type) #function in eventTypeHelper.py
+				keepEvent,add_twice = eventTypeCheck(self.MC_generator,GenParticles,genPartVars,self.event_type) 
+							#abovefunction in eventTypeHelper.py
 				if add_twice :
 					self.addTwice[0] = 1
 		if not keepEvent :
 			return self.ERR_CODE
 		#Mother particle (and MC truth top) assignment
 		if self.is_data == 0 : #MC truth values only relevant for semileptonic qqbar->ttbar
-			q_vec 	 = findInitialQuark(self.MC_generator,GenParticles) #function in eventTypeHelper.py
+			q_vec 	 = findInitialQuark(self.MC_generator,GenParticles,genPartVars) #function in eventTypeHelper.py
 			qbar_vec = ROOT.TLorentzVector(q_vec.X(),q_vec.Y(),-1.0*q_vec.Z(),q_vec.E())
-			MCt_vec, MCtbar_vec = findMCTops(GenParticles) #function in eventTypeHelper.py
+			MCt_vec, MCtbar_vec = findMCTops(self.MC_generator,GenParticles) #function in eventTypeHelper.py
 		else : #if we don't have the MC truth information, we have to assign which is which later when we do the boost
 			q_vec 	 = ROOT.TLorentzVector(0.000000001,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
 			qbar_vec = ROOT.TLorentzVector(0.000000001,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
 			MCt_vec    = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 			MCtbar_vec = ROOT.TLorentzVector(-1.0,0.0,0.0,1.0)
-		self.q_pt[0], 	   self.q_eta[0], 	   self.q_phi[0], 	   self.q_M[0] 		= q_vec.Pt(), 	   q_vec.Eta(), 	 q_vec.Phi(), 	   q_vec.M()
-		self.qbar_pt[0],   self.qbar_eta[0],   self.qbar_phi[0],   self.qbar_M[0]   = qbar_vec.Pt(),   qbar_vec.Eta(),   qbar_vec.Phi(),   qbar_vec.M()
-		self.MCt_pt[0],    self.MCt_eta[0],    self.MCt_phi[0],    self.MCt_M[0]    = MCt_vec.Pt(),    MCt_vec.Eta(),    MCt_vec.Phi(),    MCt_vec.M()
-		self.MCtbar_pt[0], self.MCtbar_eta[0], self.MCtbar_phi[0], self.MCtbar_M[0] = MCtbar_vec.Pt(), MCtbar_vec.Eta(), MCtbar_vec.Phi(), MCtbar_vec.M()
+		self.q_pt[0], 		self.q_eta[0] 	   = q_vec.Pt(), 	   q_vec.Eta()
+		self.q_phi[0], 		self.q_M[0] 	   = q_vec.Phi(), 	   q_vec.M()
+		self.qbar_pt[0], 	self.qbar_eta[0]   = qbar_vec.Pt(),    qbar_vec.Eta()
+		self.qbar_phi[0], 	self.qbar_M[0] 	   = qbar_vec.Phi(),   qbar_vec.M()
+		self.MCt_pt[0], 	self.MCt_eta[0]    = MCt_vec.Pt(), 	   MCt_vec.Eta()
+		self.MCt_phi[0], 	self.MCt_M[0] 	   = MCt_vec.Phi(),    MCt_vec.M()
+		self.MCtbar_pt[0], 	self.MCtbar_eta[0] = MCtbar_vec.Pt(),  MCtbar_vec.Eta()
+		self.MCtbar_phi[0], self.MCtbar_M[0]   = MCtbar_vec.Phi(), MCtbar_vec.M()
 		#get all the info from the event
 		#leptons
 		muVars = [];	elVars = []
@@ -154,44 +203,56 @@ class treemaker :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			jetVars_AK8.append(self.jetHandles_AK8[i].product())
+		#kludge-y lepton cleaning
+		jetVars_AK4, jetVars_AK8 = leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8)
 		#met cleaning
 		met_cut = metCut(metVars,self.MET_control_plots) #function in metHelper.py
 		if met_cut!=0 :
 			return self.__closeout__(-1*met_cut)
 		#lepton selection
 		#get the index of the ONE valid lepton OR the cutflow failpoint
-		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars,jetVars_AK4,self.lepton_control_plots) #function in lepHelper.py
+		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars,jetVars_AK4,self.lepton_control_plots) 
+		#above function in lepHelper.py
 		if lepIndex < 0 :
 			return self.__closeout__(-1*lepIndex)
 		#set the fourvector of the lepton
 		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
-		self.lep_pt[0], self.lep_eta[0], self.lep_phi[0], self.lep_M[0] = lep_vec.Pt(), lep_vec.Eta(), lep_vec.Phi(), lep_vec.M()
+		self.lep_pt[0],  self.lep_eta[0] = lep_vec.Pt(),  lep_vec.Eta()
+		self.lep_phi[0], self.lep_M[0]   = lep_vec.Phi(), lep_vec.M()
 		#neutrino handling and setup for fit
 		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
-		self.met_pt[0], self.met_eta[0], self.met_phi[0], self.met_M[0] = met1_vec.Pt(), met1_vec.Eta(), met1_vec.Phi(), met1_vec.M()
+		self.met_pt[0], self.met_eta[0] = met1_vec.Pt(),  met1_vec.Eta() 
+		self.met_phi[0], self.met_M[0]  = met1_vec.Phi(), met1_vec.M()
 		if met1_vec.Pz() == met2_vec.Pz() :
 			self.nFits[0] = 2
 		else :
 			self.nFits[0] = 1
-#		#jet selection
-#		jetTuples = selectJets(self.top_type,lep_vec,met1_vec,met2_vec,jetVars_AK4,jetVars_AK8) #function in jetHelper.py
-#		if len(jetTuples)==1 :
-#			return self.__closeout__(-1*jetTuples[0])
-#		#event reconstruction
-#		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) #function in ttbarReconstructor.py
-#		#populate the TTree with the fourvector variables, and angle and differential cross section variable reconstruction
-#		if self.top_type == 1 :
-#			self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0]) 
-#		
-#			self.cstar[0], self.x_F[0], self.M[0] = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0],self.Q_l[0]) #function in angleReconstructor.py
-#		elif self.top_type == 2 :
-#			self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0])
-#			self.cstar[0], self.x_F[0], self.M[0] = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],self.Q_l[0]) #function in angleReconstructor.py
-#		#MC Truth observable and reweighting calculation
-#		if self.is_data==0 :
-#			( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
-#				self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],self.w_s_delta[0],self.w_a_delta[0],
-#				self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
+		#jet selection
+		jetTuples = selectJets(self.top_type,lep_vec,met1_vec,met2_vec,jetVars_AK4,jetVars_AK8,self.jet_control_plots) 
+		#above function in jetHelper.py
+		if len(jetTuples)==1 :
+			return self.__closeout__(-1*jetTuples[0])
+		#event reconstruction
+		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) 
+		#above function in ttbarReconstructor.py
+		#fill the TTree with the fourvector variables, and angle and differential cross section variable reconstruction
+		if self.top_type == 1 :
+			self.__fillFourVecsType1__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0]) 		
+			( self.cstar[0], self.x_F[0], 
+			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0],self.Q_l[0]) 
+			#above function in angleReconstructor.py
+		elif self.top_type == 2 :
+			self.__fillFourVecsType2__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0])
+			( self.cstar[0], self.x_F[0], 
+			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],self.Q_l[0]) 
+			#above function in angleReconstructor.py
+		#MC Truth observable and reweighting calculation
+		if self.is_data==0 :
+			( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
+				self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
+				self.w_s_delta[0],self.w_a_delta[0],
+				self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
+				self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
 		#scale factor and reweighting calculations
 			#These are going to have to get added as we go with them, functions in eventWeightCalculator.py
 		self.__closeout__(0) #yay! A successful event!
@@ -264,12 +325,11 @@ class treemaker :
 			print '	lepType = '+lepType+''
 			self.ERR_CODE = ERR_INVALID_INIT
 		#top type?
+		self.top_type = topType
 		if topType == 1 :
 			print 'File will be analyzed using TYPE 1 (FULLY MERGED) TOPS'
-			self.top_type = 0
 		elif topType == 2 :
 			print 'File will be analyzed using TYPE 2 (PARTIALLY MERGED) TOPS'
-			self.top_type = 1
 		else :
 			print 'ERROR: cannot determine if top type 1 or top type 2 analysis is being performed!'
 			print '	topType = '+topType+''
@@ -390,14 +450,43 @@ class treemaker :
 		self.MET_control_plots.append(ROOT.TH1F('met_pt','p_{T} of MET; GeV',60,0.,300.))
 		#leptons
 		self.lepton_control_plots.append(ROOT.TH1F('lep1_pt','p_{T} of first lepton; p_{T} (GeV)',60,0.,300.))
-		self.lepton_control_plots.append(ROOT.TH1F('lep1_eta','#eta of first lepton; #eta',50,-2.5,2.5))
+		self.lepton_control_plots.append(ROOT.TH1F('lep1_eta','#eta of first lepton; #eta',60,-3.0,3.0))
 		self.lepton_control_plots.append(ROOT.TH1F('lep2_pt','p_{T} of second lepton; p_{T} (GeV)',60,0.,300.))
-		self.lepton_control_plots.append(ROOT.TH1F('lep2_eta','#eta of second lepton; #eta',50,-2.5,2.5))
-		self.lepton_control_plots.append(ROOT.TH1F('other_lep1_pt','p_{T} of first "other" lepton; p_{T} (GeV)',60,0.,300.))
-		self.lepton_control_plots.append(ROOT.TH1F('other_lep1_eta','#eta of first "other" lepton; #eta',50,-2.5,2.5))
-		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_pt','p_{T} of second "other" lepton; p_{T} (GeV)',60,0.,300.))
-		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_eta','#eta of second "other" lepton; #eta',50,-2.5,2.5))
-		self.lepton_control_plots.append(ROOT.TH2F('lep_2D_cut','selected lepton #Delta R and p_{T,rel} from nearest jet; #Delta R; p_{T,rel} (GeV)',20,0.,0.4,30,0.,30.))
+		self.lepton_control_plots.append(ROOT.TH1F('lep2_eta','#eta of second lepton; #eta',60,-3.0,3.0))
+		self.lepton_control_plots.append(ROOT.TH1F('other_lep1_pt',
+			'p_{T} of first "other" lepton; p_{T} (GeV)',60,0.,300.))
+		self.lepton_control_plots.append(ROOT.TH1F('other_lep1_eta','#eta of first "other" lepton; #eta',60,-3.0,3.0))
+		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_pt',
+			'p_{T} of second "other" lepton; p_{T} (GeV)',60,0.,300.))
+		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_eta','#eta of second "other" lepton; #eta',60,-3.0,3.0))
+		self.lepton_control_plots.append(ROOT.TH2F('lep_2D_cut',
+			'selected lepton #Delta R and p_{T,rel} from nearest jet; #Delta R; p_{T,rel} (GeV)',75,0.0,1.5,75,0.0,75.))
+		#jets
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_CSV','CSV of AK4 jets; CSV value',20,0.0,1.0))
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_pT','p_{T} of AK4 jets; p_{T} (GeV)',50,0.0,350.0))
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_dR',
+			'#Delta R(lepton) of loosely b-tagged AK4 jets; #Delta R',50,0.,5.0))
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_comb_mass',
+			'Best combined mass of (lepton, MET, leptonic bjet); M (GeV)',100,0.,500.))
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_mult','Number of leptonic b-jet candidates',10,0,10))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_pT','p_{T} of AK8 jets; p_{T} (GeV)',100,0.0,500.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_mass','Mass of AK8 jets; M (GeV)',60,0.0,300.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_tau32','#tau_{3}/#tau_{2} of AK8 jets; #tau_{32}',20,0.0,1.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_dR','#Delta R(lepton) of top candidates; #Delta R',50,0.0,5.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_mult','number of hadronic top candidates',10,0.0,10.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_pT','p_{T} of AK8 jets; p_{T} (GeV)',100,0.0,500.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_tau21','#tau_{2}/#tau_{1} of AK8 jets; #tau_{21}',20,0.0,1.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_mass','Mass of hadronic W jets; M (GeV)',60,0.0,300.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_dR',
+			'#Delta R(lepton) of hadronic W jets; #Delta R',50,0.0,5.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_mult','number of hadronic W candidates',10,0.0,10.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_comb_mass',
+			'type2 top candidate combined mass; M (GeV)',60,0.0,300.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_b_dR',
+			'#Delta R(lepton) of hadronic side b candidates; #Delta R',50,0.0,5.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_b_W_dR',
+			'#Delta R(hadronic W) of hadronic side b candidates; #Delta R',50,0.0,5.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_had_b_mult','number of hadronic side b candidates',10,0.0,10.0))
 		self.all_control_plots = self.MET_control_plots + self.lepton_control_plots + self.jet_control_plots 
 
 	##################################   reset function   ##################################
@@ -414,29 +503,43 @@ class treemaker :
 		self.initial_branches.append((var,ini_val))
 
 	################ function to fill fourvector branch values (type 2 tops) ###############
-	def __fillFourVecs__(self,lepton,met,lepb,hadW,hadb) :
-		self.lep_pt[0]   = lepton.Pt();	self.lep_eta[0]   = lepton.Eta(); self.lep_phi[0]   = lepton.Phi(); self.lep_M[0]   = lepton.M()
-		self.met_pt[0]   = met.Pt();	self.met_eta[0]   = met.Eta();	  self.met_phi[0]   = met.Phi();	self.met_M[0]   = met.M()
+	def __fillFourVecsType2__(self,lepton,met,lepb,hadW,hadb) :
+		self.lep_pt[0] 	= lepton.Pt(); 	self.lep_eta[0] = lepton.Eta()
+		self.lep_phi[0] = lepton.Phi(); self.lep_M[0] 	= lepton.M()
+		self.met_pt[0] 	= met.Pt(); 	self.met_eta[0] = met.Eta()
+		self.met_phi[0] = met.Phi(); 	self.met_M[0] 	= met.M()
 		lepW = lepton+met
-		self.lepW_pt[0]  = lepW.Pt();	self.lepW_eta[0]  = lepW.Eta();	  self.lepW_phi[0]  = lepW.Phi();   self.lepW_M[0]  = lepW.M()
-		self.lepb_pt[0]  = lepb.Pt();	self.lepb_eta[0]  = lepb.Eta();	  self.lepb_phi[0]  = lepb.Phi();   self.lepb_M[0]  = lepb.M()
-		self.hadW_pt[0]  = hadW.Pt();	self.hadW_eta[0]  = hadW.Eta();   self.hadW_phi[0]  = hadW.Phi();	self.hadW_M[0]  = hadW.M()
-		self.hadb_pt[0]  = hadb.Pt();	self.hadb_eta[0]  = hadb.Eta();   self.hadb_phi[0]  = hadb.Phi();	self.hadb_M[0]  = hadb.M()
+		self.lepW_pt[0]  = lepW.Pt();  self.lepW_eta[0] = lepW.Eta()
+		self.lepW_phi[0] = lepW.Phi(); self.lepW_M[0] 	= lepW.M()
+		self.lepb_pt[0]  = lepb.Pt();  self.lepb_eta[0] = lepb.Eta()
+		self.lepb_phi[0] = lepb.Phi(); self.lepb_M[0] 	= lepb.M()
+		self.hadW_pt[0]  = hadW.Pt();  self.hadW_eta[0] = hadW.Eta()
+		self.hadW_phi[0] = hadW.Phi(); self.hadW_M[0] 	= hadW.M()
+		self.hadb_pt[0]  = hadb.Pt();  self.hadb_eta[0] = hadb.Eta()
+		self.hadb_phi[0] = hadb.Phi(); self.hadb_M[0] 	= hadb.M()
 		lept = lepW+lepb
-		self.lept_pt[0]  = lept.Pt();	self.lept_eta[0]  = lept.Eta();   self.lept_phi[0]  = lept.Phi();	self.lept_M[0]  = lept.M()
+		self.lept_pt[0]  = lept.Pt();  self.lept_eta[0] = lept.Eta()
+		self.lept_phi[0] = lept.Phi(); self.lept_M[0] 	= lept.M()
 		hadt = hadW+hadb
-		self.hadt_pt[0]  = hadt.Pt();	self.hadt_eta[0]  = hadt.Eta();   self.hadt_phi[0]  = hadt.Phi();	self.hadt_M[0]  = hadt.M()
+		self.hadt_pt[0]  = hadt.Pt();  self.hadt_eta[0] = hadt.Eta()
+		self.hadt_phi[0] = hadt.Phi(); self.hadt_M[0] 	= hadt.M()
 
-	################ function to fill fourvector branch values (type 2 tops) ###############
-	def __fillFourVecs__(self,lepton,met,lepb,hadt) :
-		self.lep_pt[0]   = lepton.Pt();	self.lep_eta[0]   = lepton.Eta(); self.lep_phi[0]   = lepton.Phi(); self.lep_M[0]   = lepton.M()
-		self.met_pt[0]   = met.Pt();	self.met_eta[0]   = met.Eta();	  self.met_phi[0]   = met.Phi();	self.met_M[0]   = met.M()
+	################ function to fill fourvector branch values (type 1 tops) ###############
+	def __fillFourVecsType1__(self,lepton,met,lepb,hadt) :
+		self.lep_pt[0] 	= lepton.Pt(); 	self.lep_eta[0] = lepton.Eta()
+		self.lep_phi[0] = lepton.Phi(); self.lep_M[0] 	= lepton.M()
+		self.met_pt[0] 	= met.Pt(); 	self.met_eta[0] = met.Eta()
+		self.met_phi[0] = met.Phi(); 	self.met_M[0] 	= met.M()
 		lepW = lepton+met
-		self.lepW_pt[0]  = lepW.Pt();	self.lepW_eta[0]  = lepW.Eta();	  self.lepW_phi[0]  = lepW.Phi();   self.lepW_M[0]  = lepW.M()
-		self.lepb_pt[0]  = lepb.Pt();	self.lepb_eta[0]  = lepb.Eta();	  self.lepb_phi[0]  = lepb.Phi();   self.lepb_M[0]  = lepb.M()
+		self.lepW_pt[0]  = lepW.Pt();  self.lepW_eta[0] = lepW.Eta()
+		self.lepW_phi[0] = lepW.Phi(); self.lepW_M[0] 	= lepW.M()
+		self.lepb_pt[0]  = lepb.Pt();  self.lepb_eta[0] = lepb.Eta()
+		self.lepb_phi[0] = lepb.Phi(); self.lepb_M[0] 	= lepb.M()
 		lept = lepW+lepb
-		self.lept_pt[0]  = lept.Pt();	self.lept_eta[0]  = lept.Eta();   self.lept_phi[0]  = lept.Phi();	self.lept_M[0]  = lept.M()
-		self.hadt_pt[0]  = hadt.Pt();	self.hadt_eta[0]  = hadt.Eta();   self.hadt_phi[0]  = hadt.Phi();	self.hadt_M[0]  = hadt.M()
+		self.lept_pt[0]  = lept.Pt();  self.lept_eta[0] = lept.Eta()
+		self.lept_phi[0] = lept.Phi(); self.lept_M[0] 	= lept.M()
+		self.hadt_pt[0]  = hadt.Pt();  self.hadt_eta[0] = hadt.Eta()
+		self.hadt_phi[0] = hadt.Phi(); self.hadt_M[0] 	= hadt.M()
 
 	########## function to close out the event, called before kicking back to runner #########
 	def __closeout__(self,cut_flow) :

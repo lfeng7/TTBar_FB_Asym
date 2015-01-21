@@ -37,7 +37,8 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	Bx = -1*Q.Px()/Q.E(); By = -1*Q.Py()/Q.E(); Bz = -1*Q.Pz()/Q.E()
 	#calculating beta for the boost
 	M2_1 = Top.Mag2(); M2_2 = ATop.Mag2()
-	num  = 1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + (M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass)
+	num  = ( 1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + 
+		(M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass) )
 	denom_1 = (1. + (M2_1-M2_2)/(ttbar_mass*ttbar_mass))*(1. + (M2_1-M2_2)/(ttbar_mass*ttbar_mass))
 	denom_2 = (1. + (M2_2-M2_1)/(ttbar_mass*ttbar_mass))*(1. + (M2_2-M2_1)/(ttbar_mass*ttbar_mass))
 	beta = sqrt(sqrt((num*num)/(denom_1*denom_1) * (num*num)/(denom_2*denom_2)))
@@ -59,8 +60,9 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	top = top*(1.0/top.Mag()); proton1 = proton1*(1.0/proton1.Mag()); proton2 = proton2*(1.0/proton2.Mag())
 	#find the unit bisectors
 	bisector = (proton1+proton2)*(1.0/(proton1+proton2).Mag())
+#	print 'bisector = ('+str(bisector.X())+','+str(bisector.Y())+','+str(bisector.Z())+')' #DEBUGGING
 	#find the CS angle
-	cos_theta_cs=top*bisector
+	cos_theta_cs=cos(top.Angle(bisector))
 	return (cos_theta_cs,x_f,ttbar_mass)
 	#return (0.0,0.2,450.) #DEBUG RETURN
 
@@ -80,7 +82,8 @@ def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec) :
 	Bx = -1*Q.Px()/Q.E(); By = -1*Q.Py()/Q.E(); Bz = -1*Q.Pz()/Q.E()
 	#calculating beta for the boost
 	M2_1 = t_vec.Mag2(); M2_2 = tbar_vec.Mag2()
-	num  = 1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + (M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass)
+	num  = ( 1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + 
+		(M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass) )
 	denom_1 = (1. + (M2_1-M2_2)/(ttbar_mass*ttbar_mass))*(1. + (M2_1-M2_2)/(ttbar_mass*ttbar_mass))
 	denom_2 = (1. + (M2_2-M2_1)/(ttbar_mass*ttbar_mass))*(1. + (M2_2-M2_1)/(ttbar_mass*ttbar_mass))
 	beta = sqrt(sqrt((num*num)/(denom_1*denom_1) * (num*num)/(denom_2*denom_2)))
@@ -97,7 +100,7 @@ def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec) :
 	#find the unit bisectors
 	bisector = (q+qbar)*(1.0/(q+qbar).Mag())
 	#find the CS angle
-	cos_theta_cs=top*bisector
+	cos_theta_cs=cos(top.Angle(bisector))
 	#calculate the reweighting factors
 	one_m_b2 = 1.0-beta*beta;
 	b2c2 = beta*beta*cos_theta_cs*cos_theta_cs;
@@ -113,5 +116,6 @@ def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec) :
 	w_a_xi_opp = 2.0*(one_m_b2/denom)*(-1.0*cos_theta_cs);
 	w_s_delta_opp = (1.0-b2c2)/denom;
 	w_a_delta_opp = 2.0*((1.0-otb2)/denom)*(-1.0*cos_theta_cs);
-	return (cos_theta_cs,x_f,ttbar_mass,w_a,w_s_xi,w_a_xi,w_s_delta,w_a_delta,w_a_opp,w_s_xi_opp,w_a_xi_opp,w_s_delta_opp,w_a_delta_opp)
+	return (cos_theta_cs,x_f,ttbar_mass,w_a,w_s_xi,w_a_xi,w_s_delta,w_a_delta,
+		w_a_opp,w_s_xi_opp,w_a_xi_opp,w_s_delta_opp,w_a_delta_opp)
 	#return (0.0,0.2,450.,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0) #DEBUG RETURN
