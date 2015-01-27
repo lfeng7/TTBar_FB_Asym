@@ -133,6 +133,7 @@ def typeCheckMCAtNLO(GenParticles,event_type) :
 #pythia8 eventTypeCheck function
 def typeCheckPythia8(GenParticles,genPartVars,event_type) :
 #	print 'new event---------------------------------' #DEBUGGING
+	addTwice = False
 	#check the initial state partons if necessary
 	if event_type<2 :
 		initial_parton_ids = []
@@ -224,7 +225,7 @@ def findInitialQuarkPythia8(GenParticles,genPartVars) :
 			factor = 0.0
 			if genPartVars[1][i] > 0 :
 				factor = 1.0
-			elif p.daughter(0).eta() < 0 :
+			elif genPartVars[1][i] < 0 :
 				factor = -1.0
 			return ROOT.TLorentzVector(1.0,0.0,factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
 	return ROOT.TLorentzVector(1.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY) #DEBUG RETURN

@@ -76,7 +76,7 @@ if options.n_jobs>1 :
 filename+='_tree.root'
 #Initialize analyzer
 analyzer = treemaker(filename, options.data, options.generator, options.event_type, options.sideband, 
-	options.leptons, options.top_type, options.cross_section/options.n_events)
+	options.leptons, options.top_type, options.cross_section/options.n_events,options.on_grid)
 
 #Counters
 real_count = 0

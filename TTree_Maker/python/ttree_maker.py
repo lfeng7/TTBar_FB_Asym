@@ -21,7 +21,7 @@ from array import array
 from math import *
 import sys
 from eventTypeHelper import eventTypeCheck, findInitialQuark, findMCTops
-from lepHelper import leptonCleaningKludge, leptonCuts, getLeptonFourVec
+from lepHelper import leptonCuts, getLeptonFourVec#, leptonCleaningKludge
 from metHelper import metCut, setupMET
 from jetHelper import selectJets
 from ttbarReconstructor import reconstruct
@@ -67,21 +67,23 @@ class treemaker :
 	metLabels.append(('met','metPhi')); metHandles.append(Handle('vector<float>'))
 	#AK4 Jets
 	jetHandles_AK4 = [];	jetLabels_AK4 = []
-	jetLabels_AK4.append(('jetsAK4','jetAK4Pt'));   jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4Eta'));  jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4Phi'));  jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4Mass')); jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4CSV'));  jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4Pt')); 			 jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4Eta')); 			 jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4Phi')); 			 jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4Mass')); 		 jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4CSV')); 			 jetHandles_AK4.append(Handle('vector<float>'))
+	jetLabels_AK4.append(('jetsAK4','jetAK4PartonFlavour')); jetHandles_AK4.append(Handle('vector<float>'))
 	#AK8 Jets
 	jetHandles_AK8 = [];	jetLabels_AK8 = []
-	jetLabels_AK8.append(('jetsAK8','jetsAK8Pt'));   jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('jetsAK8','jetsAK8Eta'));  jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('jetsAK8','jetsAK8Phi'));  jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('jetsAK8','jetsAK8Mass')); jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('jetsAK8','jetsAK8CSV'));  jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('jetsAK8','jetsAK8tau1')); jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('jetsAK8','jetsAK8tau2')); jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('jetsAK8','jetsAK8tau3')); jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjetPt')); 			 jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjetEta')); 			 jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjetPhi')); 			 jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjetMass')); 		 jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjetCSV')); 			 jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjettau1')); 		 jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjettau2')); 		 jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjettau3')); 		 jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('patjets','patjetPartonFlavour')); jetHandles_AK8.append(Handle('vector<float>'))
 	#pythia8 nTuple GenParticles
 	genPartHandles = [];	genPartLabels = []
 	genPartLabels.append(('genPart','genPartPt')); 	   genPartHandles.append(Handle('vector<float>'))
@@ -91,6 +93,9 @@ class treemaker :
 	genPartLabels.append(('genPart','genPartID')); 	   genPartHandles.append(Handle('vector<float>'))
 	genPartLabels.append(('genPart','genPartMomID'));  genPartHandles.append(Handle('vector<float>'))
 	genPartLabels.append(('genPart','genPartStatus')); genPartHandles.append(Handle('vector<float>'))
+	#pileup
+	pileupLabel = ('',''); 	 pileupHandle 	= Handle('vector<float>')
+	MCpileupLabel = ('',''); MCpileupHandle = Handle('vector<float>')
 
 #	##################################  8TeV Handles and Labels  ##################################
 #	#MC GenEvent info
@@ -204,7 +209,22 @@ class treemaker :
 				return self.ERR_CODE
 			jetVars_AK8.append(self.jetHandles_AK8[i].product())
 		#kludge-y lepton cleaning
-		jetVars_AK4, jetVars_AK8 = leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8)
+		#jetVars_AK4, jetVars_AK8 = leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8)
+		#pileup
+		event.getByLabel(self.pileupLabel,self.pileupHandle)
+		if not self.pileupHandle.isValid() :
+			self.ERR_CODE = ERR_INVALID_HANDLE
+			return self.ERR_CODE
+		pileup = self.pileupHandle.product()[0]
+		if self.is_data == 0 :
+			event.getByLabel(self.MCpileupLabel,self.MCpileupHandle)
+			if not self.MCpileupHandle.isValid() :
+				self.ERR_CODE = ERR_INVALID_HANDLE
+				return self.ERR_CODE
+			MCpileup = self.MCpileupHandle.product()[0]
+		else :
+			MCpileup = 0
+		self.pileup[0] = pileup; self.MC_pileup[0] = MCpileup
 		#met cleaning
 		met_cut = metCut(metVars,self.MET_control_plots) #function in metHelper.py
 		if met_cut!=0 :
@@ -219,6 +239,7 @@ class treemaker :
 		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
 		self.lep_pt[0],  self.lep_eta[0] = lep_vec.Pt(),  lep_vec.Eta()
 		self.lep_phi[0], self.lep_M[0]   = lep_vec.Phi(), lep_vec.M()
+		meas_lep_pt = lep_vec.Pt(); meas_lep_eta = lep_vec.Eta()
 		#neutrino handling and setup for fit
 		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
 		self.met_pt[0], self.met_eta[0] = met1_vec.Pt(),  met1_vec.Eta() 
@@ -228,10 +249,12 @@ class treemaker :
 		else :
 			self.nFits[0] = 1
 		#jet selection
-		jetTuples = selectJets(self.top_type,lep_vec,met1_vec,met2_vec,jetVars_AK4,jetVars_AK8,self.jet_control_plots) 
+		( jetTuples, self.sf_btag_eff[0], self.sf_btag_eff_low[0], 
+			self.sf_btag_eff_hi[0] ) = selectJets(self.is_data,self.top_type,lep_vec,met1_vec,met2_vec,
+																		jetVars_AK4,jetVars_AK8,self.jet_control_plots) 
 		#above function in jetHelper.py
-		if len(jetTuples)==1 :
-			return self.__closeout__(-1*jetTuples[0])
+		if len(jetTuples[0])==1 :
+			return self.__closeout__(-1*jetTuples[0][0])
 		#event reconstruction
 		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) 
 		#above function in ttbarReconstructor.py
@@ -253,17 +276,25 @@ class treemaker :
 				self.w_s_delta[0],self.w_a_delta[0],
 				self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
 				self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
-		#scale factor and reweighting calculations
-			#These are going to have to get added as we go with them, functions in eventWeightCalculator.py
+			#scale factor and reweighting calculations
+			#8TeV numbers
+			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
+			self.sf_pileup[0] = self.corrector.getpileup_reweight(MCpileup)
+			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
+				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta)
+			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
+				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta)
 		self.__closeout__(0) #yay! A successful event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,isData,generator,eventType,sideband,lepType,topType,reweight) :
+	def __init__(self,fileName,isData,generator,eventType,sideband,lepType,topType,reweight,onGrid) :
 		self.ERR_CODE = ERR_NONE
 		#handle input options
 		self.__handleInput__(fileName,isData,generator,eventType,sideband,lepType,topType,reweight)
 		#book TTree
 		self.__book__()
+		#Set Monte Carlo reweighter
+		self.corrector = MC_corrector(self.MC_generator,self.event_type,self.lep_type,onGrid)
 	
 	##################################   #__handleInput__   ##################################   
 	#############################   __init__ helper function   ###############################
@@ -281,13 +312,16 @@ class treemaker :
 			print '	options.data = '+isData+''
 			self.ERR_CODE = ERR_INVALID_INIT
 		#MC generator?
-		self.MC_generator = generator
+		if generator.lower() == 'powheg' or generator.lower() == 'madgraph' or generator.lower() == 'pythia8'
+			self.MC_generator = generator.lower()
+		elif generator.lower() == 'mg5'
+			self.MC_generator = 'madgraph'
 		#event type?
 		if eventType == 'qq_semilep' or eventType == 'qqbar_semilep' or eventType == 'qq' or eventType == 'qqbar' :
-			print 'only SEMILEPTONIC qqbar EVENTS will be analyzed from this file'
+			print 'only SEMILEPTONIC QQBAR EVENTS will be analyzed from this file'
 			self.event_type = 0
 		elif eventType == 'gg_semilep' or eventType == 'gg' :
-			print 'only SEMILEPTONIC gg (qg,qiqbarj,etc.) EVENTS will be analyzed from this file'
+			print 'only SEMILEPTONIC GG (qg,qiqbarj,etc.) EVENTS will be analyzed from this file'
 			self.event_type = 1
 		elif eventType == 'dilep' or eventType == 'dileptonic' or eventType == 'di' or eventType == 'fulllep' :
 			print 'only DILEPTONIC EVENTS will be analyzed from this file'
@@ -361,6 +395,16 @@ class treemaker :
 		self.w_a_xi_opp    = array('d',[1.0]); self.addBranch('w_a_xi_opp',	  self.w_a_xi_opp,   'D',1.0)
 		self.w_s_delta_opp = array('d',[1.0]); self.addBranch('w_s_delta_opp',self.w_s_delta_opp,'D',1.0)
 		self.w_a_delta_opp = array('d',[1.0]); self.addBranch('w_a_delta_opp',self.w_a_delta_opp,'D',1.0)
+		self.sf_top_pT 		 = array('d',[1.0]); self.addBranch('sf_top_pT', 	   self.sf_top_pT, 		 'D',1.0)
+		self.sf_btag_eff 	 = array('d',[1.0]); self.addBranch('sf_btag_eff', 	   self.sf_btag_eff, 	 'D',1.0)
+		self.sf_btag_eff_err = array('d',[1.0]); self.addBranch('sf_btag_eff_err', self.sf_btag_eff_err, 'D',1.0)
+		self.sf_pileup 		 = array('d',[1.0]); self.addBranch('sf_pileup', 	   self.sf_pileup, 		 'D',1.0)
+		self.sf_lep_ID 		 = array('d',[1.0]); self.addBranch('sf_lep_ID', 	   self.sf_lep_ID, 		 'D',1.0)
+		self.sf_lep_ID_low 	 = array('d',[1.0]); self.addBranch('sf_lep_ID_low',   self.sf_lep_ID_low, 	 'D',1.0)
+		self.sf_lep_ID_hi 	 = array('d',[1.0]); self.addBranch('sf_lep_ID_hi',    self.sf_lep_ID_hi, 	 'D',1.0)
+		self.sf_trig_eff 	 = array('d',[1.0]); self.addBranch('sf_trig_eff', 	   self.sf_trig_eff, 	 'D',1.0)
+		self.sf_trig_eff_low = array('d',[1.0]); self.addBranch('sf_trig_eff_low', self.sf_trig_eff_low, 'D',1.0)
+		self.sf_trig_eff_hi  = array('d',[1.0]); self.addBranch('sf_trig_eff_hi',  self.sf_trig_eff_hi,  'D',1.0)
 		#error codes
 		self.error_code = array('I',[self.ERR_CODE]); self.addBranch('error_code',self.error_code,'i',self.ERR_CODE)
 		#lepton charge
@@ -441,6 +485,9 @@ class treemaker :
 		#ttbar invariant mass
 		self.M     = array('d',[-1.0]); self.addBranch('M',   self.M,   'D',-1.0)
 		self.M_MC  = array('d',[-1.0]); self.addBranch('M_MC',self.M_MC,'D',-1.0)
+		#pileup
+		self.pileup = array('i',[0]); self.addBranch('pileup',self.pileup,'I',0)
+		self.MC_pileup = array('i',[0]); self.addBranch('MC_pileup',self.MC_pileup,'I',0)
 
 		self.control_plots_folder = self.f.mkdir('control_plots_folder','control_plots')
 		self.control_plots_folder.cd()
@@ -462,13 +509,12 @@ class treemaker :
 		self.lepton_control_plots.append(ROOT.TH2F('lep_2D_cut',
 			'selected lepton #Delta R and p_{T,rel} from nearest jet; #Delta R; p_{T,rel} (GeV)',75,0.0,1.5,75,0.0,75.))
 		#jets
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_CSV','CSV of AK4 jets; CSV value',20,0.0,1.0))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_pT','p_{T} of AK4 jets; p_{T} (GeV)',50,0.0,350.0))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_dR',
 			'#Delta R(lepton) of loosely b-tagged AK4 jets; #Delta R',50,0.,5.0))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_comb_mass',
 			'Best combined mass of (lepton, MET, leptonic bjet); M (GeV)',100,0.,500.))
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_mult','Number of leptonic b-jet candidates',10,0,10))
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_CSV','CSV of AK4 jets; CSV value',20,0.0,1.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_pT','p_{T} of AK8 jets; p_{T} (GeV)',100,0.0,500.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_mass','Mass of AK8 jets; M (GeV)',60,0.0,300.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_tau32','#tau_{3}/#tau_{2} of AK8 jets; #tau_{32}',20,0.0,1.0))

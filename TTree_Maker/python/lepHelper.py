@@ -39,8 +39,6 @@ def leptonCuts(lep_type,sideband,muVars,elVars,jetVars,control_plots) :
 #	print 'new event ----------------------------------------' #DEBUGGING
 	if lep_type == 0 : #muons
 #		print '# of gen muons = '+str(len(muVars[11]))+'' #DEBUGGING
-#		print ( '# of mupts = '+str(len(muVars[0]))+', # of muetas = '+str(len(muVars[1]))+', # of muphis = ' #DEBUGGING
-#				+str(len(muVars[2]))+', # of muMs = '+str(len(muVars[3]))+'' ) #DEBUGGING
 		for i in range(len(muVars[0])) :
 #			s = '	istight cut '   #DEBUGGING
 #			if muVars[9][i] == 1 : #DEBUGGING
@@ -97,9 +95,11 @@ def leptonCuts(lep_type,sideband,muVars,elVars,jetVars,control_plots) :
 	nearest_jet_vec = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 	lepvec = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 	if lep_type == 0 :
-		lepvec.SetPtEtaPhiM(muVars[0][lepton_index],muVars[1][lepton_index],muVars[2][lepton_index],muVars[3][lepton_index])
+		lepvec.SetPtEtaPhiM(muVars[0][lepton_index],muVars[1][lepton_index],
+			muVars[2][lepton_index],muVars[3][lepton_index])
 	elif lep_type == 1 :
-		lepvec.SetPtEtaPhiM(elVars[0][lepton_index],elVars[1][lepton_index],elVars[2][lepton_index],elVars[3][lepton_index])
+		lepvec.SetPtEtaPhiM(elVars[0][lepton_index],elVars[1][lepton_index],
+			elVars[2][lepton_index],elVars[3][lepton_index])
 #	print 'lepvec = ('+str(lepvec.Px())+','+str(lepvec.Py())+','+str(lepvec.Pz())+','+str(lepvec.E())+')' #DEBUGGING
 	for i in range(len(jetVars[0])) :
 		if jetVars[0][i] < JET_PT_MIN :
@@ -107,7 +107,6 @@ def leptonCuts(lep_type,sideband,muVars,elVars,jetVars,control_plots) :
 		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 		thisJet.SetPtEtaPhiM(jetVars[0][i],jetVars[1][i],jetVars[2][i],jetVars[3][i])
 		thisJetdR = lepvec.DeltaR(thisJet)
-#		print '	thisJet=('+str(thisJet.Pt())+','+str(thisJet.Eta())+','+str(thisJet.Phi())+','+str(thisJet.M())+'), thisJetDeltaR = '+str(thisJetdR)+'' #DEBUGGING
 		if thisJetdR < nearest_jet_dR :#and thisJetdR > 0.1 :
 			nearest_jet_vec.SetPtEtaPhiM(thisJet.Pt(),thisJet.Eta(),thisJet.Phi(),thisJet.M())
 			nearest_jet_dR = thisJetdR

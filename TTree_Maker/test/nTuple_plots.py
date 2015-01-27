@@ -12,7 +12,7 @@ parser = OptionParser()
 parser.add_option('--dir', metavar='F', type='string', action='store', dest='directory', help='') ## Sets which files to run on
 parser.add_option('--generator', metavar='F', type='string', action='store', default='powheg', dest='generator', help='') ## MC generator: 'powheg' (default),
 																													## 'madgraph','mcatnlo', or 'pythia8'
-parser.add_option('--maxEvents', metavar='F', type='int', action='store', default='100000', dest='maxEvents', help='') ## hard cut on number of events (100k default)
+parser.add_option('--maxEvents', metavar='F', type='int', action='store', default='1000000', dest='maxEvents', help='') ## hard cut on number of events (100k default)
 parser.add_option('--out', metavar='F', type='string', action='store', default='NEW_NTUPLE_PLOTS', dest='out', help='') ## name of output file that holds plots
 (options, args) = parser.parse_args()
 
@@ -56,6 +56,8 @@ lep_b_pT_boosted_tops = ROOT.TH1F('lep_b_pT_boosted_tops','p_{T} of leptonic b-j
 all_histos.append(lep_b_pT_boosted_tops)
 lep_b_dR_boosted_tops = ROOT.TH1F('lep_b_dR_boosted_tops','#Delta R(lepton,leptonic b-jet) in boosted semileptonic t#bar{t} events; #Delta R',60,0.,3.) 
 all_histos.append(lep_b_dR_boosted_tops)
+lep_2D_cut_boosted_tops = ROOT.TH2F('lep_2D_cut_boosted_tops','#Delta R and p_{T,rel} (lepton,leptonic b-jet) in boosted semileptonic t#bar{t} events; #Delta R(lepton, leptonic b-jet); p_{T,rel}(lepton, leptonic b-jet)',30,0.,1.5,30,0.,60.) 
+all_histos.append(lep_2D_cut_boosted_tops)
 
 count = 0
 for event in events :
@@ -175,6 +177,7 @@ for event in events :
 	if is_boosted and is_semilep :
 		lep_b_pT_boosted_tops.Fill(lep_b_vec.Pt())
 		lep_b_dR_boosted_tops.Fill(lep_vec.DeltaR(lep_b_vec))
+		lep_2D_cut_boosted_tops.Fill(lep_vec.DeltaR(lep_b_vec),lep_vec.Pt(lep_b_vec.Vect()))
 	
 #	genPartVars = []
 #	for i in range(len(genPartHandles)) :
