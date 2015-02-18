@@ -10,6 +10,8 @@ import pickle
 #global variables
 MUON_ID_EFF_PKL_FILENAME   = 'MuonEfficiencies_Run2012ReReco_53X.pkl'
 MUON_TRIG_EFF_PKL_FILENAME = 'SingleMuonTriggerEfficiencies_eta2p1_Run2012ABCD_v5trees.pkl' 
+DATA_PU_FILENAME = 'data_pileup_distribution.root'
+MC_PU_FILENAME = 'dumped_Powheg_TT.root'
 
 ##########							   MC_corrector Class 								##########
 
@@ -33,8 +35,18 @@ class MC_corrector :
 		else :
 			prepend+='../other_input_files/'
 		#note that these files should definitely be recalculated once I decide on a trigger, etc.
-		self.data_pu_dist = 'This is a string, it obviously needs to be a histogram'
-		self.MC_pu_dist   = 'This is a string, it obviously needs to be a histogram'
+		data_pu_file = ROOT.TFile(prepend+DATA_PU_FILENAME)
+		MC_pu_file = ROOT.TFile(prepend+MC_PU_FILENAME)
+		self.data_pu_dist = ROOT.TH1D()
+		self.MC_pu_dist   = ROOT.TH1D()
+		data_dist = data_pu_file.Get('pileup')
+		MC_dist = MC_pu_file.Get('pileup')
+		self.data_pu_dist = data_dist.Clone()
+		self.MC_pu_dist = MC_dist.Clone()
+		self.data_pu_dist.SetDirectory(0)
+		self.MC_pu_dist.SetDirectory(0)
+		self.data_pu_dist.Scale(1.0/self.data_pu_dist.Integral())
+		self.MC_pu_dist.Scale(1.0/self.MC_pu_dist.Integral())
 
 	def __open_lep_eff_files__(self) :
 		prepend = ''
@@ -143,8 +155,13 @@ class MC_corrector :
 		return sf,sf_low,sf_hi
 		#return 1.0 #DEBUG RETURN
 
-	#getNextKey finds the next key to use in dereferencing the dictionary
-	def getNextKey(keyList,num) :
+#getNextKey finds the next key to use in dereferencing the dictionary
+def getNextKey(keyList,num) :
+	if num < float(keyList[0].split('_')[0]) :
+		return keyList[0]
+	elif num >= float(keyList[len(keyList)-1].split('_')[1]) :
+		return keyList[len(keyList)-1]
+	else :
 		for key in keyList :
 			if num >= float(key.split('_')[0]) and num < float(key.split('_')[1]) :
 				return key

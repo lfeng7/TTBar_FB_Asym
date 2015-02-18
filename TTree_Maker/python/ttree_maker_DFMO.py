@@ -1,5 +1,5 @@
 
-#TTree Maker workhorse code
+#TTree Maker workhorse code for use with the DFMO framework instead of the B2GAnaFW
 #NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
 #This code available on github at https://github.com/eminizer/TTBar_FB_Asym
 
@@ -30,7 +30,7 @@ from eventWeightCalculator import *
 
 ##########							   Treemaker Class 								##########
 
-class treemaker :
+class treemaker_DFMO :
 	##################################		#__doc__		##################################
 	"""treemaker class; calculates and outputs all TTree variables for an event"""
 
@@ -38,90 +38,65 @@ class treemaker :
 	#MC GenEvent info
 	genHandle = Handle('vector<reco::GenParticle>'); genLabel  = ('prunedGenParticles','')
 	#muons
+	vector_of_4vecs = 'vector<ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > >'
 	muHandles = []; muLabels = []
-	muLabels.append(('muons','muPt')); 				   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muEta')); 			   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muPhi')); 			   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muMass')); 			   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muCharge')); 			   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muSumChargedHadronPt')); muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muSumNeutralHadronPt')); muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muSumPhotonPt')); 	   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muSumPUPt')); 		   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muIsTightMuon')); 	   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muIsLooseMuon')); 	   muHandles.append(Handle('vector<float>'))
-	muLabels.append(('muons','muGenMuonE')); 		   muHandles.append(Handle('vector<float>'))
+	muLabels.append(('jhuMuonPFlowLoose','muonLoose')); 	   muHandles.append(Handle(vector_of_4vecs))
+	muLabels.append(('muons','muEta')); 					   muHandles.append(Handle('vector<float>')) #dummies
+	muLabels.append(('muons','muPhi')); 					   muHandles.append(Handle('vector<float>')) #dummies
+	muLabels.append(('muons','muMass')); 					   muHandles.append(Handle('vector<float>')) #dummies
+	muLabels.append(('jhuMuonPFlowLoose','muonLoosecharge'));  muHandles.append(Handle('vector<int>'))
+	muLabels.append(('muons','muSumChargedHadronPt')); 		   muHandles.append(Handle('vector<float>')) #dummies
+	muLabels.append(('muons','muSumNeutralHadronPt')); 		   muHandles.append(Handle('vector<float>')) #dummies
+	muLabels.append(('muons','muSumPhotonPt')); 			   muHandles.append(Handle('vector<float>')) #dummies
+	muLabels.append(('muons','muSumPUPt')); 				   muHandles.append(Handle('vector<float>')) #dummies
+	muLabels.append(('jhuMuonPFlowLoose','muonLooseistight')); muHandles.append(Handle('vector<unsigned int>'))
+	muLabels.append(('jhuMuonPFlowLoose','muonLooseisloose')); muHandles.append(Handle('vector<unsigned int>'))
+	muLabels.append(('muons','muGenMuonE')); 				   muHandles.append(Handle('vector<float>')) #dummies
 	#electrons
 	elHandles = []; elLabels = []
-	elLabels.append(('electrons','elPt')); 	    elHandles.append(Handle('vector<float>'))
-	elLabels.append(('electrons','elEta')); 	elHandles.append(Handle('vector<float>'))
-	elLabels.append(('electrons','elPhi')); 	elHandles.append(Handle('vector<float>'))
-	elLabels.append(('electrons','elMass'));    elHandles.append(Handle('vector<float>'))
-	elLabels.append(('electrons','elCharge'));  elHandles.append(Handle('vector<float>'))
-	elLabels.append(('electrons','elIso03'));   elHandles.append(Handle('vector<float>'))
-	elLabels.append(('electrons','elisTight')); elHandles.append(Handle('vector<float>'))
-	elLabels.append(('electrons','elisLoose')); elHandles.append(Handle('vector<float>'))
+	elLabels.append(('jhuElePFlowLoose','electronLoose')); 		  elHandles.append(Handle(vector_of_4vecs))
+	elLabels.append(('electrons','elEta')); 					  elHandles.append(Handle('vector<float>')) #dummies
+	elLabels.append(('electrons','elPhi')); 					  elHandles.append(Handle('vector<float>')) #dummies
+	elLabels.append(('electrons','elMass')); 					  elHandles.append(Handle('vector<float>')) #dummies
+	elLabels.append(('jhuElePFlowLoose','electronLoosecharge'));  elHandles.append(Handle('vector<int>'))
+	elLabels.append(('jhuElePFlowLoose','electronLooseiso')); 	  elHandles.append(Handle('vector<double>'))
+	elLabels.append(('jhuElePFlowLoose','electronLooseistight')); elHandles.append(Handle('vector<unsigned int>'))
+	elLabels.append(('jhuElePFlowLoose','electronLooseisloose')); elHandles.append(Handle('vector<unsigned int>')) 
 	#MET
 	metHandles = []; metLabels = []
-	metLabels.append(('met','metPt'));  metHandles.append(Handle('vector<float>'))
-	metLabels.append(('met','metPhi')); metHandles.append(Handle('vector<float>'))
-	#AK4 Jets
+	metLabels.append(('jhuGen','metpt'));  metHandles.append(Handle('double'))
+	metLabels.append(('jhuGen','metphi')); metHandles.append(Handle('double'))
+	#AK4 Jets, really AK5 jets
 	jetHandles_AK4 = [];	jetLabels_AK4 = []
-	jetLabels_AK4.append(('jetsAK4','jetAK4Pt')); 			 jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4Eta')); 			 jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4Phi')); 			 jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4Mass')); 		 jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4CSV')); 			 jetHandles_AK4.append(Handle('vector<float>'))
-	jetLabels_AK4.append(('jetsAK4','jetAK4PartonFlavour')); jetHandles_AK4.append(Handle('vector<float>'))
-	#AK8 Jets
+	jetLabels_AK4.append(('jhuAk5','AK5')); 			 jetHandles_AK4.append(Handle(vector_of_4vecs))
+	jetLabels_AK4.append(('jetsAK4','jetAK4Eta')); 		 jetHandles_AK4.append(Handle('vector<float>')) #dummies
+	jetLabels_AK4.append(('jetsAK4','jetAK4Phi')); 		 jetHandles_AK4.append(Handle('vector<float>')) #dummies
+	jetLabels_AK4.append(('jetsAK4','jetAK4Mass')); 	 jetHandles_AK4.append(Handle('vector<float>')) #dummies
+	jetLabels_AK4.append(('jhuAk5','AK5csv')); 			 jetHandles_AK4.append(Handle('vector<double>'))
+	jetLabels_AK4.append(('jhuAk5','AK5PartonFlavour')); jetHandles_AK4.append(Handle('vector<int>'))
+	#AK8 Jets, really CA8 jets
 	jetHandles_AK8 = [];	jetLabels_AK8 = []
-	jetLabels_AK8.append(('patjets','patjetPt')); 			 jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('patjets','patjetEta')); 			 jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('patjets','patjetPhi')); 			 jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('patjets','patjetMass')); 		 jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('patjets','patjetCSV')); 			 jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('patjets','patjettau1')); 		 jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('patjets','patjettau2')); 		 jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('patjets','patjettau3')); 		 jetHandles_AK8.append(Handle('vector<float>'))
-	jetLabels_AK8.append(('patjets','patjetPartonFlavour')); jetHandles_AK8.append(Handle('vector<float>'))
+	jetLabels_AK8.append(('jhuCa8','UnprunedCA8')); 			 jetHandles_AK8.append(Handle(vector_of_4vecs))
+	jetLabels_AK8.append(('patjets','patjetEta')); 				 jetHandles_AK8.append(Handle('vector<float>')) #dummies
+	jetLabels_AK8.append(('patjets','patjetPhi')); 				 jetHandles_AK8.append(Handle('vector<float>')) #dummies
+	jetLabels_AK8.append(('patjets','patjetMass')); 			 jetHandles_AK8.append(Handle('vector<float>')) #dummies
+	jetLabels_AK8.append(('jhuCa8','UnprunedCA8csv')); 			 jetHandles_AK8.append(Handle('vector<double>'))
+	jetLabels_AK8.append(('jhuCa8','UnprunedCA8tau1')); 		 jetHandles_AK8.append(Handle('vector<double>'))
+	jetLabels_AK8.append(('jhuCa8','UnprunedCA8tau2')); 		 jetHandles_AK8.append(Handle('vector<double>'))
+	jetLabels_AK8.append(('jhuCa8','UnprunedCA8tau3')); 		 jetHandles_AK8.append(Handle('vector<double>'))
+	jetLabels_AK8.append(('jhuCa8','UnprunedCA8PartonFlavour')); jetHandles_AK8.append(Handle('vector<int>'))
 	#pythia8 nTuple GenParticles
 	genPartHandles = [];	genPartLabels = []
-	genPartLabels.append(('genPart','genPartPt')); 	   genPartHandles.append(Handle('vector<float>'))
-	genPartLabels.append(('genPart','genPartEta'));    genPartHandles.append(Handle('vector<float>'))
-	genPartLabels.append(('genPart','genPartPhi'));    genPartHandles.append(Handle('vector<float>'))
-	genPartLabels.append(('genPart','genPartMass'));   genPartHandles.append(Handle('vector<float>'))
-	genPartLabels.append(('genPart','genPartID')); 	   genPartHandles.append(Handle('vector<float>'))
-	genPartLabels.append(('genPart','genPartMomID'));  genPartHandles.append(Handle('vector<float>'))
-	genPartLabels.append(('genPart','genPartStatus')); genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartPt')); 	   genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartEta'));    genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartPhi'));    genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartMass'));   genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartID')); 	   genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartMomID'));  genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartStatus')); genPartHandles.append(Handle('vector<float>'))
 	#pileup
-	pileupLabel = ('',''); 	 pileupHandle 	= Handle('vector<float>')
-	MCpileupLabel = ('',''); MCpileupHandle = Handle('vector<float>')
-
-#	##################################  8TeV Handles and Labels  ##################################
-#	#MC GenEvent info
-#	genHandle = Handle('vector<reco::GenParticle>'); genLabel  = ('prunedGenParticles','')
-#	#muons
-#	muHandles = []; muLabels = []
-#	muLabels.append(('pfShyftTupleMuons','pt')); 	 muHandles.append(Handle('vector<float>'))
-#	muLabels.append(('pfShyftTupleMuons','eta')); 	 muHandles.append(Handle('vector<float>'))
-#	muLabels.append(('pfShyftTupleMuons','phi')); 	 muHandles.append(Handle('vector<float>'))
-#	muLabels.append(('pfShyftTupleMuons','charge')); muHandles.append(Handle('vector<float>'))
-#	#electrons
-#	elHandles = []; elLabels = []
-#	elLabels.append(('pfShyftTupleElectrons','pt')); 	 elHandles.append(Handle('vector<float>'))
-#	elLabels.append(('pfShyftTupleElectrons','eta')); 	 elHandles.append(Handle('vector<float>'))
-#	elLabels.append(('pfShyftTupleElectrons','phi')); 	 elHandles.append(Handle('vector<float>'))
-#	elLabels.append(('pfShyftTupleElectrons','charge')); elHandles.append(Handle('vector<float>'))
-#	#MET
-#	metHandles = []; metLabels = []
-#	metLabels.append(('pfShyftTupleMET','pt'));  metHandles.append(Handle('vector<float>'))
-#	metLabels.append(('pfShyftTupleMET','phi')); metHandles.append(Handle('vector<float>'))
-#	#AK4 Jets
-#	jetHandles_AK4 = [];	jetLabels_AK4 = []
-#	jetLabels_AK4.append(('pfShyftTupleJets','pt'));   jetHandles_AK4.append(Handle('vector<float>'))
-#	jetLabels_AK4.append(('pfShyftTupleJets','eta'));  jetHandles_AK4.append(Handle('vector<float>'))
-#	jetLabels_AK4.append(('pfShyftTupleJets','phi'));  jetHandles_AK4.append(Handle('vector<float>'))
-#	jetLabels_AK4.append(('pfShyftTupleJets','mass')); jetHandles_AK4.append(Handle('vector<float>'))
+	pileupLabel = ('jhuGen','npv'); 	  pileupHandle 	= Handle('unsigned int')
+	MCpileupLabel = ('jhuGen','npvTrue'); MCpileupHandle = Handle('unsigned int')
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,event) :
@@ -172,18 +147,44 @@ class treemaker :
 		#get all the info from the event
 		#leptons
 		muVars = [];	elVars = []
+		muVars_dummy = [];	elVars_dummy = []
 		for i in range(len(self.muHandles)) :
-			event.getByLabel(self.muLabels[i],self.muHandles[i])
-			if not self.muHandles[i].isValid() :
-				self.ERR_CODE = ERR_INVALID_HANDLE
-				return self.ERR_CODE
-			muVars.append(self.muHandles[i].product())
+			if i == 0 or i == 4 or i == 9 :
+				event.getByLabel(self.muLabels[i],self.muHandles[i])
+				if not self.muHandles[i].isValid() :
+					self.ERR_CODE = ERR_INVALID_HANDLE
+					return self.ERR_CODE
+				muVars_dummy.append(self.muHandles[i].product())
+			muVars.append([])
+			for j in range(len(muVars_dummy[0])) :
+				muVec = muVars_dummy[0][j]
+				if i == 0 :	app = muVec.Pt();
+				elif i == 1 :	app = muVec.Eta();
+				elif i == 2 :	app = muVec.Phi();
+				elif i == 3 :	app = muVec.M();
+				elif i == 4 :	app = muVars_dummy[1][j];
+				elif i == 9 :	app = muVars_dummy[2][j];
+				else :	app = 1.0;
+				muVars[i].append(app)
 		for i in range(len(self.elHandles)) :
-			event.getByLabel(self.elLabels[i],self.elHandles[i])
-			if not self.elHandles[i].isValid() :
-				self.ERR_CODE = ERR_INVALID_HANDLE
-				return self.ERR_CODE
-			elVars.append(self.elHandles[i].product())
+			if i == 0 or i == 4 or i == 5 or i == 6 :
+				event.getByLabel(self.elLabels[i],self.elHandles[i])
+				if not self.elHandles[i].isValid() :
+					self.ERR_CODE = ERR_INVALID_HANDLE
+					return self.ERR_CODE
+				elVars_dummy.append(self.elHandles[i].product())
+			elVars.append([])
+			for j in range(len(elVars_dummy[0])) :
+				elVec = elVars_dummy[0][j]
+				if i == 0 :	app = elVec.Pt();
+				elif i == 1 :	app = elVec.Eta();
+				elif i == 2 :	app = elVec.Phi();
+				elif i == 3 :	app = elVec.M();
+				elif i == 4 :	app = elVars_dummy[1][j];
+				elif i == 5 :	app = elVars_dummy[2][j];
+				elif i == 6 :	app = elVars_dummy[3][j];
+				else :	app = 1.0;
+				elVars[i].append(app)
 		#MET
 		metVars = []
 		for i in range(len(self.metHandles)) :
@@ -194,20 +195,49 @@ class treemaker :
 			metVars.append(self.metHandles[i].product())
 		#AK4 Jets
 		jetVars_AK4 = []
+		jetVars_AK4_dummy = []
 		for i in range(len(self.jetHandles_AK4)) :
-			event.getByLabel(self.jetLabels_AK4[i],self.jetHandles_AK4[i])
-			if not self.jetHandles_AK4[i].isValid() :
-				self.ERR_CODE = ERR_INVALID_HANDLE
-				return self.ERR_CODE
-			jetVars_AK4.append(self.jetHandles_AK4[i].product())
+			if i == 0 or i == 4 or i == 5 :
+				event.getByLabel(self.jetLabels_AK4[i],self.jetHandles_AK4[i])
+				if not self.jetHandles_AK4[i].isValid() :
+					self.ERR_CODE = ERR_INVALID_HANDLE
+					return self.ERR_CODE
+				jetVars_AK4_dummy.append(self.jetHandles_AK4[i].product())
+			jetVars_AK4.append([])
+			for j in range(len(jetVars_AK4_dummy[0])) :
+				jetVec = jetVars_AK4_dummy[0][j]
+				if i == 0 :		app = jetVec.Pt();
+				elif i == 1 :	app = jetVec.Eta();
+				elif i == 2 :	app = jetVec.Phi();
+				elif i == 3 :	app = jetVec.M();
+				elif i == 4 :	app = jetVars_AK4_dummy[1][j];
+				elif i == 5 :	app = jetVars_AK4_dummy[2][j];
+				else :	app = 1.0;
+				jetVars_AK4[i].append(app)
 		#AK8 Jets
 		jetVars_AK8 = []
+		jetVars_AK8_dummy = []
 		for i in range(len(self.jetHandles_AK8)) :
-			event.getByLabel(self.jetLabels_AK8[i],self.jetHandles_AK8[i])
-			if not self.jetHandles_AK8[i].isValid() :
-				self.ERR_CODE = ERR_INVALID_HANDLE
-				return self.ERR_CODE
-			jetVars_AK8.append(self.jetHandles_AK8[i].product())
+			if i == 0 or i == 4 or i == 5 or i == 6 or i == 7 or i == 8 :
+				event.getByLabel(self.jetLabels_AK8[i],self.jetHandles_AK8[i])
+				if not self.jetHandles_AK8[i].isValid() :
+					self.ERR_CODE = ERR_INVALID_HANDLE
+					return self.ERR_CODE
+				jetVars_AK8_dummy.append(self.jetHandles_AK8[i].product())
+			jetVars_AK8.append([])
+			for j in range(len(jetVars_AK8_dummy[0])) :
+				jetVec = jetVars_AK8_dummy[0][j]
+				if i == 0 :	app = jetVec.Pt();
+				elif i == 1 :	app = jetVec.Eta();
+				elif i == 2 :	app = jetVec.Phi();
+				elif i == 3 :	app = jetVec.M();
+				elif i == 4 :	app = jetVars_AK8_dummy[1][j];
+				elif i == 5 :	app = jetVars_AK8_dummy[2][j];
+				elif i == 6 :	app = jetVars_AK8_dummy[3][j];
+				elif i == 7 :	app = jetVars_AK8_dummy[4][j];
+				elif i == 8 :	app = jetVars_AK8_dummy[5][j];
+				else :	app = 1.0;
+				jetVars_AK8[i].append(app)
 		#kludge-y lepton cleaning
 		#jetVars_AK4, jetVars_AK8 = leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8)
 		#pileup
@@ -224,7 +254,8 @@ class treemaker :
 			MCpileup = self.MCpileupHandle.product()[0]
 		else :
 			MCpileup = 0
-		self.pileup[0] = pileup; self.MC_pileup[0] = MCpileup
+#		print 'pileup = '+str(pileup)+' MCpileup = '+str(MCpileup)+'' #DEBUG
+		self.pileup[0] = int(pileup); self.MC_pileup[0] = int(MCpileup)
 		#met cleaning
 		met_cut = metCut(metVars,self.MET_control_plots) #function in metHelper.py
 		if met_cut!=0 :
@@ -250,11 +281,10 @@ class treemaker :
 			self.nFits[0] = 1
 		#jet selection
 		( jetTuples, self.sf_btag_eff[0], self.sf_btag_eff_low[0], 
-			self.sf_btag_eff_hi[0] ) = selectJets(self.is_data,self.top_type,lep_vec,met1_vec,met2_vec,
-																		jetVars_AK4,jetVars_AK8,self.jet_control_plots) 
+			self.sf_btag_eff_hi[0] ) = selectJets(self.is_data,self.top_type,lep_vec,met1_vec,met2_vec,jetVars_AK4,jetVars_AK8,self.jet_control_plots) 
 		#above function in jetHelper.py
-		if len(jetTuples[0])==1 :
-			return self.__closeout__(-1*jetTuples[0][0])
+		if len(jetTuples)==1 :
+			return self.__closeout__(-1*jetTuples[0])
 		#event reconstruction
 		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) 
 		#above function in ttbarReconstructor.py
@@ -397,7 +427,8 @@ class treemaker :
 		self.w_a_delta_opp = array('d',[1.0]); self.addBranch('w_a_delta_opp',self.w_a_delta_opp,'D',1.0)
 		self.sf_top_pT 		 = array('d',[1.0]); self.addBranch('sf_top_pT', 	   self.sf_top_pT, 		 'D',1.0)
 		self.sf_btag_eff 	 = array('d',[1.0]); self.addBranch('sf_btag_eff', 	   self.sf_btag_eff, 	 'D',1.0)
-		self.sf_btag_eff_err = array('d',[1.0]); self.addBranch('sf_btag_eff_err', self.sf_btag_eff_err, 'D',1.0)
+		self.sf_btag_eff_low = array('d',[1.0]); self.addBranch('sf_btag_eff_low', self.sf_btag_eff_low, 'D',1.0)
+		self.sf_btag_eff_hi  = array('d',[1.0]); self.addBranch('sf_btag_eff_hi',  self.sf_btag_eff_hi,  'D',1.0)
 		self.sf_pileup 		 = array('d',[1.0]); self.addBranch('sf_pileup', 	   self.sf_pileup, 		 'D',1.0)
 		self.sf_lep_ID 		 = array('d',[1.0]); self.addBranch('sf_lep_ID', 	   self.sf_lep_ID, 		 'D',1.0)
 		self.sf_lep_ID_low 	 = array('d',[1.0]); self.addBranch('sf_lep_ID_low',   self.sf_lep_ID_low, 	 'D',1.0)

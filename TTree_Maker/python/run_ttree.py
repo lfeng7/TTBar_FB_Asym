@@ -8,6 +8,7 @@ from DataFormats.FWLite import Events, Handle
 import ROOT
 from optparse import OptionParser
 from ttree_maker import treemaker
+from ttree_maker_DFMO import treemaker_DFMO
 
 ##########								Parser Options								##########
 
@@ -75,8 +76,12 @@ if options.n_jobs>1 :
 	filename+='_'+str(options.i_job)
 filename+='_tree.root'
 #Initialize analyzer
-analyzer = treemaker(filename, options.data, options.generator, options.event_type, options.sideband, 
-	options.leptons, options.top_type, options.cross_section/options.n_events,options.on_grid)
+if options.generator.lower() == 'pythia8' :
+	analyzer = treemaker(filename, options.data, options.generator, options.event_type, options.sideband, 
+		options.leptons, options.top_type, options.cross_section/options.n_events,options.on_grid)
+else :
+	analyzer = treemaker_DFMO(filename, options.data, options.generator, options.event_type, options.sideband, 
+		options.leptons, options.top_type, options.cross_section/options.n_events,options.on_grid)
 
 #Counters
 real_count = 0

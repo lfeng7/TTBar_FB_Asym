@@ -43,7 +43,8 @@ def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_AK4,jetvars_AK8,jet
 	return_list = []
 	#first find the leptonic b by looking for loosely b-tagged jets in the lepton hemisphere
 	lepbcand = ROOT.TLorentzVector(1.0,0.0,0.0,1.0); lepbcand_CSV = 0.5; lepbcand_flavour = -100
-	best_comb_mass_offset = 10000.
+	best_comb_mass_offset = 100000.
+#	print 'NEW EVENT LEPTONIC B SELECTION: ' #DEBUGGING
 	for i in range(len(jetvars_AK4[0])) :
 		#min pT cut
 		jet_control_plots[0].Fill(jetvars_AK4[0][i])
@@ -61,22 +62,29 @@ def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_AK4,jetvars_AK8,jet
 		if ( (comb_mass_1 > MIN_LEP_TOP_MASS_WINDOW and comb_mass_1 < MAX_LEP_TOP_MASS_WINDOW) or 
 			  (comb_mass_2 > MIN_LEP_TOP_MASS_WINDOW and comb_mass_2 < MAX_LEP_TOP_MASS_WINDOW) ) :
 			comb_mass_offset = min(abs(comb_mass_1-TOP_MASS),abs(comb_mass_2-TOP_MASS))
+			if comb_mass_offset == abs(comb_mass_1-TOP_MASS) :
+				jet_control_plots[2].Fill(comb_mass_1)
+			else :
+				jet_control_plots[2].Fill(comb_mass_2) 
 			if comb_mass_offset<best_comb_mass_offset :
 				best_comb_mass_offset = comb_mass_offset
+#				print '	best offset = '+str(best_comb_mass_offset)+'' #DEBUGGING
 				lepbcand.SetPtEtaPhiM(thisJet.Pt(),thisJet.Eta(),thisJet.Phi(),thisJet.M())
 				lepbcand_CSV = jetvars_AK4[4][i]
 				lepbcand_flavour = jetvars_AK4[5][i]
-	jet_control_plots[2].Fill(lepbcand.M()); jet_control_plots[3].Fill(lepbcand_CSV)
+	if best_comb_mass_offset == 100000. : #didn't find any jets in the mass window
+		return ([-1*CUTFLOW_EXACTLY_ONE_LEPTONIC_BCAND],1.0,1.0,1.0)
+	jet_control_plots[3].Fill(lepbcand_CSV)
 	#cut that the candidate jet is loosely b-tagged and calculate the scalefactor and error
 	if lepbcand_CSV < CSVL_WORKING_POINT :
-		return [-1*CUTFLOW_EXACTLY_ONE_LEPTONIC_BCAND]
+		return ([-1*CUTFLOW_EXACTLY_ONE_LEPTONIC_BCAND],1.0,1.0,1.0)
 	btag_weight = 0.0; btag_weight_low = 0.0; btag_weight_hi = 0.0
 	if isdata == 0 :
 		btag_weight, btag_weight_low, btag_weight_hi = getSF((lepbcand,lepbcand_CSV,lepbcand_flavour),CSVL_WORKING_POINT)
 	if btag_weight == 0.0 :
 		btag_weight = 1.0; btag_weight_low = 1.0; btag_weight_hi = 1.0
 	#add the b candidate to the return list
-	return_list.append(lepbcands[0])
+	return_list.append((lepbcand,lepbcand_CSV,lepbcand_flavour))
 	#now get the one or two jets making up the hadronic top 
 #	print 'toptype = '+str(toptype)+'' #DEBUGGING
 	if toptype == 1 :
@@ -89,7 +97,7 @@ def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_AK4,jetvars_AK8,jet
 	#check if the hadronic top reconstruction failed and return the cutflow value
 #	print 'return_list = '+str(return_list)+'' #DEBUGGING
 	if len(return_list[1]) == 1 :
-		return return_list[1]
+		return (return_list[1],1.0,1.0,1.0)
 
 	return (return_list, btag_weight, btag_weight_low, btag_weight_hi)
 
@@ -189,10 +197,9 @@ def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
 #btagging efficiency stuff
 #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation53XReReco
 
-#getSFlist takes a list of jets in the format (4vector,CSV value,flavour) and a CSV working point 
-#and returns a tuple of (SF list, SF error list)
+#getSF takes a list of jets in the format (4vector,CSV value,flavour) and a CSV working point 
+#and returns a tuple of (SF, SF low, SF hi)
 def getSF(jet,CSV_wp) :
-	return_SF_list = []; return_SF_low_list = []; return_SF_hi_list = []
 	if CSV_wp == CSVL_WORKING_POINT :
 		sf_func_b = get_CSVL_SFb
 		sf_func_c = get_CSVL_SFc
@@ -207,12 +214,14 @@ def getSF(jet,CSV_wp) :
 		new_SF_tuple = sf_func_c(jet[0].Pt())
 	elif abs(jet[2]) == 0 or abs(jet[2]) == 1 or abs(jet[2]) == 2 or abs(jet[2]) == 3 or abs(jet[2]) == 21 : #light
 		new_SF_tuple = sf_func_light(jet[0].Pt(),jet[0].Eta())
+	elif abs(jet[2]) == 100 : #skip jets without flavor info
+		return (1.0,1.0,1.0)
 	else :
 		print 'WARNING: UNRECOGNIZED JET FLAVOUR IN BTAG EFFICIENCY SF CALCULATION: flavour = '+str(jet[2])+''
 	return_SF = new_SF_tuple[0]
 	return_SF_low = new_SF_tuple[1]
 	return_SF_hi  = new_SF_tuple[2]
-	return return_SF,return_SF_low,return_SF_hi
+	return (return_SF,return_SF_low,return_SF_hi)
 	#return (1.0,1.0,1.0) #DEBUG RETURN
 
 #payload here: https://twiki.cern.ch/twiki/pub/CMS/BtagRecommendation53XReReco/SFb-pt_WITHttbar_payload_EPS13.txt
@@ -239,7 +248,7 @@ def get_CSVL_SFc(pT) :
 #payload here: https://twiki.cern.ch/twiki/pub/CMS/BtagRecommendation53XReReco/SFlightFuncs_EPS2013.C
 def get_CSVL_SFlight(pT,eta) : 
 	eta = abs(eta)
-	SF = 1.0, SF_low = 1.0, SF_hi = 1.0
+	SF = 1.0; SF_low = 1.0; SF_hi = 1.0
 	if eta > 0.0 and eta < 0.5 :
 		SF = ((1.01177+(0.0023066*pT))+(-4.56052e-06*(pT*pT)))+(2.57917e-09*(pT*(pT*pT)))
 		SF_low = ((0.977761+(0.00170704*pT))+(-3.2197e-06*(pT*pT)))+(1.78139e-09*(pT*(pT*pT)))
@@ -247,15 +256,15 @@ def get_CSVL_SFlight(pT,eta) :
 	elif eta > 0.5 and eta < 1.0 :
 		SF = ((0.975966+(0.00196354*pT))+(-3.83768e-06*(pT*pT)))+(2.17466e-09*(pT*(pT*pT)))
 		SF_low = ((0.945135+(0.00146006*pT))+(-2.70048e-06*(pT*pT)))+(1.4883e-09*(pT*(pT*pT)))
-		SF_hi  = ((1.00683+(0.00246404*x))+(-4.96729e-06*(x*x)))+(2.85697e-09*(x*(x*x)))
+		SF_hi  = ((1.00683+(0.00246404*pT))+(-4.96729e-06*(pT*pT)))+(2.85697e-09*(pT*(pT*pT)))
 	elif eta > 1.0 and eta < 1.5 :
-		SF = ((0.93821+(0.00180935*x))+(-3.86937e-06*(x*x)))+(2.43222e-09*(x*(x*x)))
-		SF_low = ((0.911657+(0.00142008*x))+(-2.87569e-06*(x*x)))+(1.76619e-09*(x*(x*x)))
-		SF_hi  = ((0.964787+(0.00219574*x))+(-4.85552e-06*(x*x)))+(3.09457e-09*(x*(x*x)))
+		SF = ((0.93821+(0.00180935*pT))+(-3.86937e-06*(pT*pT)))+(2.43222e-09*(pT*(pT*pT)))
+		SF_low = ((0.911657+(0.00142008*pT))+(-2.87569e-06*(pT*pT)))+(1.76619e-09*(pT*(pT*pT)))
+		SF_hi  = ((0.964787+(0.00219574*pT))+(-4.85552e-06*(pT*pT)))+(3.09457e-09*(pT*(pT*pT)))
 	elif eta > 1.5 and eta < 2.4 :
-		SF = ((1.00022+(0.0010998*x))+(-3.10672e-06*(x*x)))+(2.35006e-09*(x*(x*x)))
-		SF_low = ((0.970045+(0.000862284*x))+(-2.31714e-06*(x*x)))+(1.68866e-09*(x*(x*x)))
-		SF_hi  = ((1.03039+(0.0013358*x))+(-3.89284e-06*(x*x)))+(3.01155e-09*(x*(x*x)))
+		SF = ((1.00022+(0.0010998*pT))+(-3.10672e-06*(pT*pT)))+(2.35006e-09*(pT*(pT*pT)))
+		SF_low = ((0.970045+(0.000862284*pT))+(-2.31714e-06*(pT*pT)))+(1.68866e-09*(pT*(pT*pT)))
+		SF_hi  = ((1.03039+(0.0013358*pT))+(-3.89284e-06*(pT*pT)))+(3.01155e-09*(pT*(pT*pT)))
 	else :
 		print 'WARNING: EVENT WITH JET OUTSIDE OF ETA RANGE! CANNOT GET BTAG EFFICIENCY! |eta| = '+str(eta)+''
 	return SF,SF_low,SF_hi
