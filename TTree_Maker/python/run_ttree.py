@@ -49,6 +49,12 @@ parser.add_option('--n_events', 	 type='float',  action='store', default=1.0,  	
 
 ##########							Set Up Event Loop								##########
 
+#append the top type to the name
+if options.top_type == 1 :
+	options.name = options.name+'_type1'
+elif options.top_type == 2 :
+	options.name = options.name+'_type2'
+
 print 'Opening files for sample '+options.name+' . . .'  
 #Build path to input file
 input_files_list = ''
