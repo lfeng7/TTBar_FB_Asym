@@ -262,7 +262,7 @@ class treemaker_DFMO :
 			return self.__closeout__(-1*met_cut)
 		#lepton selection
 		#get the index of the ONE valid lepton OR the cutflow failpoint
-		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars,jetVars_AK4,self.lepton_control_plots) 
+		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars,metVars,jetVars_AK4,self.lepton_control_plots) 
 		#above function in lepHelper.py
 		if lepIndex < 0 :
 			return self.__closeout__(-1*lepIndex)
@@ -539,20 +539,26 @@ class treemaker_DFMO :
 		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_eta','#eta of second "other" lepton; #eta',60,-3.0,3.0))
 		self.lepton_control_plots.append(ROOT.TH2F('lep_2D_cut',
 			'selected lepton #Delta R and p_{T,rel} from nearest jet; #Delta R; p_{T,rel} (GeV)',75,0.0,1.5,75,0.0,75.))
+		self.lepton_control_plots.append(ROOT.TH2F('triangle_cut_el',
+			'|#Delta #phi(e^{-},E^{miss}_{T})-1.5| vs. E^{miss}_{T}; E^{miss}_{T} (GeV); |#Delta #phi(e^{-},E^{miss}_{T})-1.5|',
+			60,0,300,50,0.,5.))
+		self.lepton_control_plots.append(ROOT.TH2F('triangle_cut_jet',
+			'|#Delta #phi(jet,E^{miss}_{T})-1.5| vs. E^{miss}_{T}; E^{miss}_{T} (GeV); |#Delta #phi(jet,E^{miss}_{T})-1.5|',
+			60,0,300,50,0.,5.))
 		#jets
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_pT','p_{T} of AK4 jets; p_{T} (GeV)',50,0.0,350.0))
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_pT','p_{T} of small jets; p_{T} (GeV)',50,0.0,350.0))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_dR',
-			'#Delta R(lepton) of loosely b-tagged AK4 jets; #Delta R',50,0.,5.0))
+			'#Delta R(lepton) of loosely b-tagged small jets; #Delta R',50,0.,5.0))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_comb_mass',
 			'Best combined mass of (lepton, MET, leptonic bjet); M (GeV)',100,0.,500.))
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_CSV','CSV of AK4 jets; CSV value',20,0.0,1.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_pT','p_{T} of AK8 jets; p_{T} (GeV)',100,0.0,500.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_mass','Mass of AK8 jets; M (GeV)',60,0.0,300.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_tau32','#tau_{3}/#tau_{2} of AK8 jets; #tau_{32}',20,0.0,1.0))
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_CSV','CSV of small jets; CSV value',20,0.0,1.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_pT','p_{T} of big jets; p_{T} (GeV)',100,0.0,500.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_mass','Mass of big jets; M (GeV)',60,0.0,300.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_tau32','#tau_{3}/#tau_{2} of big jets; #tau_{32}',20,0.0,1.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_dR','#Delta R(lepton) of top candidates; #Delta R',50,0.0,5.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_mult','number of hadronic top candidates',10,0.0,10.0))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_pT','p_{T} of AK8 jets; p_{T} (GeV)',100,0.0,500.0))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_tau21','#tau_{2}/#tau_{1} of AK8 jets; #tau_{21}',20,0.0,1.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_pT','p_{T} of big jets; p_{T} (GeV)',100,0.0,500.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_tau21','#tau_{2}/#tau_{1} of big jets; #tau_{21}',20,0.0,1.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_mass','Mass of hadronic W jets; M (GeV)',60,0.0,300.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_dR',
 			'#Delta R(lepton) of hadronic W jets; #Delta R',50,0.0,5.0))

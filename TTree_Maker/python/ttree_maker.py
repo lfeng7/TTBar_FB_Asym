@@ -231,7 +231,7 @@ class treemaker :
 			return self.__closeout__(-1*met_cut)
 		#lepton selection
 		#get the index of the ONE valid lepton OR the cutflow failpoint
-		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars,jetVars_AK4,self.lepton_control_plots) 
+		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars,metVars,jetVars_AK4,self.lepton_control_plots) 
 		#above function in lepHelper.py
 		if lepIndex < 0 :
 			return self.__closeout__(-1*lepIndex)
@@ -508,6 +508,12 @@ class treemaker :
 		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_eta','#eta of second "other" lepton; #eta',60,-3.0,3.0))
 		self.lepton_control_plots.append(ROOT.TH2F('lep_2D_cut',
 			'selected lepton #Delta R and p_{T,rel} from nearest jet; #Delta R; p_{T,rel} (GeV)',75,0.0,1.5,75,0.0,75.))
+		self.lepton_control_plots.append(ROOT.TH2F('triangle_cut_el',
+			'|#Delta #phi(e^{-},E^{miss}_{T})-1.5| vs. E^{miss}_{T}; E^{miss}_{T} (GeV); |#Delta #phi(e^{-},E^{miss}_{T})-1.5|',
+			60,0,300,50,0.,5.))
+		self.lepton_control_plots.append(ROOT.TH2F('triangle_cut_jet',
+			'|#Delta #phi(jet,E^{miss}_{T})-1.5| vs. E^{miss}_{T}; E^{miss}_{T} (GeV); |#Delta #phi(jet,E^{miss}_{T})-1.5|',
+			60,0,300,50,0.,5.))
 		#jets
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_pT','p_{T} of AK4 jets; p_{T} (GeV)',50,0.0,350.0))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_dR',

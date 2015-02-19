@@ -11,6 +11,7 @@ CUTFLOW_EXACTLY_ONE_LEPTON = 2
 CUTFLOW_OTHER_LEPTON_VETO = 3
 CUTFLOW_JET_PRESELECTION = 4
 CUTFLOW_LEPTON_2D = 5
+CUTFLOW_LEPTON_TRIANGLE = 6
 #cut values
 MU_PT_MIN = 45 #GeV
 MU_ETA_MAX = 2.1
@@ -24,15 +25,15 @@ LEADING_JET_PT_MIN = 150. #GeV
 SECOND_JET_PT_MIN = 50. #GeV
 JETS_ETA_MAX = 2.4
 JET_PT_MIN = 25. #GeV
-DR_MIN = 0.#0.5
-REL_PT_MIN = 0.#25. #GeV
+DR_MIN = 0.5
+REL_PT_MIN = 25. #GeV
 
 #leptonCuts
 #takes in lepton type, sideband switch, lists of muon and electron variables
 #returns: 
 #	1) Index of single valid lepton OR
 #	2) Negative value of cutflow failure point
-def leptonCuts(lep_type,sideband,muVars,elVars,jetVars,control_plots) :
+def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,control_plots) :
 	#make list of lepton candidate and "other" lepton indices
 	lep_cands = []
 	other_leps = []
@@ -115,6 +116,19 @@ def leptonCuts(lep_type,sideband,muVars,elVars,jetVars,control_plots) :
 	control_plots[8].Fill(nearest_jet_dR,lepvec.Pt(nearest_jet_vec.Vect()))
 	if nearest_jet_dR < DR_MIN and lepvec.Pt(nearest_jet_vec.Vect()) < REL_PT_MIN : #yes, this SHOULD say "and".
 		return -1*CUTFLOW_LEPTON_2D
+
+	#make electron triangle cut
+	if lep_type == 1 :
+		metVec = ROOT.TLorentzVector() 
+		metVec.SetPtEtaPhiM(metVars[0][0],0.0,metVars[1][0],0.0)
+		metE = metVec.E()
+		firstJet = ROOT.TLorentzVector() 
+		firstJet.SetPtEtaPhiM(jetVars_AK4[0][0],jetVars_AK4[1][0],jetVars_AK4[2][0],jetVars_AK4[3][0])
+		el_val = abs(lepvec.DeltaPhi(metVec)-1.5); jet_val = abs(firstJet.DeltaPhi(metVec)-1.5)
+		control_plots[9].Fill(metE,el_val); control_plots[10].Fill(metE,jet_val)
+		cut_val = (1.5/75.)*metE
+		if not (el_val < cut_val and jet_val < cut_val) :
+			return -1*CUTFLOW_LEPTON_TRIANGLE
 
 	#return the index of the single valid lepton
 	return lepton_index
