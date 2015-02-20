@@ -86,6 +86,7 @@ def findMCTops(generator,GenParticles) :
 
 #Powheg eventTypeCheck function
 def typeCheckPowheg(GenParticles,event_type) :
+	addTwice = False
 	#check the initial state partons if necessary
 	if event_type<2 :
 		initial_parton_ids = []
@@ -107,6 +108,7 @@ def typeCheckPowheg(GenParticles,event_type) :
 
 #MC@NLO eventTypeCheck function
 def typeCheckMCAtNLO(GenParticles,event_type) :
+	addTwice = False
 	#check the initial state partons if necessary
 	if event_type<2 :
 		initial_parton_ids = []
