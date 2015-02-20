@@ -109,6 +109,8 @@ def selectJetsType1Tops(lepvec,jetvars_AK8,jet_control_plots) :
 		#hard cuts on pT, mass, and tau3/tau2
 		jet_control_plots[4].Fill(jetvars_AK8[0][i]) 
 		jet_control_plots[5].Fill(jetvars_AK8[3][i]) 
+		if jetvars_AK8[6][i] == 0 :
+			continue
 		jet_control_plots[6].Fill(jetvars_AK8[7][i]/jetvars_AK8[6][i])
 		if ( jetvars_AK8[0][i] < MIN_HAD_TOP_PT or jetvars_AK8[3][i] < MIN_HAD_TOP_MASS or 
 			jetvars_AK8[7][i]/jetvars_AK8[6][i] > MAX_HAD_TOP_TAU32 ) :
@@ -136,7 +138,10 @@ def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
 	hadWcands = []
 	for i in range(len(jetvars_AK8[0])) :
 		#hard cuts on pT and tau2/tau1
-		jet_control_plots[9].Fill(jetvars_AK8[0][i]); jet_control_plots[10].Fill(jetvars_AK8[6][i]/jetvars_AK8[5][i])
+		jet_control_plots[9].Fill(jetvars_AK8[0][i]) 
+		if jetvars_AK8[5][i] == 0 :
+			continue
+		jet_control_plots[10].Fill(jetvars_AK8[6][i]/jetvars_AK8[5][i])
 		if jetvars_AK8[0][i] < MIN_HAD_W_PT or jetvars_AK8[6][i]/jetvars_AK8[5][i] > MAX_HAD_W_TAU21 :
 			continue
 		#check that it's in the W mass window
