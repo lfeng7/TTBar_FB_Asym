@@ -200,7 +200,7 @@ def findInitialQuarkPowheg(GenParticles) :
 			elif p.daughter(0).eta() < 0 :
 				factor = -1.0
 			return ROOT.TLorentzVector(1.0,0.0,factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
-	#return ROOT.TLorentzVector(1.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY) #DEBUG RETURN
+	return ROOT.TLorentzVector(1.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY) #DEBUG RETURN
 
 #MC@NLO findInitialQuark function
 def findInitialQuarkMCAtNLO(GenParticles) :
@@ -218,7 +218,7 @@ def findInitialQuarkMCAtNLO(GenParticles) :
 			elif p.eta() < 0 :
 				factor = -1.0
 			return ROOT.TLorentzVector(1.0,0.0,factor*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
-	#return ROOT.TLorentzVector(1.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY) #DEBUG RETURN
+	return ROOT.TLorentzVector(1.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY) #DEBUG RETURN
 
 #Pythia8 findInitialQuark function
 def findInitialQuarkPythia8(GenParticles,genPartVars) :
