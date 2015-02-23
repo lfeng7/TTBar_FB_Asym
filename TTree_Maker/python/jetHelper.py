@@ -124,7 +124,7 @@ def selectJetsType1Tops(lepvec,jetvars_AK8,jet_control_plots) :
 		jet_control_plots[7].Fill(lepvec.DeltaR(thisJet))
 		if lepvec.DeltaR(thisJet) < pi/2. :
 			continue
-		if len(jetvars_AK8>8) :
+		if len(jetvars_AK8)>8 :
 			hadtopcands.append(
 				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],jetvars_AK8[8][i]) )
 		else :
@@ -163,7 +163,7 @@ def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
 		if lepvec.DeltaR(thisJet) < pi/2. :
 			continue
 		#append to the list of W candidates
-		if len(jetvars_AK8>8) :
+		if len(jetvars_AK8)>8 :
 			hadWcands.append(
 				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],jetvars_AK8[8][i]) )
 		else :
@@ -196,7 +196,7 @@ def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
 		if thisJet.DeltaR(hadWcands[0][0]) < MIN_HAD_W_B_DELTAR :
 			continue
 		#append to the list of b candidates
-		if len(jetvars_AK4>5) :
+		if len(jetvars_AK4)>5 :
 			hadbcands.append((thisJet,jetvars_AK4[4][i],jetvars_AK4[5][i]))
 		else :
 			hadbcands.append((thisJet,jetvars_AK4[4][i],0))
