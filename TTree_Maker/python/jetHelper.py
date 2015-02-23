@@ -124,8 +124,12 @@ def selectJetsType1Tops(lepvec,jetvars_AK8,jet_control_plots) :
 		jet_control_plots[7].Fill(lepvec.DeltaR(thisJet))
 		if lepvec.DeltaR(thisJet) < pi/2. :
 			continue
-		hadtopcands.append(
-			(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],jetvars_AK8[8][i]) )
+		if len(jetvars_AK8>8) :
+			hadtopcands.append(
+				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],jetvars_AK8[8][i]) )
+		else :
+			hadtopcands.append(
+				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],0) )
 #	print 'len(hadtopcands) = '+str(len(hadtopcands))+'' #DEBUGGING
 	#require exactly one hadronic top candidate
 	jet_control_plots[8].Fill(len(hadtopcands))
@@ -159,8 +163,12 @@ def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
 		if lepvec.DeltaR(thisJet) < pi/2. :
 			continue
 		#append to the list of W candidates
-		hadWcands.append(
-			(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],jetvars_AK8[8][i]) )
+		if len(jetvars_AK8>8) :
+			hadWcands.append(
+				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],jetvars_AK8[8][i]) )
+		else :
+			hadWcands.append(
+				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],0) )
 	#require exactly one hadronic W candidate
 	jet_control_plots[13].Fill(len(hadWcands))
 	if len(hadWcands) != 1 :
@@ -188,7 +196,10 @@ def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
 		if thisJet.DeltaR(hadWcands[0][0]) < MIN_HAD_W_B_DELTAR :
 			continue
 		#append to the list of b candidates
-		hadbcands.append((thisJet,jetvars_AK4[4][i],jetvars_AK4[5][i]))
+		if len(jetvars_AK4>5) :
+			hadbcands.append((thisJet,jetvars_AK4[4][i],jetvars_AK4[5][i]))
+		else :
+			hadbcands.append((thisJet,jetvars_AK4[4][i],0))
 	#require exactly one hadronic b candidate
 	jet_control_plots[17].Fill(len(hadbcands))
 	if len(hadbcands) != 1 :
