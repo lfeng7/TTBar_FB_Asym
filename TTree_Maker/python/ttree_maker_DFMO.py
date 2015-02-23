@@ -301,11 +301,12 @@ class treemaker_DFMO :
 			#above function in angleReconstructor.py
 		#MC Truth observable and reweighting calculation
 		if self.is_data==0 :
-			( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
-				self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
-				self.w_s_delta[0],self.w_a_delta[0],
-				self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
-				self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
+			if self.event_type!=none :
+				( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
+					self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
+					self.w_s_delta[0],self.w_a_delta[0],
+					self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
+					self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
 			#scale factor and reweighting calculations
 			#8TeV numbers
 			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
