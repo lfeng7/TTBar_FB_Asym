@@ -346,6 +346,8 @@ class treemaker_DFMO :
 			self.MC_generator = generator.lower()
 		elif generator.lower() == 'mg5' :
 			self.MC_generator = 'madgraph'
+		elif generator.lower() == 'none' :
+			self.MC_generator = 'none'
 		#event type?
 		if eventType == 'qq_semilep' or eventType == 'qqbar_semilep' or eventType == 'qq' or eventType == 'qqbar' :
 			print 'only SEMILEPTONIC QQBAR EVENTS will be analyzed from this file'
