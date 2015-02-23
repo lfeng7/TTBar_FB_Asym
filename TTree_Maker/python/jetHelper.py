@@ -71,7 +71,10 @@ def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_AK4,jetvars_AK8,jet
 #				print '	best offset = '+str(best_comb_mass_offset)+'' #DEBUGGING
 				lepbcand.SetPtEtaPhiM(thisJet.Pt(),thisJet.Eta(),thisJet.Phi(),thisJet.M())
 				lepbcand_CSV = jetvars_AK4[4][i]
-				lepbcand_flavour = jetvars_AK4[5][i]
+				if isdata == 0 :
+					lepbcand_flavour = jetvars_AK4[5][i]
+				else :
+					lepbcand_flavour = 0
 	if best_comb_mass_offset == 100000. : #didn't find any jets in the mass window
 		return ([-1*CUTFLOW_EXACTLY_ONE_LEPTONIC_BCAND],1.0,1.0,1.0)
 	jet_control_plots[3].Fill(lepbcand_CSV)

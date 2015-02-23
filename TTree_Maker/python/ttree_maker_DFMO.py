@@ -124,8 +124,6 @@ class treemaker_DFMO :
 							#abovefunction in eventTypeHelper.py
 				if add_twice :
 					self.addTwice[0] = 1
-		else :
-			self.jetLabels_AK4.pop(); self.jetHandles_AK4.pop(); self.jetLabels_AK8.pop(); self.jetHandles_AK8.pop()
 		if not keepEvent :
 			return self.ERR_CODE
 		#Mother particle (and MC truth top) assignment
@@ -134,8 +132,8 @@ class treemaker_DFMO :
 			qbar_vec = ROOT.TLorentzVector(q_vec.X(),q_vec.Y(),-1.0*q_vec.Z(),q_vec.E())
 			MCt_vec, MCtbar_vec = findMCTops(self.MC_generator,GenParticles) #function in eventTypeHelper.py
 		else : #if we don't have the MC truth information, we have to assign which is which later when we do the boost
-			q_vec 	 = ROOT.TLorentzVector(0.000000001,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
-			qbar_vec = ROOT.TLorentzVector(0.000000001,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
+			q_vec 	 = ROOT.TLorentzVector(1.0,0.0,sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
+			qbar_vec = ROOT.TLorentzVector(1.0,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
 			MCt_vec    = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 			MCtbar_vec = ROOT.TLorentzVector(-1.0,0.0,0.0,1.0)
 		self.q_pt[0], 		self.q_eta[0] 	   = q_vec.Pt(), 	   q_vec.Eta()
@@ -350,6 +348,7 @@ class treemaker_DFMO :
 			self.MC_generator = 'madgraph'
 		elif generator.lower() == 'none' :
 			self.MC_generator = 'none'
+			self.jetLabels_AK4.pop(); self.jetHandles_AK4.pop(); self.jetLabels_AK8.pop(); self.jetHandles_AK8.pop()
 		#event type?
 		if eventType == 'qq_semilep' or eventType == 'qqbar_semilep' or eventType == 'qq' or eventType == 'qqbar' :
 			print 'only SEMILEPTONIC QQBAR EVENTS will be analyzed from this file'
