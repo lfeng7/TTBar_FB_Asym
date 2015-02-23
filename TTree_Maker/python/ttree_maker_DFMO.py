@@ -124,6 +124,8 @@ class treemaker_DFMO :
 							#abovefunction in eventTypeHelper.py
 				if add_twice :
 					self.addTwice[0] = 1
+		else :
+			jetLabels_AK4.pop(); jetHandles_AK4.pop(); jetLabels_AK8.pop(); jetHandles_AK8.pop()
 		if not keepEvent :
 			return self.ERR_CODE
 		#Mother particle (and MC truth top) assignment
