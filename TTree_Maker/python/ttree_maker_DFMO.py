@@ -301,7 +301,7 @@ class treemaker_DFMO :
 			#above function in angleReconstructor.py
 		#MC Truth observable and reweighting calculation
 		if self.is_data==0 :
-			if self.event_type!=none :
+			if self.event_type!=4 :
 				( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
 					self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
 					self.w_s_delta[0],self.w_a_delta[0],
