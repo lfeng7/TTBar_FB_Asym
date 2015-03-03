@@ -215,6 +215,7 @@ def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
 
 #btagging efficiency stuff
 #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation53XReReco
+#https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagSFMethods
 
 #getSF takes a list of jets in the format (4vector,CSV value,flavour) and a CSV working point 
 #and returns a tuple of (SF, SF low, SF hi)

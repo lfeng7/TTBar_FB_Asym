@@ -43,6 +43,12 @@ for name in sample_names :
     os.system('mv *_all.root ../total_ttree_files')
     os.chdir('..')
 os.chdir('total_ttree_files')
-os.system('hadd SingleMu_Run2012_type1_all.root SingleMu_Runa2012*_type1_all.root')
-os.system('hadd SingleMu_Run2012_type2_all.root SingleMu_Runa2012*_type2_all.root')
+os.system('hadd SingleMu_Run2012_type1_all.root SingleMu_Run2012*_type1_all.root')
+os.system('hadd SingleMu_Run2012_type2_all.root SingleMu_Run2012*_type2_all.root')
+cmd = 'hadd Powheg_semilep_TT_type1_all.root Powheg_qq_semilep_TT_type1_all.root'
+cmd += ' Powheg_qq_semilep_TT_SC_type1_all.root Powheg_gg_semilep_TT_type1_all.root Powheg_gg_semilep_TT_SC_type1_all.root'
+os.system(cmd)
+cmd = 'hadd Powheg_semilep_TT_type2_all.root Powheg_qq_semilep_TT_type2_all.root'
+cmd += ' Powheg_qq_semilep_TT_SC_type2_all.root Powheg_gg_semilep_TT_type2_all.root Powheg_gg_semilep_TT_SC_type2_all.root'
+os.system(cmd)
 os.chdir('..')
