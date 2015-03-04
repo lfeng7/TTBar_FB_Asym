@@ -167,8 +167,8 @@ control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(
 sum_same_colors.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(140.,0.0,140.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(140.,0.0,140.+40.,0.0,0.04,'|> SAME'))
-control_plot_lines[len(control_plot_lines)-1].append(TLine(250.,0.0,250.,0.0))
-control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(250.,0.0,250.-40.,0.0,0.04,'|> SAME'))
+control_plot_lines[len(control_plot_lines)-1].append(TLine(210.,0.0,210.,0.0))
+control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(210.,0.0,210.-40.,0.0,0.04,'|> SAME'))
 
 #leptonic bjet CSV
 control_plot_names.append('lep_bjet_CSV')

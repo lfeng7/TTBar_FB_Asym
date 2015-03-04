@@ -17,7 +17,7 @@ CUTFLOW_EXACTLY_ONE_HADRONIC_TOPCAND = 10
 MIN_LEPB_PT = 25. #GeV
 CSVL_WORKING_POINT = 0.244
 MIN_LEP_TOP_MASS_WINDOW = 140. #GeV
-MAX_LEP_TOP_MASS_WINDOW = 250. #GeV
+MAX_LEP_TOP_MASS_WINDOW = 210. #GeV
 MIN_HAD_TOP_PT = 400. #GeV
 MIN_HAD_TOP_MASS = 130. #GeV
 MAX_HAD_TOP_TAU32 = 0.7
@@ -28,30 +28,30 @@ MAX_HAD_W_TAU21 = 0.75
 MIN_HAD_B_PT = 25. #GeV
 MIN_HAD_TOP_MASS_WINDOW = 130. #GeV
 MAX_HAD_TOP_MASS_WINDOW = 270. #GeV
-MIN_HAD_W_B_DELTAR = 0.6
+MIN_HAD_W_B_DELTAR = 0.8
 
 #selectJets takes in the top type (1 or 2), the lepton vector, the met vectors, and lists of AK4 and AK8 jet variables
 #returns:
 #	1) a 4 or 5 element list of the following
-#		-leptonic b (fourvector, CSV value, flavour), hadronic top (fourvector, CSV value, tau1, tau2, tau3,flavour) 
+#		-leptonic b (fourvector, CSV value, flavour), hadronic top (fourvector, tau1, tau2, tau3) 
 #			for type 1 or
-#		-leptonic b (fourvector, CSV value, flavour), hadronic b (fourvector, CSV value,flavour), 
-#			hadronic W (fourvector, CSV value, tau1, tau2, tau3,flavour) for type 2 THEN
+#		-leptonic b (fourvector, CSV value, flavour), hadronic W (fourvector,tau1, tau2, tau3),
+#			hadronic b fourvector, for type 2 THEN
 #		-the btagging efficiency scale factor, low error, and hi error for MC events OR
 #	2) a 1-element list of negative value of a cutflow failure point
-def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
+def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_small,jetvars_large,jet_control_plots) :
 	return_list = []
 	#first find the leptonic b by looking for loosely b-tagged jets in the lepton hemisphere
 	lepbcand = ROOT.TLorentzVector(1.0,0.0,0.0,1.0); lepbcand_CSV = 0.5; lepbcand_flavour = -100
 	best_comb_mass_offset = 100000.
 #	print 'NEW EVENT LEPTONIC B SELECTION: ' #DEBUGGING
-	for i in range(len(jetvars_AK4[0])) :
+	for i in range(len(jetvars_small[0])) :
 		#min pT cut
-		jet_control_plots[0].Fill(jetvars_AK4[0][i])
-		if jetvars_AK4[0][i] < MIN_LEPB_PT :
+		jet_control_plots[0].Fill(jetvars_small[0][i])
+		if jetvars_small[0][i] < MIN_LEPB_PT :
 			continue
 		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
-		thisJet.SetPtEtaPhiM(jetvars_AK4[0][i],jetvars_AK4[1][i],jetvars_AK4[2][i],jetvars_AK4[3][i])
+		thisJet.SetPtEtaPhiM(jetvars_small[0][i],jetvars_small[1][i],jetvars_small[2][i],jetvars_small[3][i])
 		#check that it's in the leptonic hemisphere
 		lep_dR = lepvec.DeltaR(thisJet)
 		jet_control_plots[1].Fill(lep_dR)
@@ -70,9 +70,9 @@ def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_AK4,jetvars_AK8,jet
 				best_comb_mass_offset = comb_mass_offset
 #				print '	best offset = '+str(best_comb_mass_offset)+'' #DEBUGGING
 				lepbcand.SetPtEtaPhiM(thisJet.Pt(),thisJet.Eta(),thisJet.Phi(),thisJet.M())
-				lepbcand_CSV = jetvars_AK4[4][i]
+				lepbcand_CSV = jetvars_small[4][i]
 				if isdata == 0 :
-					lepbcand_flavour = jetvars_AK4[5][i]
+					lepbcand_flavour = jetvars_small[5][i]
 				else :
 					lepbcand_flavour = 0
 	if best_comb_mass_offset == 100000. : #didn't find any jets in the mass window
@@ -91,9 +91,9 @@ def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_AK4,jetvars_AK8,jet
 	#now get the one or two jets making up the hadronic top 
 #	print 'toptype = '+str(toptype)+'' #DEBUGGING
 	if toptype == 1 :
-		return_list.append(selectJetsType1Tops(lepvec,jetvars_AK8,jet_control_plots))
+		return_list.append(selectJetsType1Tops(lepvec,jetvars_large,jet_control_plots))
 	elif toptype == 2 :
-		twojetstuple = selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots)
+		twojetstuple = selectJetsType2Tops(lepvec,jetvars_large,jet_control_plots)
 		for i in range(len(twojetstuple)) :
 			return_list.append(twojetstuple[i])
 
@@ -105,31 +105,34 @@ def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_AK4,jetvars_AK8,jet
 	return (return_list, btag_weight, btag_weight_low, btag_weight_hi)
 
 #selectJetsType1Tops does the selection for type 1 (fully merged) tops
-def selectJetsType1Tops(lepvec,jetvars_AK8,jet_control_plots) :
-	#look through all the AK8 jets
+def selectJetsType1Tops(lepvec,jetvars_large,jet_control_plots) :
+	#look through all the large jets
 	hadtopcands = []
-	for i in range(len(jetvars_AK8[0])) :
-		#hard cuts on pT, mass, and tau3/tau2
-		jet_control_plots[4].Fill(jetvars_AK8[0][i]) 
-		jet_control_plots[5].Fill(jetvars_AK8[3][i]) 
-		if jetvars_AK8[6][i] == 0 :
+	for i in range(len(jetvars_large[0])) :
+		#hard cut on pT
+		jet_control_plots[4].Fill(jetvars_large[0][i]) 
+		if jetvars_large[0][i] < MIN_HAD_TOP_PT :
 			continue
-		jet_control_plots[6].Fill(jetvars_AK8[7][i]/jetvars_AK8[6][i])
-		if ( jetvars_AK8[0][i] < MIN_HAD_TOP_PT or jetvars_AK8[3][i] < MIN_HAD_TOP_MASS or 
-			jetvars_AK8[7][i]/jetvars_AK8[6][i] > MAX_HAD_TOP_TAU32 ) :
+		#hard cut on mass
+		jet_control_plots[5].Fill(jetvars_large[3][i]) 
+		if jetvars_large[3][i] < MIN_HAD_TOP_MASS :
 			continue
 		#check that it's on the hadronic hemisphere
 		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
-		thisJet.SetPtEtaPhiM(jetvars_AK8[0][i],jetvars_AK8[1][i],jetvars_AK8[2][i],jetvars_AK8[3][i])
-		jet_control_plots[7].Fill(lepvec.DeltaR(thisJet))
+		thisJet.SetPtEtaPhiM(jetvars_large[0][i],jetvars_large[1][i],jetvars_large[2][i],jetvars_large[3][i])
+		jet_control_plots[6].Fill(lepvec.DeltaR(thisJet))
 		if lepvec.DeltaR(thisJet) < pi/2. :
 			continue
-		if len(jetvars_AK8)>8 :
-			hadtopcands.append(
-				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],jetvars_AK8[8][i]) )
-		else :
-			hadtopcands.append(
-				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],0) )
+		#match the pruned jet to an unpruned jet, and cut on the unpruned tau3/tau2
+		matchedJet_taus = get_taus(thisJet,jetvars_large)
+		if matchedJet_taus[1] == 0 :
+			continue
+		tau32 = matchedJet_taus[2]/matchedJet_taus[1]
+		jet_control_plots[7].Fill(tau32)
+		if	tau32 > MAX_HAD_TOP_TAU32 :
+			continue
+		#add this jet to the list of candidates
+		hadtopcands.append((thisJet,matchedJet_taus[0],matchedJet_taus[1],matchedJet_taus[2]))
 #	print 'len(hadtopcands) = '+str(len(hadtopcands))+'' #DEBUGGING
 	#require exactly one hadronic top candidate
 	jet_control_plots[8].Fill(len(hadtopcands))
@@ -140,66 +143,61 @@ def selectJetsType1Tops(lepvec,jetvars_AK8,jet_control_plots) :
 	#return (ROOT.TLorentzVector(1.0,0.0,0.0,1.0),0.5,0.5,0.5,0.5,0) #DEBUG RETURN
 
 #selectJetsType2Tops does the selection for type 2 (partially merged) tops
-def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
-	#look through the AK8 jets for W candidates
+def  selectJetsType2Tops(lepvec,jetvars_large,jet_control_plots) :
+	#look through the large jets for W candidates
 	hadWcands = []
-	for i in range(len(jetvars_AK8[0])) :
-		#hard cuts on pT and tau2/tau1
-		jet_control_plots[9].Fill(jetvars_AK8[0][i]) 
-		if jetvars_AK8[5][i] == 0 :
-			continue
-		jet_control_plots[10].Fill(jetvars_AK8[6][i]/jetvars_AK8[5][i])
-		if jetvars_AK8[0][i] < MIN_HAD_W_PT or jetvars_AK8[6][i]/jetvars_AK8[5][i] > MAX_HAD_W_TAU21 :
+	for i in range(len(jetvars_large[0])) :
+		#hard cut on pT
+		jet_control_plots[9].Fill(jetvars_large[0][i]) 
+		if jetvars_large[0][i] < MIN_HAD_W_PT :
 			continue
 		#check that it's in the W mass window
-		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
-		thisJet.SetPtEtaPhiM(jetvars_AK8[0][i],jetvars_AK8[1][i],jetvars_AK8[2][i],jetvars_AK8[3][i])
-		jetMass = thisJet.M()
-		jet_control_plots[11].Fill(jetMass)
+		jetMass = jetvars_large[3]
+		jet_control_plots[10].Fill(jetMass)
 		if jetMass < MIN_HAD_W_MASS_WINDOW or jetMass > MAX_HAD_W_MASS_WINDOW :
 			continue
-		#check that it's in the hadronic hemisphere
-		jet_control_plots[12].Fill(lepvec.DeltaR(thisJet))
+		#check that it's on the hadronic side
+		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
+		thisJet.SetPtEtaPhiM(jetvars_large[0][i],jetvars_large[1][i],jetvars_large[2][i],jetvars_large[3][i])
+		jet_control_plots[11].Fill(lepvec.DeltaR(thisJet))
 		if lepvec.DeltaR(thisJet) < pi/2. :
 			continue
+		#get the matched unpruned jet's tau variables and cut on tau2/tau1
+		matchedJet_taus = get_taus(thisJet,jetvars_large)
+		tau21 = matchedJet_taus[1]/matchedJet_taus[0]
+		jet_control_plots[12].Fill(tau21)
+		if tau21 > MAX_HAD_W_TAU21 :
+			continue
 		#append to the list of W candidates
-		if len(jetvars_AK8)>8 :
-			hadWcands.append(
-				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],jetvars_AK8[8][i]) )
-		else :
-			hadWcands.append(
-				(thisJet,jetvars_AK8[4][i],jetvars_AK8[5][i],jetvars_AK8[6][i],jetvars_AK8[7][i],0) )
+		hadWcands.append((thisJet,matchedJet_taus[0],matchedJet_taus[1],matchedJet_taus[2]))
 	#require exactly one hadronic W candidate
 	jet_control_plots[13].Fill(len(hadWcands))
 	if len(hadWcands) != 1 :
 		return ([-1*CUTFLOW_EXACTLY_ONE_HADRONIC_WCAND],[-1*CUTFLOW_EXACTLY_ONE_HADRONIC_WCAND])
 
-	#now look through the AK4 jets for hadronic b candidates
+	#now look through the large jets for hadronic b candidates
 	hadbcands = []
-	for i in range(len(jetvars_AK4[0])) :
+	for i in range(len(jetvars_large[0])) :
 		#hard cut on pT 
-		if jetvars_AK4[0][i] < MIN_HAD_B_PT :
+		if jetvars_large[0][i] < MIN_HAD_B_PT :
+			continue
+		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
+		thisJet.SetPtEtaPhiM(jetvars_large[0][i],jetvars_large[1][i],jetvars_large[2][i],jetvars_large[3][i])
+		#check that it's in the hadronic hemisphere
+		jet_control_plots[14].Fill(lepvec.DeltaR(thisJet))
+		if lepvec.DeltaR(thisJet) < pi/2. :
 			continue
 		#check that it combines with the W to give a mass in the top mass window
-		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
-		thisJet.SetPtEtaPhiM(jetvars_AK4[0][i],jetvars_AK4[1][i],jetvars_AK4[2][i],jetvars_AK4[3][i])
 		combMass = (thisJet+hadWcands[0][0]).M()
-		jet_control_plots[14].Fill(combMass)
+		jet_control_plots[15].Fill(combMass)
 		if combMass < MIN_HAD_TOP_MASS_WINDOW or combMass > MAX_HAD_TOP_MASS_WINDOW :
-			continue
-		#check that it's in the hadronic hemisphere
-		jet_control_plots[15].Fill(lepvec.DeltaR(thisJet))
-		if lepvec.DeltaR(thisJet) < pi/2. :
 			continue
 		#check that it's sufficiently separated from the W jet
 		jet_control_plots[16].Fill(thisJet.DeltaR(hadWcands[0][0]))
 		if thisJet.DeltaR(hadWcands[0][0]) < MIN_HAD_W_B_DELTAR :
 			continue
 		#append to the list of b candidates
-		if len(jetvars_AK4)>5 :
-			hadbcands.append((thisJet,jetvars_AK4[4][i],jetvars_AK4[5][i]))
-		else :
-			hadbcands.append((thisJet,jetvars_AK4[4][i],0))
+		hadbcands.append(tuple(thisJet))
 	#require exactly one hadronic b candidate
 	jet_control_plots[17].Fill(len(hadbcands))
 	if len(hadbcands) != 1 :
@@ -208,6 +206,20 @@ def  selectJetsType2Tops(lepvec,jetvars_AK4,jetvars_AK8,jet_control_plots) :
 	return (hadWcands[0],hadbcands[0])
 	#return [(ROOT.TLorentzVector(1.0,0.0,0.0,1.0),0.5,0),
 	#(ROOT.TLorentzVector(1.0,0.0,0.0,1.0),0.5,0.5,0.5,0.5,0)] #DEBUG RETURN
+
+#get_taus takes a pruned jet vector and the list of all the other jet variables. It returns a 3-tuple 
+#of the "tau" substructure variables for the unpruned jet that is the best match to the given pruned jet
+def get_taus(jetVec,jetVars) :
+	#look through all the Unpruned CA8 Jets and try to match to the given jet
+	best_dR = 10000000.
+	bestJetIndex = -1
+	for i in range(len(jetVars[4])) :
+		newJet = ROOT.TLorentzVector()
+		newJet.SetPtEtaPhiM(jetVars[4][i],jetVars[5][i],jetVars[6][i],jetVars[7][i])
+		if jetVec.DeltaR(newJet) < best_dR :
+			bestJetIndex = i
+			best_dR = jetVec.DeltaR(newJet)
+	return (jetVars[8][bestJetIndex],jetVars[9][bestJetIndex],jetVars[10][bestJetIndex])
 
 ##################################################################################################
 ##########						b-tagging efficiency stuff 								##########

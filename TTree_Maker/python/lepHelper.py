@@ -21,8 +21,8 @@ OTHER_MU_PT_MIN = 35 #GeV
 OTHER_MU_ETA_MAX = 2.1
 OTHER_EL_PT_MIN = 35 #GeV
 OTHER_EL_ETA_MAX = 2.5
-LEADING_JET_PT_MIN = 150. #GeV
-SECOND_JET_PT_MIN = 50. #GeV
+ONE_LARGE_JET_PT_MIN = 150. #GeV
+ONE_LARGE_ONE_SMALL_JET_PT_MIN = 50. #GeV
 JETS_ETA_MAX = 2.4
 JET_PT_MIN = 25. #GeV
 DR_MIN = 0.5
@@ -33,7 +33,7 @@ REL_PT_MIN = 25. #GeV
 #returns: 
 #	1) Index of single valid lepton OR
 #	2) Negative value of cutflow failure point
-def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,control_plots) :
+def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,jetVars_large,control_plots) :
 	#make list of lepton candidate and "other" lepton indices
 	lep_cands = []
 	other_leps = []
@@ -86,9 +86,19 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,control_plots) :
 		return -1*CUTFLOW_OTHER_LEPTON_VETO
 	lepton_index = lep_cands[0]
 
-	#check that there are at least two jets satisfying the leading jet pT and eta requirements
-	if (len(jetVars[0])<2 or jetVars[0][0] < LEADING_JET_PT_MIN or jetVars[0][1] < SECOND_JET_PT_MIN or 
-			fabs(jetVars[1][0]) > JETS_ETA_MAX or fabs(jetVars[1][0]) > JETS_ETA_MAX ) :
+	#check that there are at least one large and one small jet
+	if (len(jetVars[0])<1 or len(jetVars_large[0])<1) :
+		continue
+	control_plots[8].Fill(jetVars_large[0][0],jetVars[0][0])
+	#cut that there's at least one very hard large jet, or at least one hard large jet and one hard small jet
+	#in the eta range
+	isGood = False
+	if jetVars_large[0][0] > ONE_LARGE_JET_PT_MIN and fabs(jetVars_large[1][0]) < JETS_ETA_MAX :
+		isGood = True
+	elif ( jetVars_large[0][0] > ONE_LARGE_ONE_SMALL_JET_PT_MIN and jetVars[0][0] > ONE_LARGE_ONE_SMALL_JET_PT_MIN
+		and fabs(jetVars_large[1][0]) < JETS_ETA_MAX and fabs(jetVars[1][0]) < JETS_ETA_MAX ) :
+		isGood = True
+	if not isGood :
 		return -1*CUTFLOW_JET_PRESELECTION
 
 	#find the nearest jet with pT > some minimum 
@@ -113,7 +123,7 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,control_plots) :
 			nearest_jet_dR = thisJetdR
 #	print 'nearest_jet_dR = '+str(nearest_jet_dR)+'' #DEBUGGING
 	#make lepton 2D cut
-	control_plots[8].Fill(nearest_jet_dR,lepvec.Pt(nearest_jet_vec.Vect()))
+	control_plots[9].Fill(nearest_jet_dR,lepvec.Pt(nearest_jet_vec.Vect()))
 	if nearest_jet_dR < DR_MIN and lepvec.Pt(nearest_jet_vec.Vect()) < REL_PT_MIN : #yes, this SHOULD say "and".
 		return -1*CUTFLOW_LEPTON_2D
 
@@ -123,9 +133,9 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,control_plots) :
 		metVec.SetPtEtaPhiM(metVars[0][0],0.0,metVars[1][0],0.0)
 		metE = metVec.E()
 		firstJet = ROOT.TLorentzVector() 
-		firstJet.SetPtEtaPhiM(jetVars_AK4[0][0],jetVars_AK4[1][0],jetVars_AK4[2][0],jetVars_AK4[3][0])
+		firstJet.SetPtEtaPhiM(jetVars[0][0],jetVars[1][0],jetVars[2][0],jetVars[3][0])
 		el_val = abs(lepvec.DeltaPhi(metVec)-1.5); jet_val = abs(firstJet.DeltaPhi(metVec)-1.5)
-		control_plots[9].Fill(metE,el_val); control_plots[10].Fill(metE,jet_val)
+		control_plots[10].Fill(metE,el_val); control_plots[11].Fill(metE,jet_val)
 		cut_val = (1.5/75.)*metE
 		if not (el_val < cut_val and jet_val < cut_val) :
 			return -1*CUTFLOW_LEPTON_TRIANGLE
@@ -153,16 +163,16 @@ def getLeptonFourVec(lep_type,muVars,elVars,lep_index) :
 #takes in the lepton and jet fourvectors
 #subtracts off the fourvectors of loose, non-isolated leptons from jets within 0.5
 #returns the subtracted jet variable lists
-def leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8) :
+def leptonCleaningKludge(muVars,elVars,jetVars_small,jetVars_large) :
 	newJetVars_AK4 = []; newJetVars_AK8 = []
-	for i in range(len(jetVars_AK4)) :
+	for i in range(len(jetVars_small)) :
 		newJetVars_AK4.append([])
-		for j in range(len(jetVars_AK4[i])) :
-			newJetVars_AK4[i].append(jetVars_AK4[i][j])
-	for i in range(len(jetVars_AK8)) :
+		for j in range(len(jetVars_small[i])) :
+			newJetVars_AK4[i].append(jetVars_small[i][j])
+	for i in range(len(jetVars_large)) :
 		newJetVars_AK8.append([])
-		for j in range(len(jetVars_AK8[i])) :
-			newJetVars_AK8[i].append(jetVars_AK8[i][j])
+		for j in range(len(jetVars_large[i])) :
+			newJetVars_AK8[i].append(jetVars_large[i][j])
 #	print 'old newJetVars_AK4 = '+str(newJetVars_AK4)+'' #DEBUGGING
 	#look at all the leptons and find the non-isolated ones
 	for i in range(len(muVars[0])) :
@@ -179,7 +189,7 @@ def leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8) :
 		#find AK4 jets within 0.5 of the lepton and subtract off the lepton pT
 		for j in range(len(newJetVars_AK4[0])) :
 			thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0) 
-			thisJet.SetPtEtaPhiM(jetVars_AK4[0][j],jetVars_AK4[1][j],jetVars_AK4[2][j],jetVars_AK4[3][j])
+			thisJet.SetPtEtaPhiM(jetVars_small[0][j],jetVars_small[1][j],jetVars_small[2][j],jetVars_small[3][j])
 			if thisJet.DeltaR(thisMuon) < 0.4 and thisMuon.Pt()<thisJet.Pt() :
 #				print 'removing a muon from an AK4 jet' #DEBUGGING
 				thisNewJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0) 
@@ -191,7 +201,7 @@ def leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8) :
 		#find AK8 jets within 0.5 of the lepton and subtract off the lepton pT
 		for j in range(len(newJetVars_AK8[0])) :
 			thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0) 
-			thisJet.SetPtEtaPhiM(jetVars_AK8[0][j],jetVars_AK8[1][j],jetVars_AK8[2][j],jetVars_AK8[3][j])
+			thisJet.SetPtEtaPhiM(jetVars_large[0][j],jetVars_large[1][j],jetVars_large[2][j],jetVars_large[3][j])
 			if thisJet.DeltaR(thisMuon) < 0.8 and thisMuon.Pt()<thisJet.Pt() :
 				thisNewJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0) 
 				thisNewJet.SetPtEtaPhiM(newJetVars_AK8[0][j],newJetVars_AK8[1][j],
@@ -211,7 +221,7 @@ def leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8) :
 		#find AK4 jets within 0.5 of the lepton and subtract off the lepton pT
 		for j in range(len(newJetVars_AK4[0])) :
 			thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0) 
-			thisJet.SetPtEtaPhiM(jetVars_AK4[0][j],jetVars_AK4[1][j],jetVars_AK4[2][j],jetVars_AK4[3][j])
+			thisJet.SetPtEtaPhiM(jetVars_small[0][j],jetVars_small[1][j],jetVars_small[2][j],jetVars_small[3][j])
 			if thisJet.DeltaR(thisElectron) < 0.4 and thisElectron.Pt()<thisJet.Pt() :
 #					print 'removed an electron from an AK4 jet' #DEBUGGING
 				thisNewJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0) 
@@ -223,7 +233,7 @@ def leptonCleaningKludge(muVars,elVars,jetVars_AK4,jetVars_AK8) :
 		#find AK8 jets within 0.5 of the lepton and subtract off the lepton pT
 		for j in range(len(newJetVars_AK8[0])) :
 			thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0) 
-			thisJet.SetPtEtaPhiM(jetVars_AK8[0][j],jetVars_AK8[1][j],jetVars_AK8[2][j],jetVars_AK8[3][j])
+			thisJet.SetPtEtaPhiM(jetVars_large[0][j],jetVars_large[1][j],jetVars_large[2][j],jetVars_large[3][j])
 			if thisJet.DeltaR(thisElectron) < 0.8 and thisElectron.Pt()<thisJet.Pt() :
 				thisNewJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0) 
 				thisNewJet.SetPtEtaPhiM(newJetVars_AK8[0][j],newJetVars_AK8[1][j],
