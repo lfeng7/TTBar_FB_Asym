@@ -88,7 +88,7 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,jetVars_large,con
 
 	#check that there are at least one large and one small jet
 	if (len(jetVars[0])<1 or len(jetVars_large[0])<1) :
-		continue
+		return -1*CUTFLOW_JET_PRESELECTION
 	control_plots[8].Fill(jetVars_large[0][0],jetVars[0][0])
 	#cut that there's at least one very hard large jet, or at least one hard large jet and one hard small jet
 	#in the eta range

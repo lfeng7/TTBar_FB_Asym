@@ -239,6 +239,7 @@ class treemaker :
 				elif i == 5 :	app = jetVars_large_dummy[2][j];
 				else :	app = 1.0;
 				jetVars_large[i].append(app)
+		jetVars_large_dummy = []
 		for i in range(len(self.jetHandles_large_unpruned)) :
 			if i == 0 or i == 4 or i == 5 or i == 6 :
 				event.getByLabel(self.jetLabels_large_unpruned[i],self.jetHandles_large_unpruned[i])

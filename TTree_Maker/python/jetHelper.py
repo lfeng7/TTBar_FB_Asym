@@ -36,7 +36,7 @@ MIN_HAD_W_B_DELTAR = 0.8
 #		-leptonic b (fourvector, CSV value, flavour), hadronic top (fourvector, tau1, tau2, tau3) 
 #			for type 1 or
 #		-leptonic b (fourvector, CSV value, flavour), hadronic W (fourvector,tau1, tau2, tau3),
-#			hadronic b fourvector, for type 2 THEN
+#			hadronic b (fourvector,1.0) (needed to maintain a parallel structure here), for type 2 THEN
 #		-the btagging efficiency scale factor, low error, and hi error for MC events OR
 #	2) a 1-element list of negative value of a cutflow failure point
 def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_small,jetvars_large,jet_control_plots) :
@@ -152,7 +152,7 @@ def  selectJetsType2Tops(lepvec,jetvars_large,jet_control_plots) :
 		if jetvars_large[0][i] < MIN_HAD_W_PT :
 			continue
 		#check that it's in the W mass window
-		jetMass = jetvars_large[3]
+		jetMass = jetvars_large[3][i]
 		jet_control_plots[10].Fill(jetMass)
 		if jetMass < MIN_HAD_W_MASS_WINDOW or jetMass > MAX_HAD_W_MASS_WINDOW :
 			continue
@@ -197,7 +197,7 @@ def  selectJetsType2Tops(lepvec,jetvars_large,jet_control_plots) :
 		if thisJet.DeltaR(hadWcands[0][0]) < MIN_HAD_W_B_DELTAR :
 			continue
 		#append to the list of b candidates
-		hadbcands.append(tuple(thisJet))
+		hadbcands.append((thisJet,1.0))
 	#require exactly one hadronic b candidate
 	jet_control_plots[17].Fill(len(hadbcands))
 	if len(hadbcands) != 1 :
