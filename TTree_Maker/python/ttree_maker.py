@@ -575,24 +575,24 @@ class treemaker :
 			60,0,300,50,0.,5.))
 		#jets
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_pT','p_{T} of small jets; p_{T} (GeV)',50,0.0,350.0))
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_dR',
-			'#Delta R(lepton) of hard small jets; #Delta R',50,0.,5.0))
+		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_dPhi',
+			'#Delta #phi(lepton) of hard small jets; #Delta #phi',50,0.,5.0))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_comb_mass',
 			'Best combined mass of (lepton, MET, leptonic bjet); M (GeV)',40,100.,300.))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_CSV','CSV of small jets; CSV value',20,0.0,1.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_pT','p_{T} of large jets; p_{T} (GeV)',100,0.0,500.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_mass','Mass of hard large jets; M (GeV)',60,0.0,300.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_dR','#Delta R(lepton) of top-like jets; #Delta R',50,0.0,5.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_dR','#Delta #phi(leptonic top) of top-like jets; #Delta #phi',50,0.0,5.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_tau32','#tau_{3}/#tau_{2} of hadronic top-like jets; #tau_{32}',20,0.0,1.0))
 		self.jet_control_plots.append(ROOT.TH1F('t1_top_mult','number of hadronic top candidates',4,0.0,4.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_pT','p_{T} of large jets; p_{T} (GeV)',100,0.0,500.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_mass','Mass of hard large jets; M (GeV)',50,0.0,250.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_dR',
-			'#Delta R(lepton) of W-like jets; #Delta R',50,0.0,5.0))
+			'#Delta #phi(leptonic top) of W-like jets; #Delta #phi',50,0.0,5.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_tau21','#tau_{2}/#tau_{1} of hadronic W-like jets; #tau_{21}',20,0.0,1.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_mult','number of hadronic W candidates',4,0.0,4.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_b_dR',
-			'#Delta R(lepton) of hard small jets; #Delta R',50,0.0,5.0))
+			'#Delta #phi(leptonic top) of hard small jets; #Delta #phi',50,0.0,5.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_comb_mass',
 			'hadronic top candidate combined mass; M (GeV)',60,0.0,300.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_b_W_dR',

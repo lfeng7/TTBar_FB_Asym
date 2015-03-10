@@ -87,6 +87,7 @@ control_plot_arrows = []
 set_maxes = []
 include_data = []
 sum_same_colors = []
+draw_log = []
 
 ##############################################################################################################
 ############################						  PLOTS 					  ############################
@@ -95,21 +96,21 @@ sum_same_colors = []
 #met pT
 control_plot_names.append('met_pt')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(10.,0.0,10.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(10.,0.0,10.+40.,0.0,0.04,'|> SAME'))
 
 #leading lepton pT
 control_plot_names.append('lep1_pt')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(45.,0.0,45.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(45.,0.0,45.+40.,0.0,0.04,'|> SAME'))
 
 #leading lepton eta
 control_plot_names.append('lep1_eta')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(2.1,0.0,2.1,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.1,0.0,2.1-0.4,0.0,0.04,'|> SAME'))
 control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.1,0.0,-2.1,0.0))
@@ -118,14 +119,14 @@ control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.1,0.0,-2.1+0.4,
 #second lepton pT
 control_plot_names.append('lep2_pt')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(45.,0.0,45.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(45.,0.0,45.-40.,0.0,0.04,'|> SAME'))
 
 #second lepton eta
 control_plot_names.append('lep2_eta')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(2.1,0.0,2.1,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.1,0.0,2.1+0.4,0.0,0.04,'|> SAME'))
 control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.1,0.0,-2.1,0.0))
@@ -134,14 +135,14 @@ control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.1,0.0,-2.1-0.4,
 #leading other lepton pT
 control_plot_names.append('other_lep1_pt')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(35.,0.0,35.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(35.,0.0,35.-30.,0.0,0.04,'|> SAME'))
 
 #leading other lepton eta
 control_plot_names.append('other_lep1_eta')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(2.5,0.0,2.5,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.5,0.0,2.5+0.4,0.0,0.04,'|> SAME'))
 control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.5,0.0,-2.5,0.0))
@@ -150,21 +151,21 @@ control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.5,0.0,-2.5-0.4,
 #leptonic bjet pT
 control_plot_names.append('lep_bjet_pT')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(25.,0.0,25.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(25.,0.0,25.+30.,0.0,0.04,'|> SAME'))
 
 #leptonic bjet dR
 control_plot_names.append('lep_bjet_dR')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.-0.4,0.0,0.04,'|> SAME'))
 
 #leptonic bjet combined mass
 control_plot_names.append('lep_bjet_comb_mass')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(140.,0.0,140.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(140.,0.0,140.+40.,0.0,0.04,'|> SAME'))
 control_plot_lines[len(control_plot_lines)-1].append(TLine(210.,0.0,210.,0.0))
@@ -173,7 +174,7 @@ control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(210.,0.0,210.-40.,
 #leptonic bjet CSV
 control_plot_names.append('lep_bjet_CSV')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(0.244,0.0,0.244,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.244,0.0,0.244+0.15,0.0,0.04,'|> SAME'))
 
@@ -182,35 +183,35 @@ if 'type1' in filenames[0] :
 	#top cand pT
 	control_plot_names.append('t1_top_pT')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(400.,0.0,400.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(400.,0.0,400.+30.,0.0,0.04,'|> SAME'))
 
 	#top cand mass
 	control_plot_names.append('t1_top_mass')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(130.,0.0,130.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(130.,0.0,130.+30.,0.0,0.04,'|> SAME'))
 
 	#top cand tau32
 	control_plot_names.append('t1_top_tau32')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(0.7,0.0,0.7,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.7,0.0,0.7-0.15,0.0,0.04,'|> SAME'))
 
 	#top cand dR
 	control_plot_names.append('t1_top_dR')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.+0.4,0.0,0.04,'|> SAME'))
 
 	#top cand multiplicity
 	control_plot_names.append('t1_top_mult')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(1.0,0.0,1.0,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(1.0,0.0,1.0-0.2,0.0,0.04,'|> SAME'))
 
@@ -219,42 +220,42 @@ elif 'type2' in filenames[0] :
 	#hadronic W pT
 	control_plot_names.append('t2_top_W_pT')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(200.,0.0,200.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(200.,0.0,200.+30.,0.0,0.04,'|> SAME'))
 
 	#hadronic W mass
 	control_plot_names.append('t2_top_W_mass')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
-	control_plot_lines[len(control_plot_lines)-1].append(TLine(70.,0.0,70.,0.0))
+	sum_same_colors.append(True); draw_log.append(True)
+	control_plot_lines[len(control_plot_lines)-1].append(TLine(60.,0.0,60.,0.0))
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(100.,0.0,100.,0.0))
 
 	#hadronic W tau21
 	control_plot_names.append('t2_top_W_tau21')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(0.75,0.0,0.75,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.75,0.0,0.75-0.15,0.0,0.04,'|> SAME'))
 
 	#hadronic W dR
 	control_plot_names.append('t2_top_W_dR')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.+0.4,0.0,0.04,'|> SAME'))
 
 	#hadronic W multiplicity
 	control_plot_names.append('t2_top_W_mult')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(1.0,0.0,1.0,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(1.0,0.0,1.0-0.2,0.0,0.04,'|> SAME'))
 
 	#combined top mass
 	control_plot_names.append('t2_top_comb_mass')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(130.,0.0,130.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(130.,0.0,130.+25.,0.0,0.04,'|> SAME'))
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(270.,0.0,270.,0.0))
@@ -263,21 +264,21 @@ elif 'type2' in filenames[0] :
 	#hadronic b dR
 	control_plot_names.append('t2_top_b_dR')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.+0.4,0.0,0.04,'|> SAME'))
 
 	#hadronic b dR WRT to hadronic W
 	control_plot_names.append('t2_top_b_W_dR')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(0.6,0.0,0.6,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.6,0.0,0.6+0.4,0.0,0.04,'|> SAME'))
 
 	#hadronic b multiplicity
 	control_plot_names.append('t2_top_had_b_mult')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True)
+	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(1.0,0.0,1.0,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(1.0,0.0,1.0-0.2,0.0,0.04,'|> SAME'))
 
@@ -293,7 +294,55 @@ for i in range(len(filenames)) :
 datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
 histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
 optionstrings.append('')
-weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID*sf_trig_eff')
+weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID')
+includedata.append(True)
+renormalize.append(True)
+binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
+
+#costheta Comparison
+histonames.append('costheta_comp')
+drawstrings.append('cstar')
+cutstrings.append('cutflow==0')
+xbins = 20; xlow = -1.0; xhigh = 1.0;
+title = 'c^{*} in Simulation and Data; c^{*}'
+for i in range(len(filenames)) :
+	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+optionstrings.append('')
+weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID')
+includedata.append(True)
+renormalize.append(True)
+binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
+
+#x_F Comparison
+histonames.append('x_F_comp')
+drawstrings.append('x_F')
+cutstrings.append('cutflow==0')
+xbins = 30; xlow = 0.0; xhigh = 0.6;
+title = '|x_{F}| in Simulation and Data; |x_{F}|'
+for i in range(len(filenames)) :
+	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+optionstrings.append('')
+weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID')
+includedata.append(True)
+renormalize.append(True)
+binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
+
+#M Comparison
+histonames.append('M_comp')
+drawstrings.append('M')
+cutstrings.append('cutflow==0')
+xbins = 40; xlow = 350.; xhigh = 1750.;
+title = 'M in Simulation and Data; M (GeV)'
+for i in range(len(filenames)) :
+	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+optionstrings.append('')
+weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID')
 includedata.append(True)
 renormalize.append(True)
 binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
@@ -436,6 +485,8 @@ for i in range(len(control_plot_names)) :
 	#make a canvas for this plot and draw all the plots on it
 	tmp_canv_name = control_plot_names[i]+'_canv'
 	tmp_canv = TCanvas(tmp_canv_name,tmp_canv_name,1200,900)
+	if draw_log[i] :
+		tmp_canv.SetLogy()
 	tmp_canv.cd()
 	drawn_colors = []
 	control_plots[i][0].SetMaximum(control_plot_max_ys[i])

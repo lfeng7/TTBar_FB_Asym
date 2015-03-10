@@ -50,9 +50,9 @@ data_filename = 'SingleMu_Run2012'
 #Get the files
 files = []
 for i in range(len(filenames)) :
-	filenames[i] += '_type2_all.root'
+	filenames[i] += '_type1_all.root'
 	files.append(TFile(filenames[i]))
-data_file = TFile(data_filename+'_type2_all.root')
+data_file = TFile(data_filename+'_type1_all.root')
 
 N_CUTFLOWS = 10+1
 events_at_cutflow = []
