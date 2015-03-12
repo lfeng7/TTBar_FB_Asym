@@ -53,7 +53,7 @@ def selectJets(isdata,toptype,lepvec,met1vec,met2vec,jetvars_small,jetvars_large
 		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 		thisJet.SetPtEtaPhiM(jetvars_small[0][i],jetvars_small[1][i],jetvars_small[2][i],jetvars_small[3][i])
 		#Fill a control plot with the jet deltaphi from the lepton
-		lep_dPhi = lepvec.DeltaPhi(thisJet)
+		lep_dPhi = abs(lepvec.DeltaPhi(thisJet))
 		jet_control_plots[1].Fill(lep_dPhi)
 		#see if this jet is the best one yet in terms of combined mass
 		comb_mass_1 = (lepvec+met1vec+thisJet).M(); comb_mass_2 = (lepvec+met2vec+thisJet).M()
@@ -126,8 +126,8 @@ def selectJetsType1Tops(leptopvec,jetvars_large,jet_control_plots) :
 		#check that it's on the hadronic hemisphere
 		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 		thisJet.SetPtEtaPhiM(jetvars_large[0][i],jetvars_large[1][i],jetvars_large[2][i],jetvars_large[3][i])
-		jet_control_plots[6].Fill(leptopvec.DeltaPhi(thisJet))
-		if leptopvec.DeltaPhi(thisJet) < pi/2. :
+		jet_control_plots[6].Fill(abs(leptopvec.DeltaPhi(thisJet)))
+		if abs(leptopvec.DeltaPhi(thisJet)) < pi/2. :
 			continue
 		#match the pruned jet to an unpruned jet, and cut on the unpruned tau3/tau2
 		matchedJet_taus = get_taus(thisJet,jetvars_large)
@@ -165,8 +165,8 @@ def  selectJetsType2Tops(leptopvec,jetvars_large,jet_control_plots) :
 		#check that it's on the hadronic side
 		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 		thisJet.SetPtEtaPhiM(jetvars_large[0][i],jetvars_large[1][i],jetvars_large[2][i],jetvars_large[3][i])
-		jet_control_plots[11].Fill(leptopvec.DeltaPhi(thisJet))
-		if leptopvec.DeltaPhi(thisJet) < pi/2. :
+		jet_control_plots[11].Fill(abs(leptopvec.DeltaPhi(thisJet)))
+		if abs(leptopvec.DeltaPhi(thisJet)) < pi/2. :
 			continue
 		#get the matched unpruned jet's tau variables and cut on tau2/tau1
 		matchedJet_taus = get_taus(thisJet,jetvars_large)
@@ -190,8 +190,8 @@ def  selectJetsType2Tops(leptopvec,jetvars_large,jet_control_plots) :
 		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 		thisJet.SetPtEtaPhiM(jetvars_large[0][i],jetvars_large[1][i],jetvars_large[2][i],jetvars_large[3][i])
 		#check that it's in the hadronic hemisphere
-		jet_control_plots[14].Fill(leptopvec.DeltaPhi(thisJet))
-		if leptopvec.DeltaPhi(thisJet) < pi/2. :
+		jet_control_plots[14].Fill(abs(leptopvec.DeltaPhi(thisJet)))
+		if abs(leptopvec.DeltaPhi(thisJet)) < pi/2. :
 			continue
 		#check that it combines with the W to give a mass in the top mass window
 		combMass = (thisJet+hadWcands[0][0]).M()

@@ -156,7 +156,7 @@ control_plot_lines[len(control_plot_lines)-1].append(TLine(25.,0.0,25.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(25.,0.0,25.+30.,0.0,0.04,'|> SAME'))
 
 #leptonic bjet dR
-control_plot_names.append('lep_bjet_dR')
+control_plot_names.append('lep_bjet_dPhi')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
 sum_same_colors.append(True); draw_log.append(True)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
@@ -202,7 +202,7 @@ if 'type1' in filenames[0] :
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.7,0.0,0.7-0.15,0.0,0.04,'|> SAME'))
 
 	#top cand dR
-	control_plot_names.append('t1_top_dR')
+	control_plot_names.append('t1_top_dPhi')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
 	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
@@ -239,7 +239,7 @@ elif 'type2' in filenames[0] :
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.75,0.0,0.75-0.15,0.0,0.04,'|> SAME'))
 
 	#hadronic W dR
-	control_plot_names.append('t2_top_W_dR')
+	control_plot_names.append('t2_top_W_dPhi')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
 	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
@@ -262,7 +262,7 @@ elif 'type2' in filenames[0] :
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(270.,0.0,270.-25.,0.0,0.04,'|> SAME'))
 
 	#hadronic b dR
-	control_plot_names.append('t2_top_b_dR')
+	control_plot_names.append('t2_top_b_dPhi')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
 	sum_same_colors.append(True); draw_log.append(True)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
