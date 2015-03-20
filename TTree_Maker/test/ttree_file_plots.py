@@ -10,7 +10,7 @@ gROOT.Macro('rootlogon.C')
 
 #OptionsParser
 parser = OptionParser()
-parser.add_option('--n', metavar='F', type='string', action='store',dest='outname',default='NEW_PLOTS_TYPE1',help='')
+parser.add_option('--n', metavar='F', type='string', action='store',dest='outname',default='NEW_PLOTS_TYPE2_linear',help='')
 (options, args) = parser.parse_args()
 
 #lists of filenames, fill colors, and pointers
@@ -19,45 +19,45 @@ fillcolors = []
 linestyles = []
 sample_weights = []
 #Single top
-filenames.append('T_s_type1_all.root');		fillcolors.append(kMagenta);	linestyles.append(1)
-filenames.append('T_t_type1_all.root');		fillcolors.append(kMagenta);	linestyles.append(2)
-filenames.append('T_tW_type1_all.root');	fillcolors.append(kMagenta);	linestyles.append(3)
-filenames.append('Tbar_s_type1_all.root');	fillcolors.append(kMagenta);	linestyles.append(4)
-filenames.append('Tbar_t_type1_all.root');	fillcolors.append(kMagenta);	linestyles.append(5)
-filenames.append('Tbar_tW_type1_all.root');	fillcolors.append(kMagenta);	linestyles.append(6)
+filenames.append('T_s_type2_all.root');		fillcolors.append(kMagenta);	linestyles.append(1)
+filenames.append('T_t_type2_all.root');		fillcolors.append(kMagenta);	linestyles.append(2)
+filenames.append('T_tW_type2_all.root');	fillcolors.append(kMagenta);	linestyles.append(3)
+filenames.append('Tbar_s_type2_all.root');	fillcolors.append(kMagenta);	linestyles.append(4)
+filenames.append('Tbar_t_type2_all.root');	fillcolors.append(kMagenta);	linestyles.append(5)
+filenames.append('Tbar_tW_type2_all.root');	fillcolors.append(kMagenta);	linestyles.append(6)
 #DYnJets
-filenames.append('DY1Jets_type1_all.root');	fillcolors.append(kAzure-2);	linestyles.append(1)
-filenames.append('DY2Jets_type1_all.root');	fillcolors.append(kAzure-2);	linestyles.append(2)
-filenames.append('DY3Jets_type1_all.root');	fillcolors.append(kAzure-2);	linestyles.append(3)
-filenames.append('DY4Jets_type1_all.root');	fillcolors.append(kAzure-2);	linestyles.append(4)
+filenames.append('DY1Jets_type2_all.root');	fillcolors.append(kAzure-2);	linestyles.append(1)
+filenames.append('DY2Jets_type2_all.root');	fillcolors.append(kAzure-2);	linestyles.append(2)
+filenames.append('DY3Jets_type2_all.root');	fillcolors.append(kAzure-2);	linestyles.append(3)
+filenames.append('DY4Jets_type2_all.root');	fillcolors.append(kAzure-2);	linestyles.append(4)
 #WnJets samples
-filenames.append('W1Jets_type1_all.root');	fillcolors.append(kGreen-3);	linestyles.append(1)
-filenames.append('W2Jets_type1_all.root');	fillcolors.append(kGreen-3);	linestyles.append(2)
-filenames.append('W3Jets_type1_all.root');	fillcolors.append(kGreen-3);	linestyles.append(3)
-filenames.append('W4Jets_type1_all.root');	fillcolors.append(kGreen-3);	linestyles.append(4)
+filenames.append('W1Jets_type2_all.root');	fillcolors.append(kGreen-3);	linestyles.append(1)
+filenames.append('W2Jets_type2_all.root');	fillcolors.append(kGreen-3);	linestyles.append(2)
+filenames.append('W3Jets_type2_all.root');	fillcolors.append(kGreen-3);	linestyles.append(3)
+filenames.append('W4Jets_type2_all.root');	fillcolors.append(kGreen-3);	linestyles.append(4)
 #POWHEG TT
 #dileptonic 
-filenames.append('Powheg_dilep_TT_type1_all.root');					fillcolors.append(kRed-7);	linestyles.append(1)
-filenames.append('Powheg_dilep_TT_SC_type1_all.root');				fillcolors.append(kRed-7);	linestyles.append(2)
-filenames.append('Powheg_dilep_TT_Mtt_700_to_1000_type1_all.root');	fillcolors.append(kRed-7);	linestyles.append(3)
-filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf_type1_all.root');	fillcolors.append(kRed-7);	linestyles.append(4)
+filenames.append('Powheg_dilep_TT_type2_all.root');					fillcolors.append(kRed-7);	linestyles.append(1)
+filenames.append('Powheg_dilep_TT_SC_type2_all.root');				fillcolors.append(kRed-7);	linestyles.append(2)
+filenames.append('Powheg_dilep_TT_Mtt_700_to_1000_type2_all.root');	fillcolors.append(kRed-7);	linestyles.append(3)
+filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf_type2_all.root');	fillcolors.append(kRed-7);	linestyles.append(4)
 #hadronic
-filenames.append('Powheg_had_TT_type1_all.root');					fillcolors.append(kRed-7);	linestyles.append(1)
-filenames.append('Powheg_had_TT_SC_type1_all.root');				fillcolors.append(kRed-7);	linestyles.append(2)
-filenames.append('Powheg_had_TT_Mtt_700_to_1000_type1_all.root');	fillcolors.append(kRed-7);	linestyles.append(3)
-filenames.append('Powheg_had_TT_Mtt_1000_to_Inf_type1_all.root');	fillcolors.append(kRed-7);	linestyles.append(4)
+filenames.append('Powheg_had_TT_type2_all.root');					fillcolors.append(kRed-7);	linestyles.append(1)
+filenames.append('Powheg_had_TT_SC_type2_all.root');				fillcolors.append(kRed-7);	linestyles.append(2)
+filenames.append('Powheg_had_TT_Mtt_700_to_1000_type2_all.root');	fillcolors.append(kRed-7);	linestyles.append(3)
+filenames.append('Powheg_had_TT_Mtt_1000_to_Inf_type2_all.root');	fillcolors.append(kRed-7);	linestyles.append(4)
 #semileptonic qq
-filenames.append('Powheg_qq_semilep_TT_type1_all.root');				 fillcolors.append(kRed+1);	linestyles.append(1)
-filenames.append('Powheg_qq_semilep_TT_SC_type1_all.root');				 fillcolors.append(kRed+1);	linestyles.append(2)
-filenames.append('Powheg_qq_semilep_TT_Mtt_700_to_1000_type1_all.root'); fillcolors.append(kRed+1);	linestyles.append(3)
-filenames.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf_type1_all.root'); fillcolors.append(kRed+1);	linestyles.append(4)
+filenames.append('Powheg_qq_semilep_TT_type2_all.root');				 fillcolors.append(kRed+1);	linestyles.append(1)
+filenames.append('Powheg_qq_semilep_TT_SC_type2_all.root');				 fillcolors.append(kRed+1);	linestyles.append(2)
+filenames.append('Powheg_qq_semilep_TT_Mtt_700_to_1000_type2_all.root'); fillcolors.append(kRed+1);	linestyles.append(3)
+filenames.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf_type2_all.root'); fillcolors.append(kRed+1);	linestyles.append(4)
 #semileptonic gg
-filenames.append('Powheg_gg_semilep_TT_type1_all.root');				 fillcolors.append(kRed+1);	linestyles.append(1)
-filenames.append('Powheg_gg_semilep_TT_SC_type1_all.root');				 fillcolors.append(kRed+1);	linestyles.append(2)
-filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000_type1_all.root'); fillcolors.append(kRed+1);	linestyles.append(3)
-filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf_type1_all.root'); fillcolors.append(kRed+1);	linestyles.append(4)
+filenames.append('Powheg_gg_semilep_TT_type2_all.root');				 fillcolors.append(kRed+1);	linestyles.append(1)
+filenames.append('Powheg_gg_semilep_TT_SC_type2_all.root');				 fillcolors.append(kRed+1);	linestyles.append(2)
+filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000_type2_all.root'); fillcolors.append(kRed+1);	linestyles.append(3)
+filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf_type2_all.root'); fillcolors.append(kRed+1);	linestyles.append(4)
 #data
-data_filename = 'SingleMu_Run2012_type1_all.root'
+data_filename = 'SingleMu_Run2012_type2_all.root'
 
 #list of files
 filelist = []
@@ -103,14 +103,14 @@ control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(10.,0.0,10.+40.,0.
 #leading lepton pT
 control_plot_names.append('lep1_pt')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(45.,0.0,45.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(45.,0.0,45.+40.,0.0,0.04,'|> SAME'))
 
 #leading lepton eta
 control_plot_names.append('lep1_eta')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(2.1,0.0,2.1,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.1,0.0,2.1-0.4,0.0,0.04,'|> SAME'))
 control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.1,0.0,-2.1,0.0))
@@ -119,14 +119,14 @@ control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.1,0.0,-2.1+0.4,
 #second lepton pT
 control_plot_names.append('lep2_pt')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(45.,0.0,45.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(45.,0.0,45.-40.,0.0,0.04,'|> SAME'))
 
 #second lepton eta
 control_plot_names.append('lep2_eta')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(2.1,0.0,2.1,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.1,0.0,2.1+0.4,0.0,0.04,'|> SAME'))
 control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.1,0.0,-2.1,0.0))
@@ -135,14 +135,14 @@ control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.1,0.0,-2.1-0.4,
 #leading other lepton pT
 control_plot_names.append('other_lep1_pt')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(35.,0.0,35.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(35.,0.0,35.-30.,0.0,0.04,'|> SAME'))
 
 #leading other lepton eta
 control_plot_names.append('other_lep1_eta')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(2.5,0.0,2.5,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.5,0.0,2.5+0.4,0.0,0.04,'|> SAME'))
 control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.5,0.0,-2.5,0.0))
@@ -151,21 +151,21 @@ control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.5,0.0,-2.5-0.4,
 #leptonic bjet pT
 control_plot_names.append('lep_bjet_pT')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(25.,0.0,25.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(25.,0.0,25.+30.,0.0,0.04,'|> SAME'))
 
 #leptonic bjet dR
 control_plot_names.append('lep_bjet_dPhi')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.-0.4,0.0,0.04,'|> SAME'))
 
 #leptonic bjet combined mass
 control_plot_names.append('lep_bjet_comb_mass')
 control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True); draw_log.append(True)
+sum_same_colors.append(True); draw_log.append(False)
 control_plot_lines[len(control_plot_lines)-1].append(TLine(140.,0.0,140.,0.0))
 control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(140.,0.0,140.+40.,0.0,0.04,'|> SAME'))
 control_plot_lines[len(control_plot_lines)-1].append(TLine(210.,0.0,210.,0.0))
@@ -183,14 +183,14 @@ if 'type1' in filenames[0] :
 	#top cand pT
 	control_plot_names.append('t1_top_pT')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(400.,0.0,400.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(400.,0.0,400.+30.,0.0,0.04,'|> SAME'))
 
 	#top cand mass
 	control_plot_names.append('t1_top_mass')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(130.,0.0,130.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(130.,0.0,130.+30.,0.0,0.04,'|> SAME'))
 
@@ -204,14 +204,14 @@ if 'type1' in filenames[0] :
 	#top cand dR
 	control_plot_names.append('t1_top_dPhi')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.+0.4,0.0,0.04,'|> SAME'))
 
 	#top cand multiplicity
 	control_plot_names.append('t1_top_mult')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(1.0,0.0,1.0,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(1.0,0.0,1.0-0.2,0.0,0.04,'|> SAME'))
 
@@ -220,16 +220,16 @@ elif 'type2' in filenames[0] :
 	#hadronic W pT
 	control_plot_names.append('t2_top_W_pT')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(200.,0.0,200.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(200.,0.0,200.+30.,0.0,0.04,'|> SAME'))
 
 	#hadronic W mass
 	control_plot_names.append('t2_top_W_mass')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
-	control_plot_lines[len(control_plot_lines)-1].append(TLine(60.,0.0,60.,0.0))
-	control_plot_lines[len(control_plot_lines)-1].append(TLine(100.,0.0,100.,0.0))
+	sum_same_colors.append(True); draw_log.append(False)
+	control_plot_lines[len(control_plot_lines)-1].append(TLine(65.,0.0,65.,0.0))
+	control_plot_lines[len(control_plot_lines)-1].append(TLine(105.,0.0,105.,0.0))
 
 	#hadronic W tau21
 	control_plot_names.append('t2_top_W_tau21')
@@ -241,46 +241,44 @@ elif 'type2' in filenames[0] :
 	#hadronic W dR
 	control_plot_names.append('t2_top_W_dPhi')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.+0.4,0.0,0.04,'|> SAME'))
 
 	#hadronic W multiplicity
 	control_plot_names.append('t2_top_W_mult')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(1.0,0.0,1.0,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(1.0,0.0,1.0-0.2,0.0,0.04,'|> SAME'))
 
 	#combined top mass
 	control_plot_names.append('t2_top_comb_mass')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
-	control_plot_lines[len(control_plot_lines)-1].append(TLine(130.,0.0,130.,0.0))
-	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(130.,0.0,130.+25.,0.0,0.04,'|> SAME'))
-	control_plot_lines[len(control_plot_lines)-1].append(TLine(270.,0.0,270.,0.0))
-	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(270.,0.0,270.-25.,0.0,0.04,'|> SAME'))
+	sum_same_colors.append(True); draw_log.append(False)
+	control_plot_lines[len(control_plot_lines)-1].append(TLine(140.,0.0,140.,0.0))
+	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(140.,0.0,140.+25.,0.0,0.04,'|> SAME'))
+	control_plot_lines[len(control_plot_lines)-1].append(TLine(210.,0.0,210.,0.0))
+	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(210.,0.0,210.-25.,0.0,0.04,'|> SAME'))
 
 	#hadronic b dR
 	control_plot_names.append('t2_top_b_dPhi')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.+0.4,0.0,0.04,'|> SAME'))
 
 	#hadronic b dR WRT to hadronic W
 	control_plot_names.append('t2_top_b_W_dR')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
+	sum_same_colors.append(True); draw_log.append(False)
 	control_plot_lines[len(control_plot_lines)-1].append(TLine(0.6,0.0,0.6,0.0))
 	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.6,0.0,0.6+0.4,0.0,0.04,'|> SAME'))
 
-	#hadronic b multiplicity
-	control_plot_names.append('t2_top_had_b_mult')
+	#hadronic top best combined mass
+	control_plot_names.append('t2_top_best_comb_mass')
 	control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-	sum_same_colors.append(True); draw_log.append(True)
-	control_plot_lines[len(control_plot_lines)-1].append(TLine(1.0,0.0,1.0,0.0))
-	control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(1.0,0.0,1.0-0.2,0.0,0.04,'|> SAME'))
+	sum_same_colors.append(True); draw_log.append(False)
 
 
 #Pileup Comparison
@@ -421,11 +419,12 @@ for i in range(len(histonames)) :
 	tmp_canv_name = histonames[i]+'_canv'
 	tmp_canv = TCanvas(tmp_canv_name,tmp_canv_name,1200,900)
 	tmp_canv.cd()
+	datamax = datahistograms[i].GetMaximum()+sqrt(datahistograms[i].GetMaximum())
 	if renorms[i] :
-		histostacks[i].SetMaximum(max(1.02*datahistograms[i].GetMaximum(),1.02*histostacks[i].GetMaximum()))
+		histostacks[i].SetMaximum(max(1.02*datamax,1.02*histostacks[i].GetMaximum()))
 		histostacks[i].Draw()
 	else :
-		histostacks[i].SetMaximum(max(1.02*datahistograms[i].GetMaximum(),1.02*histostacks[i].GetMaximum("nostack")))
+		histostacks[i].SetMaximum(max(1.02*datamax,1.02*histostacks[i].GetMaximum("nostack")))
 		histostacks[i].Draw("nostack")
 	if includedata[i] :
 		datahistograms[i].SetMarkerStyle(20)
@@ -464,7 +463,8 @@ for i in range(len(control_plot_names)) :
 	#get this plot from the data file
 	new_data_plot = data_file.Get('control_plots_folder/'+control_plot_names[i]).Clone()
 	new_data_plot.SetDirectory(0)
-	new_data_plot.Scale(1.0/new_data_plot.Integral())
+	if new_data_plot.Integral() != 0. :
+		new_data_plot.Scale(1.0/new_data_plot.Integral())
 	if 1.02*new_data_plot.GetMaximum() > control_plot_max_ys[i] :
 		control_plot_max_ys[i] = 1.02*new_data_plot.GetMaximum()
 	#set line width and color accordingly

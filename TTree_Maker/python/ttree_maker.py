@@ -21,7 +21,7 @@ from array import array
 from math import *
 import sys
 from eventTypeHelper import eventTypeCheck, findInitialQuark, findMCTops
-from lepHelper import leptonCuts, getLeptonFourVec#, leptonCleaningKludge
+from lepHelper import leptonCuts, getLeptonFourVec
 from metHelper import metCut, setupMET
 from jetHelper import selectJets
 from ttbarReconstructor import reconstruct
@@ -259,8 +259,6 @@ class treemaker :
 				elif i == 6 :	app = jetVars_large_dummy[3][j];
 				else :	app = 1.0;
 				jetVars_large[i+4].append(app)
-		#kludge-y lepton cleaning
-		#jetVars_small, jetVars_large = leptonCleaningKludge(muVars,elVars,jetVars_small,jetVars_large)
 		#pileup
 		event.getByLabel(self.pileupLabel,self.pileupHandle)
 		if not self.pileupHandle.isValid() :
@@ -597,7 +595,7 @@ class treemaker :
 			'hadronic top candidate combined mass; M (GeV)',60,0.0,300.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_b_W_dR',
 			'#Delta R(W,b) (hadronic top constituent jets); #Delta R',35,0.0,3.5))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_had_b_mult','number of hadronic side b candidates',4,0.0,4.0))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_best_comb_mass','best combined mass of hadronic top',50,130.,230..))
 		self.all_control_plots = self.MET_control_plots + self.lepton_control_plots + self.jet_control_plots 
 
 	##################################   reset function   ##################################

@@ -22,8 +22,8 @@ MIN_HAD_TOP_PT = 400. #GeV
 MIN_HAD_TOP_MASS = 130. #GeV
 MAX_HAD_TOP_TAU32 = 0.7
 MIN_HAD_W_PT = 200. #GeV
-MIN_HAD_W_MASS_WINDOW = 60. #GeV
-MAX_HAD_W_MASS_WINDOW = 100. #GeV
+MIN_HAD_W_MASS_WINDOW = 65. #GeV
+MAX_HAD_W_MASS_WINDOW = 105. #GeV
 MAX_HAD_W_TAU21 = 0.75
 MIN_HAD_B_PT = 25. #GeV
 MIN_HAD_TOP_MASS_WINDOW = 140. #GeV
@@ -182,7 +182,8 @@ def  selectJetsType2Tops(leptopvec,jetvars_large,jet_control_plots) :
 		return ([-1*CUTFLOW_EXACTLY_ONE_HADRONIC_WCAND],[-1*CUTFLOW_EXACTLY_ONE_HADRONIC_WCAND])
 
 	#now look through the large jets for hadronic b candidates
-	hadbcands = []
+	hadbcand = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
+	best_comb_mass_offset = 100000.
 	for i in range(len(jetvars_large[0])) :
 		#hard cut on pT 
 		if jetvars_large[0][i] < MIN_HAD_B_PT :
@@ -202,14 +203,17 @@ def  selectJetsType2Tops(leptopvec,jetvars_large,jet_control_plots) :
 		jet_control_plots[16].Fill(thisJet.DeltaR(hadWcands[0][0]))
 		if thisJet.DeltaR(hadWcands[0][0]) < MIN_HAD_W_B_DELTAR :
 			continue
-		#append to the list of b candidates
-		hadbcands.append((thisJet,1.0))
+		#if it's giving the best combined mass yet, it's the new hadronic b jet
+		comb_mass_offset = abs(combMass-TOP_MASS)
+		if comb_mass_offset < best_comb_mass_offset :
+			best_comb_mass_offset = comb_mass_offset
+			hadbcand.SetPtEtaPhiM(thisJet.Pt(),thisJet.Eta(),thisJet.Phi(),thisJet.M())
 	#require exactly one hadronic b candidate
-	jet_control_plots[17].Fill(len(hadbcands))
-	if len(hadbcands) != 1 :
+	if best_comb_mass_offset == 100000. :
 		return ([-1*CUTFLOW_EXACTLY_ONE_HADRONIC_BCAND],[-1*CUTFLOW_EXACTLY_ONE_HADRONIC_BCAND])
+	jet_control_plots[17].Fill((hadbcand+hadWcands[0][0]).M()) 		
 
-	return (hadWcands[0],hadbcands[0])
+	return (hadWcands[0],(hadbcand,1.0))
 	#return [(ROOT.TLorentzVector(1.0,0.0,0.0,1.0),0.5,0),
 	#(ROOT.TLorentzVector(1.0,0.0,0.0,1.0),0.5,0.5,0.5,0.5,0)] #DEBUG RETURN
 

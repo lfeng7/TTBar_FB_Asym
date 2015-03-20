@@ -50,9 +50,9 @@ data_filename = 'SingleMu_Run2012'
 #Get the files
 files = []
 for i in range(len(filenames)) :
-	filenames[i] += '_type1_all.root'
+	filenames[i] += '_type2_all.root'
 	files.append(TFile(filenames[i]))
-data_file = TFile(data_filename+'_type1_all.root')
+data_file = TFile(data_filename+'_type2_all.root')
 
 N_CUTFLOWS = 10+1
 events_at_cutflow = []
@@ -75,7 +75,9 @@ for i in range(len(files)) :
 		events_at_cutflow[i].append(1.0*gDirectory.Get('tmp').Integral())
 	#Get the final number of selected events
 	tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*(cutflow==0)')
-	events_at_cutflow[i].append(1.0*gDirectory.Get('tmp').Integral())
+	nfinalevents = 1.0*gDirectory.Get('tmp').Integral()
+	events_at_cutflow[i].append(nfinalevents)
+	print '	Total number of selected events (unweighted) = '+str(nfinalevents/weights[i])+''
 	files[i].Close()
 
 print 'Getting event numbers from data file (get comfortable)'
