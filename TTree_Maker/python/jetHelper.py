@@ -291,7 +291,7 @@ def get_CSVL_SFc(pT) :
 def get_CSVL_SFlight(pT,eta) : 
 	eta = abs(eta)
 	SF = 1.0; SF_low = 1.0; SF_hi = 1.0
-	if eta > 0.0 and eta < 0.5 :
+	if eta < 0.5 :
 		SF = ((1.01177+(0.0023066*pT))+(-4.56052e-06*(pT*pT)))+(2.57917e-09*(pT*(pT*pT)))
 		SF_low = ((0.977761+(0.00170704*pT))+(-3.2197e-06*(pT*pT)))+(1.78139e-09*(pT*(pT*pT)))
 		SF_hi  = ((1.04582+(0.00290226*pT))+(-5.89124e-06*(pT*pT)))+(3.37128e-09*(pT*(pT*pT)))

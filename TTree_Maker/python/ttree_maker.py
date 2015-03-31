@@ -595,7 +595,7 @@ class treemaker :
 			'hadronic top candidate combined mass; M (GeV)',60,0.0,300.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_b_W_dR',
 			'#Delta R(W,b) (hadronic top constituent jets); #Delta R',35,0.0,3.5))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_best_comb_mass','best combined mass of hadronic top',50,130.,230..))
+		self.jet_control_plots.append(ROOT.TH1F('t2_top_best_comb_mass','best combined mass of hadronic top',50,130.,230.))
 		self.all_control_plots = self.MET_control_plots + self.lepton_control_plots + self.jet_control_plots 
 
 	##################################   reset function   ##################################

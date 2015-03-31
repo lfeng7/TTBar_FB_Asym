@@ -103,8 +103,8 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,jetVars_large,con
 
 	#find the nearest jet with pT > some minimum 
 	nearest_jet_dR = 1000000.
-	nearest_jet_vec = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
-	lepvec = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
+	nearest_jet_vec = ROOT.TLorentzVector()
+	lepvec = ROOT.TLorentzVector()
 	if lep_type == 0 :
 		lepvec.SetPtEtaPhiM(muVars[0][lepton_index],muVars[1][lepton_index],
 			muVars[2][lepton_index],muVars[3][lepton_index])
@@ -113,7 +113,7 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,jetVars_large,con
 			elVars[2][lepton_index],elVars[3][lepton_index])
 #	print 'lepvec = ('+str(lepvec.Px())+','+str(lepvec.Py())+','+str(lepvec.Pz())+','+str(lepvec.E())+')' #DEBUGGING
 	for i in range(len(jetVars[0])) :
-		thisJet = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
+		thisJet = ROOT.TLorentzVector()
 		thisJet.SetPtEtaPhiM(jetVars[0][i],jetVars[1][i],jetVars[2][i],jetVars[3][i])
 		thisJetdR = lepvec.DeltaR(thisJet)
 		#if the lepton is inside the jet, subtract the lepton fourvector from the jet fourvector
@@ -130,11 +130,13 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,jetVars_large,con
 #	print 'nearest_jet_dR = '+str(nearest_jet_dR)+'' #DEBUGGING
 	#make lepton 2D cut
 	control_plots[9].Fill(nearest_jet_dR,lepvec.Pt(nearest_jet_vec.Vect()))
-	if nearest_jet_dR < DR_MIN and lepvec.Pt(nearest_jet_vec.Vect()) < REL_PT_MIN : #yes, this SHOULD say "and".
+	if sideband == 0 and (nearest_jet_dR < DR_MIN and lepvec.Pt(nearest_jet_vec.Vect()) < REL_PT_MIN) :
+		return -1*CUTFLOW_LEPTON_2D
+	if sideband == 1 and not (nearest_jet_dR < DR_MIN and lepvec.Pt(nearest_jet_vec.Vect()) < REL_PT_MIN) :
 		return -1*CUTFLOW_LEPTON_2D
 
 	#make electron triangle cut
-	if lep_type == 1 :
+	if lep_type == 1 and sideband == 0 :
 		metVec = ROOT.TLorentzVector() 
 		metVec.SetPtEtaPhiM(metVars[0][0],0.0,metVars[1][0],0.0)
 		metE = metVec.E()
@@ -154,7 +156,7 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,jetVars_large,con
 #takes in lepton type, lists of muon/electron variables, index of single valid lepton
 #returns a tuple of (TLorentzVector of single valid lepton, lepton charge)
 def getLeptonFourVec(lep_type,muVars,elVars,lep_index) :
-	lepvec = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
+	lepvec = ROOT.TLorentzVector()
 	lepcharge = 0
 	if lep_type == 0 : #muons
 		lepvec.SetPtEtaPhiM(muVars[0][lep_index],muVars[1][lep_index],muVars[2][lep_index],muVars[3][lep_index])
@@ -163,4 +165,4 @@ def getLeptonFourVec(lep_type,muVars,elVars,lep_index) :
 		lepvec.SetPtEtaPhiM(elVars[0][lep_index],elVars[1][lep_index],elVars[2][lep_index],elVars[3][lep_index])
 		lepcharge = elVars[4][lep_index]
 	return (lepvec,int(lepcharge))
-	#return (ROOT.TLorentzVector(1.0,0.0,0.0,1.0), 1) #DEBUG RETURN
+	#return (ROOT.TLorentzVector(), 1) #DEBUG RETURN

@@ -48,6 +48,10 @@ parser.add_option('--n_events', 	 type='float',  action='store', default=1.0,  	
 
 ##########							Set Up Event Loop								##########
 
+#append 'sb' to the name for a sideband file
+if options.sideband.lower() == 'yes' :
+	options.name = options.name+'_sb'
+
 #append the top type to the name
 if options.top_type == 1 :
 	options.name = options.name+'_type1'
