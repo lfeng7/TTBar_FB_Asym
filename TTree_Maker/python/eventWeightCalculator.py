@@ -55,7 +55,7 @@ class MC_corrector :
 		if self.on_grid == 'yes' :
 			prepend+='./tardir/'
 		else :
-			prepend+='../other_input_files/'
+			prepend+='../../other_input_files/'
 		if self.lep_type == 1 :
 			print 'WARNING: ELECTRON TRIGGER EFFICIENCY SCALE FACTOR CORRECTIONS NOT YET IMPLEMENTED!'
 			self.lepton_id_histo_file = ROOT.TFile(prepend+ELECTRON_ID_EFF_HISTO_FILENAME)

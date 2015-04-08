@@ -153,7 +153,7 @@ class treemaker :
 		muVars = [];	elVars = []
 		muVars_dummy = [];	elVars_dummy = []
 		for i in range(len(self.muHandles)) :
-			if i == 0 or i == 4 or i == 9 :
+			if i == 0 or i == 4 or i == 9 or i == 10 :
 				event.getByLabel(self.muLabels[i],self.muHandles[i])
 				if not self.muHandles[i].isValid() :
 					self.ERR_CODE = ERR_INVALID_HANDLE
@@ -168,10 +168,11 @@ class treemaker :
 				elif i == 3 :	app = muVec.M();
 				elif i == 4 :	app = muVars_dummy[1][j];
 				elif i == 9 :	app = muVars_dummy[2][j];
+				elif i == 10 :	app = muVars_dummy[3][j];
 				else :	app = 1.0;
 				muVars[i].append(app)
 		for i in range(len(self.elHandles)) :
-			if i == 0 or i == 4 or i == 5 or i == 6 :
+			if i == 0 or i == 4 or i == 5 or i == 6 or i == 7 :
 				event.getByLabel(self.elLabels[i],self.elHandles[i])
 				if not self.elHandles[i].isValid() :
 					self.ERR_CODE = ERR_INVALID_HANDLE
@@ -187,6 +188,7 @@ class treemaker :
 				elif i == 4 :	app = elVars_dummy[1][j];
 				elif i == 5 :	app = elVars_dummy[2][j];
 				elif i == 6 :	app = elVars_dummy[3][j];
+				elif i == 7 :	app = elVars_dummy[4][j];
 				else :	app = 1.0;
 				elVars[i].append(app)
 		#MET
@@ -286,54 +288,54 @@ class treemaker :
 		if lepIndex < 0 :
 			return self.__closeout__(-1*lepIndex)
 		#set the fourvector of the lepton
-		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
-		self.lep_pt[0],  self.lep_eta[0] = lep_vec.Pt(),  lep_vec.Eta()
-		self.lep_phi[0], self.lep_M[0]   = lep_vec.Phi(), lep_vec.M()
-		meas_lep_pt = lep_vec.Pt(); meas_lep_eta = lep_vec.Eta()
-		#neutrino handling and setup for fit
-		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
-		self.met_pt[0], self.met_eta[0] = met1_vec.Pt(),  met1_vec.Eta() 
-		self.met_phi[0], self.met_M[0]  = met1_vec.Phi(), met1_vec.M()
-		if met1_vec.Pz() == met2_vec.Pz() :
-			self.nFits[0] = 2
-		else :
-			self.nFits[0] = 1
-		#jet selection
-		( jetTuples, self.sf_btag_eff[0], self.sf_btag_eff_low[0], 
-			self.sf_btag_eff_hi[0] ) = selectJets(self.is_data,self.top_type,lep_vec,met1_vec,met2_vec,jetVars_small,jetVars_large,self.jet_control_plots) 
-		#above function in jetHelper.py
-		if len(jetTuples)==1 :
-			return self.__closeout__(-1*jetTuples[0])
-		#event reconstruction
-		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) 
-		#above function in ttbarReconstructor.py
-		#fill the TTree with the fourvector variables, and angle and differential cross section variable reconstruction
-		if self.top_type == 1 :
-			self.__fillFourVecsType1__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0]) 		
-			( self.cstar[0], self.x_F[0], 
-			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0],self.Q_l[0]) 
-			#above function in angleReconstructor.py
-		elif self.top_type == 2 :
-			self.__fillFourVecsType2__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0])
-			( self.cstar[0], self.x_F[0], 
-			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],self.Q_l[0]) 
-			#above function in angleReconstructor.py
-		#MC Truth observable and reweighting calculation
-		if self.is_data==0 :
-			if self.event_type!=4 :
-				( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
-					self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
-					self.w_s_delta[0],self.w_a_delta[0],
-					self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
-					self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
-			#scale factor and reweighting calculations
-			#8TeV numbers
-			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
-			self.sf_pileup[0] = self.corrector.getpileup_reweight(MCpileup)
-			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
-				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta)
-			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
-				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta)
+#		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
+#		self.lep_pt[0],  self.lep_eta[0] = lep_vec.Pt(),  lep_vec.Eta()
+#		self.lep_phi[0], self.lep_M[0]   = lep_vec.Phi(), lep_vec.M()
+#		meas_lep_pt = lep_vec.Pt(); meas_lep_eta = lep_vec.Eta()
+#		#neutrino handling and setup for fit
+#		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
+#		self.met_pt[0], self.met_eta[0] = met1_vec.Pt(),  met1_vec.Eta() 
+#		self.met_phi[0], self.met_M[0]  = met1_vec.Phi(), met1_vec.M()
+#		if met1_vec.Pz() == met2_vec.Pz() :
+#			self.nFits[0] = 2
+#		else :
+#			self.nFits[0] = 1
+#		#jet selection
+#		( jetTuples, self.sf_btag_eff[0], self.sf_btag_eff_low[0], 
+#			self.sf_btag_eff_hi[0] ) = selectJets(self.is_data,self.top_type,lep_vec,met1_vec,met2_vec,jetVars_small,jetVars_large,self.jet_control_plots) 
+#		#above function in jetHelper.py
+#		if len(jetTuples)==1 :
+#			return self.__closeout__(-1*jetTuples[0])
+#		#event reconstruction
+#		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) 
+#		#above function in ttbarReconstructor.py
+#		#fill the TTree with the fourvector variables, and angle and differential cross section variable reconstruction
+#		if self.top_type == 1 :
+#			self.__fillFourVecsType1__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0]) 		
+#			( self.cstar[0], self.x_F[0], 
+#			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0],self.Q_l[0]) 
+#			#above function in angleReconstructor.py
+#		elif self.top_type == 2 :
+#			self.__fillFourVecsType2__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0])
+#			( self.cstar[0], self.x_F[0], 
+#			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],self.Q_l[0]) 
+#			#above function in angleReconstructor.py
+#		#MC Truth observable and reweighting calculation
+#		if self.is_data==0 :
+#			if self.event_type!=4 :
+#				( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
+#					self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
+#					self.w_s_delta[0],self.w_a_delta[0],
+#					self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
+#					self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
+#			#scale factor and reweighting calculations
+#			#8TeV numbers
+#			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
+#			self.sf_pileup[0] = self.corrector.getpileup_reweight(MCpileup)
+#			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
+#				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta)
+#			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
+#				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta)
 		self.__closeout__(0) #yay! A successful event!
 
 	##################################  #__init__ function  ##################################
