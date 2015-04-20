@@ -89,6 +89,36 @@ class treemaker :
 	jetLabels_large_unpruned.append(('jhuCa8','UnprunedCA8tau1')); jetHandles_large_unpruned.append(Handle('vector<double>'))
 	jetLabels_large_unpruned.append(('jhuCa8','UnprunedCA8tau2')); jetHandles_large_unpruned.append(Handle('vector<double>'))
 	jetLabels_large_unpruned.append(('jhuCa8','UnprunedCA8tau3')); jetHandles_large_unpruned.append(Handle('vector<double>'))
+	#CMS Top Tagged CA8 jets
+	jetHandles_tt = [];	jetLabels_tt = []
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8CORR')); 		   jetHandles_tt.append(Handle(vector_of_4vecs))
+	jetLabels_tt.append(('patjets','TopTaggedAK8Eta')); 		   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8Phi')); 		   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8Mass')); 		   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub0CORR')); 	   jetHandles_tt.append(Handle(vector_of_4vecs))
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub0Eta')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub0Phi')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub0Mass')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub1CORR')); 	   jetHandles_tt.append(Handle(vector_of_4vecs))
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub1Eta')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub1Phi')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub1Mass')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub2CORR')); 	   jetHandles_tt.append(Handle(vector_of_4vecs))
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub2Eta')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub2Phi')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub2Mass')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub3CORR')); 	   jetHandles_tt.append(Handle(vector_of_4vecs))
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub3Eta')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub3Phi')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('patjets','TopTaggedAK8sub3Mass')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8csv')); 		   jetHandles_tt.append(Handle('vector<double>'))
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub0csv')); 	   jetHandles_tt.append(Handle('vector<double>'))
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub1csv')); 	   jetHandles_tt.append(Handle('vector<double>'))
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub2csv')); 	   jetHandles_tt.append(Handle('vector<double>'))
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub3csv')); 	   jetHandles_tt.append(Handle('vector<double>'))
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8topTagMinMass')); jetHandles_tt.append(Handle('vector<double>'))
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8topTagTopMass')); jetHandles_tt.append(Handle('vector<double>'))
+	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8nsub')); 		   jetHandles_tt.append(Handle('vector<unsigned int>'))
 	#pythia8 nTuple GenParticles
 	genPartHandles = [];	genPartLabels = []
 	#genPartLabels.append(('genPart','genPartPt')); 	   genPartHandles.append(Handle('vector<float>'))
@@ -261,6 +291,25 @@ class treemaker :
 				elif i == 6 :	app = jetVars_large_dummy[3][j];
 				else :	app = 1.0;
 				jetVars_large[i+4].append(app)
+		#CMS Top Tagged Jets
+		jetVars_tt = []
+		jetVars_tt_dummy = []
+		for i in range(len(self.jetHandles_tt)) :
+			if (i<20 and i%4 == 0) or (i >= 20) :
+				event.getByLabel(self.jetLabels_tt[i],self.jetHandles_tt[i])
+				if not self.jetHandles_tt[i].isValid() :
+					self.ERR_CODE = ERR_INVALID_HANDLE
+					return self.ERR_CODE
+				jetVars_tt_dummy.append(self.jetHandles_tt[i].product())
+			jetVars_tt.append([])
+			for j in range(len(jetVars_tt_dummy[0])) :
+				jetVec = jetVars_tt_dummy[i/4][j]
+				if i<20 and i%4 == 0 :	app = jetVec.Pt();
+				elif i<20 and i%4 == 1 :	app = jetVec.Eta();
+				elif i<20 and i%4 == 2 :	app = jetVec.Phi();
+				elif i<20 and i%4 == 3 :	app = jetVec.M();
+				else :	app = jetVars_tt_dummy[i-15][j];
+				jetVars_tt[i].append(app)
 		#pileup
 		event.getByLabel(self.pileupLabel,self.pileupHandle)
 		if not self.pileupHandle.isValid() :
@@ -288,61 +337,61 @@ class treemaker :
 		if lepIndex < 0 :
 			return self.__closeout__(-1*lepIndex)
 		#set the fourvector of the lepton
-#		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
-#		self.lep_pt[0],  self.lep_eta[0] = lep_vec.Pt(),  lep_vec.Eta()
-#		self.lep_phi[0], self.lep_M[0]   = lep_vec.Phi(), lep_vec.M()
-#		meas_lep_pt = lep_vec.Pt(); meas_lep_eta = lep_vec.Eta()
-#		#neutrino handling and setup for fit
-#		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
-#		self.met_pt[0], self.met_eta[0] = met1_vec.Pt(),  met1_vec.Eta() 
-#		self.met_phi[0], self.met_M[0]  = met1_vec.Phi(), met1_vec.M()
-#		if met1_vec.Pz() == met2_vec.Pz() :
-#			self.nFits[0] = 2
-#		else :
-#			self.nFits[0] = 1
-#		#jet selection
-#		( jetTuples, self.sf_btag_eff[0], self.sf_btag_eff_low[0], 
-#			self.sf_btag_eff_hi[0] ) = selectJets(self.is_data,self.top_type,lep_vec,met1_vec,met2_vec,jetVars_small,jetVars_large,self.jet_control_plots) 
-#		#above function in jetHelper.py
-#		if len(jetTuples)==1 :
-#			return self.__closeout__(-1*jetTuples[0])
-#		#event reconstruction
-#		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) 
-#		#above function in ttbarReconstructor.py
-#		#fill the TTree with the fourvector variables, and angle and differential cross section variable reconstruction
-#		if self.top_type == 1 :
-#			self.__fillFourVecsType1__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0]) 		
-#			( self.cstar[0], self.x_F[0], 
-#			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0],self.Q_l[0]) 
-#			#above function in angleReconstructor.py
-#		elif self.top_type == 2 :
-#			self.__fillFourVecsType2__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0])
-#			( self.cstar[0], self.x_F[0], 
-#			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],self.Q_l[0]) 
-#			#above function in angleReconstructor.py
-#		#MC Truth observable and reweighting calculation
-#		if self.is_data==0 :
-#			if self.event_type!=4 :
-#				( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
-#					self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
-#					self.w_s_delta[0],self.w_a_delta[0],
-#					self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
-#					self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
-#			#scale factor and reweighting calculations
-#			#8TeV numbers
-#			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
-#			self.sf_pileup[0] = self.corrector.getpileup_reweight(MCpileup)
-#			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
-#				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta)
-#			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
-#				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta)
+		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
+		self.lep_pt[0],  self.lep_eta[0] = lep_vec.Pt(),  lep_vec.Eta()
+		self.lep_phi[0], self.lep_M[0]   = lep_vec.Phi(), lep_vec.M()
+		meas_lep_pt = lep_vec.Pt(); meas_lep_eta = lep_vec.Eta()
+		#neutrino handling and setup for fit
+		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
+		self.met_pt[0], self.met_eta[0] = met1_vec.Pt(),  met1_vec.Eta() 
+		self.met_phi[0], self.met_M[0]  = met1_vec.Phi(), met1_vec.M()
+		if met1_vec.Pz() == met2_vec.Pz() :
+			self.nFits[0] = 2
+		else :
+			self.nFits[0] = 1
+		#jet selection
+		( jetTuples, self.sf_btag_eff[0], self.sf_btag_eff_low[0], self.sf_btag_eff_hi[0],
+			self.top_type[0] ) = selectJets(self.is_data,lep_vec,met1_vec,met2_vec,jetVars_small,jetVars_large,jetVars_tt,self.jet_control_plots) 
+		#above function in jetHelper.py
+		if len(jetTuples)==1 :
+			return self.__closeout__(-1*jetTuples[0])
+		#event reconstruction
+		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) 
+		#above function in ttbarReconstructor.py
+		#fill the TTree with the fourvector variables, and angle and differential cross section variable reconstruction
+		if self.top_type[0] == 1 :
+			self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],jetTuples[3][0]) 		
+			( self.cstar[0], self.x_F[0], 
+			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0]+jetTuples[3][0],self.Q_l[0]) 
+			#above function in angleReconstructor.py
+		elif self.top_type == 2 :
+			self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0])
+			( self.cstar[0], self.x_F[0], 
+			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],self.Q_l[0]) 
+			#above function in angleReconstructor.py
+		#MC Truth observable and reweighting calculation
+		if self.is_data==0 :
+			if self.event_type!=4 :
+				( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
+					self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
+					self.w_s_delta[0],self.w_a_delta[0],
+					self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
+					self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
+			#scale factor and reweighting calculations
+			#8TeV numbers
+			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
+			self.sf_pileup[0] = self.corrector.getpileup_reweight(MCpileup)
+			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
+				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta)
+			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
+				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta)
 		self.__closeout__(0) #yay! A successful event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,isData,generator,eventType,sideband,lepType,topType,reweight,onGrid) :
+	def __init__(self,fileName,isData,generator,eventType,sideband,lepType,reweight,onGrid) :
 		self.ERR_CODE = ERR_NONE
 		#handle input options
-		self.__handleInput__(fileName,isData,generator,eventType,sideband,lepType,topType,reweight)
+		self.__handleInput__(fileName,isData,generator,eventType,sideband,lepType,reweight)
 		#book TTree
 		self.__book__()
 		#Set Monte Carlo reweighter
@@ -350,7 +399,7 @@ class treemaker :
 	
 	##################################   #__handleInput__   ##################################   
 	#############################   __init__ helper function   ###############################
-	def __handleInput__(self,fileName,isData,generator,eventType,sideband,lepType,topType,reweight) :
+	def __handleInput__(self,fileName,isData,generator,eventType,sideband,lepType,reweight) :
 		self.ERR_CODE = ERR_NONE
 		#output file name
 		self.file_name = fileName
@@ -413,16 +462,6 @@ class treemaker :
 			print 'ERROR: cannot determine if muon or electron analysis is being performed!'
 			print '	lepType = '+lepType+''
 			self.ERR_CODE = ERR_INVALID_INIT
-		#top type?
-		self.top_type = topType
-		if topType == 1 :
-			print 'File will be analyzed using TYPE 1 (FULLY MERGED) TOPS'
-		elif topType == 2 :
-			print 'File will be analyzed using TYPE 2 (PARTIALLY MERGED) TOPS'
-		else :
-			print 'ERROR: cannot determine if top type 1 or top type 2 analysis is being performed!'
-			print '	topType = '+topType+''
-			self.ERR_CODE = ERR_INVALID_INIT
 		#event scaling?
 		self.w = reweight
 
@@ -436,6 +475,8 @@ class treemaker :
 		#list of branch variables with initial values
 		self.initial_branches = []
 		#Add branches to TTree
+		#top type
+		self.top_type = array('I',[0]); self.addBranch('top_type',self.top_type,'i',0)
 		#cutflow
 		self.cutflow = array('I',[0]); self.addBranch('cutflow',self.cutflow,'i',0)
 		#weights (renormalization, scale factors, analysis)
@@ -580,11 +621,10 @@ class treemaker :
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_comb_mass',
 			'Best combined mass of (lepton, MET, leptonic bjet); M (GeV)',40,100.,300.))
 		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_CSV','CSV of small jets; CSV value',20,0.0,1.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_pT','p_{T} of large jets; p_{T} (GeV)',100,0.0,500.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_mass','Mass of hard large jets; M (GeV)',60,0.0,300.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_dPhi','#Delta #phi(leptonic top) of top-like jets; #Delta #phi',35,0.0,3.5))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_tau32','#tau_{3}/#tau_{2} of hadronic top-like jets; #tau_{32}',20,0.0,1.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_mult','number of hadronic top candidates',4,0.0,4.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_pT','p_{T} of CMS Top Tagger jets; p_{T} (GeV)',100,0.0,500.0))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_nsub','N_{subjets} of hard CMS Top Tagger jets; N_{subjets}',5,0,5))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_mmin','m_{min} of hard CMS Top Tagger Jets with 3 subjets; m_{min} (GeV)',50,0.0,250.))
+		self.jet_control_plots.append(ROOT.TH1F('t1_top_mjet','m_{jet} of top-like CMS Top Tagger jets; m_{jet} (GeV)',60,0.0,300.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_pT','p_{T} of large jets; p_{T} (GeV)',100,0.0,500.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_mass','Mass of hard large jets; M (GeV)',50,0.0,250.0))
 		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_dPhi',
@@ -614,7 +654,7 @@ class treemaker :
 		self.initial_branches.append((var,ini_val))
 
 	################ function to fill fourvector branch values (type 2 tops) ###############
-	def __fillFourVecsType2__(self,lepton,met,lepb,hadW,hadb) :
+	def __fillFourVecs__(self,lepton,met,lepb,hadW,hadb) :
 		self.lep_pt[0] 	= lepton.Pt(); 	self.lep_eta[0] = lepton.Eta()
 		self.lep_phi[0] = lepton.Phi(); self.lep_M[0] 	= lepton.M()
 		self.met_pt[0] 	= met.Pt(); 	self.met_eta[0] = met.Eta()
@@ -632,23 +672,6 @@ class treemaker :
 		self.lept_pt[0]  = lept.Pt();  self.lept_eta[0] = lept.Eta()
 		self.lept_phi[0] = lept.Phi(); self.lept_M[0] 	= lept.M()
 		hadt = hadW+hadb
-		self.hadt_pt[0]  = hadt.Pt();  self.hadt_eta[0] = hadt.Eta()
-		self.hadt_phi[0] = hadt.Phi(); self.hadt_M[0] 	= hadt.M()
-
-	################ function to fill fourvector branch values (type 1 tops) ###############
-	def __fillFourVecsType1__(self,lepton,met,lepb,hadt) :
-		self.lep_pt[0] 	= lepton.Pt(); 	self.lep_eta[0] = lepton.Eta()
-		self.lep_phi[0] = lepton.Phi(); self.lep_M[0] 	= lepton.M()
-		self.met_pt[0] 	= met.Pt(); 	self.met_eta[0] = met.Eta()
-		self.met_phi[0] = met.Phi(); 	self.met_M[0] 	= met.M()
-		lepW = lepton+met
-		self.lepW_pt[0]  = lepW.Pt();  self.lepW_eta[0] = lepW.Eta()
-		self.lepW_phi[0] = lepW.Phi(); self.lepW_M[0] 	= lepW.M()
-		self.lepb_pt[0]  = lepb.Pt();  self.lepb_eta[0] = lepb.Eta()
-		self.lepb_phi[0] = lepb.Phi(); self.lepb_M[0] 	= lepb.M()
-		lept = lepW+lepb
-		self.lept_pt[0]  = lept.Pt();  self.lept_eta[0] = lept.Eta()
-		self.lept_phi[0] = lept.Phi(); self.lept_M[0] 	= lept.M()
 		self.hadt_pt[0]  = hadt.Pt();  self.hadt_eta[0] = hadt.Eta()
 		self.hadt_phi[0] = hadt.Phi(); self.hadt_M[0] 	= hadt.M()
 

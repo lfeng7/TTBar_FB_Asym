@@ -127,7 +127,7 @@ def leptonCuts(lep_type,sideband,muVars,elVars,metVars,jetVars,jetVars_large,con
 		if iso_func_return == 0 :
 			iso_other_leps.append(other_leps[i])
 
-	print '      # leptons = %d, # iso leptons = %d\n      # other leptons = %d, # iso other leptons = %d'%(len(lep_cands),len(iso_leps),len(other_leps),len(iso_other_leps)) #DEBUGGING
+#	print '      # leptons = %d, # iso leptons = %d\n      # other leptons = %d, # iso other leptons = %d'%(len(lep_cands),len(iso_leps),len(other_leps),len(iso_other_leps)) #DEBUGGING
 
 	#check for exactly one lepton that passed the isolation cuts
 	if len(iso_leps) != 1 :

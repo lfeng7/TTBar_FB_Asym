@@ -23,8 +23,6 @@ parser.add_option('--sideband',	  type='string', action='store', default='no',  
 	help='Perform analysis in a sideband? "yes" or "no" (default: "no")')
 parser.add_option('--leptons', 	  type='string', action='store', default='muons', dest='leptons',	  
 	help='Specify "muons" or "electrons" lepton type, default is "muons"')
-parser.add_option('--top_type',   type='int', 	 action='store', default=1, 	  dest='top_type',	  
-	help='Specify top type "1" (fully merged) or "2" (partially merged), default is "1"')
 parser.add_option('--max_events', type='int',    action='store', default=-1,	  dest='max_events',  
 	help='Maximum number of events to process (default is -1 for "all")')
 parser.add_option('--print_every',type='int',    action='store', default=1000,	  dest='print_every', 
@@ -51,12 +49,6 @@ parser.add_option('--n_events', 	 type='float',  action='store', default=1.0,  	
 #append 'sb' to the name for a sideband file
 if options.sideband.lower() == 'yes' :
 	options.name = options.name+'_sb'
-
-#append the top type to the name
-if options.top_type == 1 :
-	options.name = options.name+'_type1'
-elif options.top_type == 2 :
-	options.name = options.name+'_type2'
 
 print 'Opening files for sample '+options.name+' . . .'  
 #Build path to input file
@@ -86,7 +78,7 @@ if options.n_jobs>1 :
 filename+='_tree.root'
 #Initialize analyzer
 analyzer = treemaker(filename, options.data, options.generator, options.event_type, options.sideband, 
-	options.leptons, options.top_type, options.cross_section/options.n_events,options.on_grid)
+	options.leptons, options.cross_section/options.n_events, options.on_grid)
 
 #Counters
 real_count = 0
