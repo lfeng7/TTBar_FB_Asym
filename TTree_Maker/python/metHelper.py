@@ -6,24 +6,8 @@ import ROOT
 from math import *
 
 #Global variables
-#cutflow
-CUTFLOW_MINIMUM_MET = 1
-#cut values
-MET_PT_MIN = 10. #GeV
 #constants
 MW = 80.4
-
-#metCut
-#takes in the MET variables
-#returns 0 if cut is passed or negative value of cutflow failure point
-def metCut(metVars,control_plots) :
-	metPt = metVars[0][0]
-	control_plots[0].Fill(metPt)
-	if metPt > MET_PT_MIN :
-		return 0
-	else :
-		return -1*CUTFLOW_MINIMUM_MET
-
 
 #setupMET
 #takes in the fourvector of the selected lepton and the list of 

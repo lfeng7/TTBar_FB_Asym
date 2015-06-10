@@ -42,22 +42,16 @@ sample_names.append('SingleEl_Run2012D')
 
 for name in sample_names :
     os.chdir(name)
-    os.system('hadd '+name+'_type1_all.root '+name+'*type1*tree.root')
-    os.system('hadd '+name+'_type2_all.root '+name+'*type2*tree.root')
+    os.system('hadd '+name+'_all.root '+name+'*tree.root')
     os.system('mv *_all.root ../total_ttree_files')
     os.chdir('..')
     os.chdir(name+'_sb')
-    os.system('hadd '+name+'_sb_type1_all.root '+name+'*type1*tree.root')
-    os.system('hadd '+name+'_sb_type2_all.root '+name+'*type2*tree.root')
+    os.system('hadd '+name+'_sb_all.root '+name+'*tree.root')
     os.system('mv *_all.root ../total_ttree_files')
     os.chdir('..')
 os.chdir('total_ttree_files')
-os.system('hadd SingleMu_Run2012_type1_all.root SingleMu_Run2012*_type1_all.root')
-os.system('hadd SingleMu_Run2012_type2_all.root SingleMu_Run2012*_type2_all.root')
-cmd = 'hadd Powheg_semilep_TT_type1_all.root Powheg_qq_semilep_TT_type1_all.root'
-cmd += ' Powheg_qq_semilep_TT_SC_type1_all.root Powheg_gg_semilep_TT_type1_all.root Powheg_gg_semilep_TT_SC_type1_all.root'
-os.system(cmd)
-cmd = 'hadd Powheg_semilep_TT_type2_all.root Powheg_qq_semilep_TT_type2_all.root'
-cmd += ' Powheg_qq_semilep_TT_SC_type2_all.root Powheg_gg_semilep_TT_type2_all.root Powheg_gg_semilep_TT_SC_type2_all.root'
+os.system('hadd SingleMu_Run2012_all.root SingleMu_Run2012*_all.root')
+cmd = 'hadd Powheg_semilep_TT_all.root Powheg_qq_semilep_TT_all.root'
+cmd += ' Powheg_qq_semilep_TT_SC_all.root Powheg_gg_semilep_TT_all.root Powheg_gg_semilep_TT_SC_all.root'
 os.system(cmd)
 os.chdir('..')

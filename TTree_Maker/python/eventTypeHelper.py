@@ -9,7 +9,7 @@ from math import *
 
 #global variables
 #Beam energy
-SQRT_S=13000.0
+SQRT_S=8000.0
 BEAM_ENERGY=SQRT_S/2.0
 #PDG ID Numbering scheme http://pdg.lbl.gov/2002/montecarlorpp.pdf
 PROTON_ID = 2212

@@ -3,37 +3,13 @@ from array import array
 from math import *
 import os
 
+#top type to look at
+toptype = str(1)
+
 filenames = []
 shortnames = []
 weights = []
-#Single top
-filenames.append('T_s');		shortnames.append('Single Top')
-filenames.append('T_t');		shortnames.append('Single Top')
-filenames.append('T_tW');		shortnames.append('Single Top')
-filenames.append('Tbar_s');		shortnames.append('Single Top')
-filenames.append('Tbar_t');		shortnames.append('Single Top')
-filenames.append('Tbar_tW');	shortnames.append('Single Top')
-#DYnJets
-filenames.append('DY1Jets');	shortnames.append('DYJets')
-filenames.append('DY2Jets');	shortnames.append('DYJets')
-filenames.append('DY3Jets');	shortnames.append('DYJets')
-filenames.append('DY4Jets');	shortnames.append('DYJets')
-#WnJets samples
-filenames.append('W1Jets');		shortnames.append('WJets')
-filenames.append('W2Jets');		shortnames.append('WJets')
-filenames.append('W3Jets');		shortnames.append('WJets')
-filenames.append('W4Jets');		shortnames.append('WJets')
 #POWHEG TT
-#dileptonic 
-filenames.append('Powheg_dilep_TT');						shortnames.append('Dileptonic TTBar')
-filenames.append('Powheg_dilep_TT_SC');						shortnames.append('Dileptonic TTBar')
-filenames.append('Powheg_dilep_TT_Mtt_700_to_1000');		shortnames.append('Dileptonic TTBar')
-filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf');		shortnames.append('Dileptonic TTBar')
-#hadronic
-filenames.append('Powheg_had_TT');							shortnames.append('Hadronic TTBar')
-filenames.append('Powheg_had_TT_SC');						shortnames.append('Hadronic TTBar')
-filenames.append('Powheg_had_TT_Mtt_700_to_1000');			shortnames.append('Hadronic TTBar')
-filenames.append('Powheg_had_TT_Mtt_1000_to_Inf');			shortnames.append('Hadronic TTBar')
 #semileptonic qq
 filenames.append('Powheg_qq_semilep_TT');					shortnames.append('Semileptonic TTBar')
 filenames.append('Powheg_qq_semilep_TT_SC');				shortnames.append('Semileptonic TTBar')
@@ -44,15 +20,43 @@ filenames.append('Powheg_gg_semilep_TT');					shortnames.append('Semileptonic TT
 filenames.append('Powheg_gg_semilep_TT_SC');				shortnames.append('Semileptonic TTBar')
 filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000');	shortnames.append('Semileptonic TTBar')
 filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf');	shortnames.append('Semileptonic TTBar')
+#dileptonic 
+filenames.append('Powheg_dilep_TT');						shortnames.append('Dileptonic TTBar')
+filenames.append('Powheg_dilep_TT_SC');						shortnames.append('Dileptonic TTBar')
+filenames.append('Powheg_dilep_TT_Mtt_700_to_1000');		shortnames.append('Dileptonic TTBar')
+filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf');		shortnames.append('Dileptonic TTBar')
+#hadronic
+filenames.append('Powheg_had_TT');							shortnames.append('Hadronic TTBar')
+filenames.append('Powheg_had_TT_SC');						shortnames.append('Hadronic TTBar')
+filenames.append('Powheg_had_TT_Mtt_700_to_1000');			shortnames.append('Hadronic TTBar')
+filenames.append('Powheg_had_TT_Mtt_1000_to_Inf');			shortnames.append('Hadronic TTBar')
+#WnJets samples
+filenames.append('W1Jets');		shortnames.append('WJets')
+filenames.append('W2Jets');		shortnames.append('WJets')
+filenames.append('W3Jets');		shortnames.append('WJets')
+filenames.append('W4Jets');		shortnames.append('WJets')
+#DYnJets
+filenames.append('DY1Jets');	shortnames.append('DYJets')
+filenames.append('DY2Jets');	shortnames.append('DYJets')
+filenames.append('DY3Jets');	shortnames.append('DYJets')
+filenames.append('DY4Jets');	shortnames.append('DYJets')
+#Single top
+filenames.append('T_s');		shortnames.append('Single Top')
+filenames.append('T_t');		shortnames.append('Single Top')
+filenames.append('T_tW');		shortnames.append('Single Top')
+filenames.append('Tbar_s');		shortnames.append('Single Top')
+filenames.append('Tbar_t');		shortnames.append('Single Top')
+filenames.append('Tbar_tW');	shortnames.append('Single Top')
+
 #data
 data_filename = 'SingleMu_Run2012'
 
 #Get the files
 files = []
 for i in range(len(filenames)) :
-	filenames[i] += '_type2_all.root'
+	filenames[i] += '_all.root'
 	files.append(TFile(filenames[i]))
-data_file = TFile(data_filename+'_type2_all.root')
+data_file = TFile(data_filename+'_all.root')
 
 N_CUTFLOWS = 10+1
 events_at_cutflow = []
@@ -71,10 +75,13 @@ for i in range(len(files)) :
 	events_at_cutflow[i].append(1.0*gDirectory.Get('tmp').Integral())
 	#Get the number of events at each cutflow except the last
 	for cutflow in range(1,N_CUTFLOWS) :
-		tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*(cutflow==0 || cutflow>'+str(cutflow)+')')
+		if cutflow < 7 :
+			tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*((cutflow==0 || cutflow>'+str(cutflow)+'))')
+		else :
+			tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*((top_type==0 || top_type=='+toptype+') && (cutflow==0 || cutflow>'+str(cutflow)+'))')
 		events_at_cutflow[i].append(1.0*gDirectory.Get('tmp').Integral())
 	#Get the final number of selected events
-	tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*(cutflow==0)')
+	tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*((top_type==0 || top_type=='+toptype+') && (cutflow==0))')
 	nfinalevents = 1.0*gDirectory.Get('tmp').Integral()
 	events_at_cutflow[i].append(nfinalevents)
 	print '	Total number of selected events (unweighted) = '+str(nfinalevents/weights[i])+''
@@ -88,21 +95,19 @@ data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')')
 data_events_at_cutflow.append(1.0*gDirectory.Get('tmp').Integral())
 for cutflow in range(1,N_CUTFLOWS) :
 	#Get the number of events at each cutflow
-	data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(cutflow==0 || cutflow>'+str(cutflow)+')')
+	if cutflow <= 7 :
+		data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(cutflow==0 || cutflow>'+str(cutflow)+')')
+	else :
+		data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','((top_type==0 || top_type=='+toptype+') && (cutflow==0 || cutflow>'+str(cutflow)+'))')
 	data_events_at_cutflow.append(1.0*gDirectory.Get('tmp').Integral())
 #Get the total number of reconstructed events
-data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(cutflow==0)')
+data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','((top_type==0 || top_type=='+toptype+') && (cutflow==0))')
 data_events_at_cutflow.append(1.0*gDirectory.Get('tmp').Integral())
 data_file.Close()
 
 #print out the number of events in data and the efficiencies for the MC samples
 #first line is just table headings for each cutflow and each sample type
-cutflow_filename = 'cutflow_table'
-if 'type1' in filenames[0] :
-	cutflow_filename+='_type1'
-elif 'type2' in filenames[0] :
-	cutflow_filename+='_type2'
-cutflow_filename+='.txt'
+cutflow_filename = 'cutflow_table_type'+toptype+'.txt'
 first_line = 'Cutflow 	Data Events 		'
 added_shortnames = []
 for shortname in shortnames :

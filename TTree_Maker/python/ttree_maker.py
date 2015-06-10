@@ -9,6 +9,11 @@
 ERR_NONE = 0 		   #	0 = no Error
 ERR_INVALID_INIT = 1   #	1 = invalid initialization options
 ERR_INVALID_HANDLE = 2 #	2 = invalid Handle for event
+#Cutflow codes:
+CUTFLOW_FULL_EVENT = 0
+CUTFLOW_NOT_ENOUGH_JETS = 1
+CUTFLOW_NO_LEPTON = 2
+CUTFLOW_KINEMATIC_FIT_FAIL = 3
 #Beam energy
 SQRT_S=13000.0
 BEAM_ENERGY=SQRT_S/2.0
@@ -20,9 +25,12 @@ from DataFormats.FWLite import Events, Handle
 from array import array
 from math import *
 import sys
+from muon import muon
+from electron import electron
+from jet import jet
 from eventTypeHelper import eventTypeCheck, findInitialQuark, findMCTops
-from lepHelper import leptonCuts, getLeptonFourVec
-from metHelper import metCut, setupMET
+from lepHelper import muonCuts, electronCuts
+from metHelper import setupMET
 from jetHelper import selectJets
 from ttbarReconstructor import reconstruct
 from angleReconstructor import getObservables, getMCObservables
@@ -34,107 +42,42 @@ class treemaker :
 	##################################		#__doc__		##################################
 	"""treemaker class; calculates and outputs all TTree variables for an event"""
 
-	##################################  13TeV Handles and Labels  ##################################
+	##################################  Handles and Labels  ##################################
 	#MC GenEvent info
 	genHandle = Handle('vector<reco::GenParticle>'); genLabel  = ('prunedGenParticles','')
-	#muons
 	vector_of_4vecs = 'vector<ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > >'
+	#muons
 	muHandles = []; muLabels = []
 	muLabels.append(('jhuMuonPFlowLoose','muonLoose')); 	   muHandles.append(Handle(vector_of_4vecs))
-	muLabels.append(('muons','muEta')); 					   muHandles.append(Handle('vector<float>')) #dummies
-	muLabels.append(('muons','muPhi')); 					   muHandles.append(Handle('vector<float>')) #dummies
-	muLabels.append(('muons','muMass')); 					   muHandles.append(Handle('vector<float>')) #dummies
 	muLabels.append(('jhuMuonPFlowLoose','muonLoosecharge'));  muHandles.append(Handle('vector<int>'))
-	muLabels.append(('muons','muSumChargedHadronPt')); 		   muHandles.append(Handle('vector<float>')) #dummies
-	muLabels.append(('muons','muSumNeutralHadronPt')); 		   muHandles.append(Handle('vector<float>')) #dummies
-	muLabels.append(('muons','muSumPhotonPt')); 			   muHandles.append(Handle('vector<float>')) #dummies
-	muLabels.append(('muons','muSumPUPt')); 				   muHandles.append(Handle('vector<float>')) #dummies
 	muLabels.append(('jhuMuonPFlowLoose','muonLooseistight')); muHandles.append(Handle('vector<unsigned int>'))
 	muLabels.append(('jhuMuonPFlowLoose','muonLooseisloose')); muHandles.append(Handle('vector<unsigned int>'))
-	muLabels.append(('muons','muGenMuonE')); 				   muHandles.append(Handle('vector<float>')) #dummies
 	#electrons
 	elHandles = []; elLabels = []
 	elLabels.append(('jhuElePFlowLoose','electronLoose')); 		  elHandles.append(Handle(vector_of_4vecs))
-	elLabels.append(('electrons','elEta')); 					  elHandles.append(Handle('vector<float>')) #dummies
-	elLabels.append(('electrons','elPhi')); 					  elHandles.append(Handle('vector<float>')) #dummies
-	elLabels.append(('electrons','elMass')); 					  elHandles.append(Handle('vector<float>')) #dummies
 	elLabels.append(('jhuElePFlowLoose','electronLoosecharge'));  elHandles.append(Handle('vector<int>'))
-	elLabels.append(('jhuElePFlowLoose','electronLooseiso')); 	  elHandles.append(Handle('vector<double>'))
 	elLabels.append(('jhuElePFlowLoose','electronLooseistight')); elHandles.append(Handle('vector<unsigned int>'))
 	elLabels.append(('jhuElePFlowLoose','electronLooseisloose')); elHandles.append(Handle('vector<unsigned int>')) 
 	#MET
 	metHandles = []; metLabels = []
 	metLabels.append(('jhuGen','metpt'));  metHandles.append(Handle('double'))
 	metLabels.append(('jhuGen','metphi')); metHandles.append(Handle('double'))
-	#small (AK5) jets
-	jetHandles_small = [];	jetLabels_small = []
-	jetLabels_small.append(('jhuAk5','AK5')); 			   jetHandles_small.append(Handle(vector_of_4vecs))
-	jetLabels_small.append(('jetsAK4','jetAK4Eta')); 	   jetHandles_small.append(Handle('vector<float>')) #dummies
-	jetLabels_small.append(('jetsAK4','jetAK4Phi')); 	   jetHandles_small.append(Handle('vector<float>')) #dummies
-	jetLabels_small.append(('jetsAK4','jetAK4Mass')); 	   jetHandles_small.append(Handle('vector<float>')) #dummies
-	jetLabels_small.append(('jhuAk5','AK5csv')); 		   jetHandles_small.append(Handle('vector<double>'))
-	jetLabels_small.append(('jhuAk5','AK5PartonFlavour')); jetHandles_small.append(Handle('vector<int>'))
-	#Pruned large (CA8) jets
-	jetHandles_large_pruned = [];	jetLabels_large_pruned = []
-	jetLabels_large_pruned.append(('jhuCa8pp','PrunedCA8')); 			  jetHandles_large_pruned.append(Handle(vector_of_4vecs))
-	jetLabels_large_pruned.append(('patjets','patjetEta')); 			  jetHandles_large_pruned.append(Handle('vector<float>')) #dummies
-	jetLabels_large_pruned.append(('patjets','patjetPhi')); 			  jetHandles_large_pruned.append(Handle('vector<float>')) #dummies
-	jetLabels_large_pruned.append(('patjets','patjetMass')); 			  jetHandles_large_pruned.append(Handle('vector<float>')) #dummies
-	#Unpruned large (CA8) jets
-	jetHandles_large_unpruned = [];	jetLabels_large_unpruned = []
-	jetLabels_large_unpruned.append(('jhuCa8','UnprunedCA8')); 	   jetHandles_large_unpruned.append(Handle(vector_of_4vecs))
-	jetLabels_large_unpruned.append(('patjets','patjetEta')); 	   jetHandles_large_unpruned.append(Handle('vector<float>')) #dummies
-	jetLabels_large_unpruned.append(('patjets','patjetPhi')); 	   jetHandles_large_unpruned.append(Handle('vector<float>')) #dummies
-	jetLabels_large_unpruned.append(('patjets','patjetMass')); 	   jetHandles_large_unpruned.append(Handle('vector<float>')) #dummies
-	jetLabels_large_unpruned.append(('jhuCa8','UnprunedCA8tau1')); jetHandles_large_unpruned.append(Handle('vector<double>'))
-	jetLabels_large_unpruned.append(('jhuCa8','UnprunedCA8tau2')); jetHandles_large_unpruned.append(Handle('vector<double>'))
-	jetLabels_large_unpruned.append(('jhuCa8','UnprunedCA8tau3')); jetHandles_large_unpruned.append(Handle('vector<double>'))
-	#CMS Top Tagged CA8 jets
-	jetHandles_tt = [];	jetLabels_tt = []
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8CORR')); 		   jetHandles_tt.append(Handle(vector_of_4vecs))
-	jetLabels_tt.append(('patjets','TopTaggedAK8Eta')); 		   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8Phi')); 		   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8Mass')); 		   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub0CORR')); 	   jetHandles_tt.append(Handle(vector_of_4vecs))
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub0Eta')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub0Phi')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub0Mass')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub1CORR')); 	   jetHandles_tt.append(Handle(vector_of_4vecs))
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub1Eta')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub1Phi')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub1Mass')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub2CORR')); 	   jetHandles_tt.append(Handle(vector_of_4vecs))
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub2Eta')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub2Phi')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub2Mass')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub3CORR')); 	   jetHandles_tt.append(Handle(vector_of_4vecs))
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub3Eta')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub3Phi')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('patjets','TopTaggedAK8sub3Mass')); 	   jetHandles_tt.append(Handle('vector<float>')) #dummies
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8csv')); 		   jetHandles_tt.append(Handle('vector<double>'))
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub0csv')); 	   jetHandles_tt.append(Handle('vector<double>'))
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub1csv')); 	   jetHandles_tt.append(Handle('vector<double>'))
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub2csv')); 	   jetHandles_tt.append(Handle('vector<double>'))
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8sub3csv')); 	   jetHandles_tt.append(Handle('vector<double>'))
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8topTagMinMass')); jetHandles_tt.append(Handle('vector<double>'))
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8topTagTopMass')); jetHandles_tt.append(Handle('vector<double>'))
-	jetLabels_tt.append(('jhuCa8tt','TopTaggedCA8nsub')); 		   jetHandles_tt.append(Handle('vector<unsigned int>'))
-	#pythia8 nTuple GenParticles
-	genPartHandles = [];	genPartLabels = []
-	#genPartLabels.append(('genPart','genPartPt')); 	   genPartHandles.append(Handle('vector<float>'))
-	#genPartLabels.append(('genPart','genPartEta'));    genPartHandles.append(Handle('vector<float>'))
-	#genPartLabels.append(('genPart','genPartPhi'));    genPartHandles.append(Handle('vector<float>'))
-	#genPartLabels.append(('genPart','genPartMass'));   genPartHandles.append(Handle('vector<float>'))
-	#genPartLabels.append(('genPart','genPartID')); 	   genPartHandles.append(Handle('vector<float>'))
-	#genPartLabels.append(('genPart','genPartMomID'));  genPartHandles.append(Handle('vector<float>'))
-	#genPartLabels.append(('genPart','genPartStatus')); genPartHandles.append(Handle('vector<float>'))
+	#Jets
+	jetHandles = [];	jetLabels = []
+	jetLabels.append(('jhuCa8pp','PrunedCA8')); 			 jetHandles.append(Handle(vector_of_4vecs))
+	jetLabels.append(('jhuCa8','UnprunedCA8')); 			 jetHandles.append(Handle(vector_of_4vecs))
+	jetLabels.append(('jhuCa8','UnprunedCA8tau1')); 		 jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8tau2')); 		 jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8tau3')); 		 jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8csv')); 			 jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8PartonFlavour')); jetHandles.append(Handle('vector<int>'))
 	#pileup
 	pileupLabel = ('jhuGen','npv'); 	  pileupHandle 	= Handle('unsigned int')
 	MCpileupLabel = ('jhuGen','npvTrue'); MCpileupHandle = Handle('unsigned int')
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,event) :
-		self.ERR_CODE = ERR_NONE
+		self.ERR_CODE = ERR_NONE; self.cutflow[0] = CUTFLOW_FULL_EVENT
 		#keep track of whether event has been cut
 		keepEvent = True
 		#event type split
@@ -160,7 +103,7 @@ class treemaker :
 					self.addTwice[0] = 1
 		if not keepEvent :
 			return self.ERR_CODE
-		#Mother particle (and MC truth top) assignment
+		#Mother particle and MC truth top assignment
 		if self.is_data == 0 : #MC truth values only relevant for semileptonic qqbar->ttbar
 			q_vec 	 = findInitialQuark(self.MC_generator,GenParticles,genPartVars) #function in eventTypeHelper.py
 			qbar_vec = ROOT.TLorentzVector(q_vec.X(),q_vec.Y(),-1.0*q_vec.Z(),q_vec.E())
@@ -170,57 +113,9 @@ class treemaker :
 			qbar_vec = ROOT.TLorentzVector(1.0,0.0,-1.0*sqrt(BEAM_ENERGY*BEAM_ENERGY -1*1),BEAM_ENERGY)
 			MCt_vec    = ROOT.TLorentzVector(1.0,0.0,0.0,1.0)
 			MCtbar_vec = ROOT.TLorentzVector(-1.0,0.0,0.0,1.0)
-		self.q_pt[0], 		self.q_eta[0] 	   = q_vec.Pt(), 	   q_vec.Eta()
-		self.q_phi[0], 		self.q_M[0] 	   = q_vec.Phi(), 	   q_vec.M()
-		self.qbar_pt[0], 	self.qbar_eta[0]   = qbar_vec.Pt(),    qbar_vec.Eta()
-		self.qbar_phi[0], 	self.qbar_M[0] 	   = qbar_vec.Phi(),   qbar_vec.M()
-		self.MCt_pt[0], 	self.MCt_eta[0]    = MCt_vec.Pt(), 	   MCt_vec.Eta()
-		self.MCt_phi[0], 	self.MCt_M[0] 	   = MCt_vec.Phi(),    MCt_vec.M()
-		self.MCtbar_pt[0], 	self.MCtbar_eta[0] = MCtbar_vec.Pt(),  MCtbar_vec.Eta()
-		self.MCtbar_phi[0], self.MCtbar_M[0]   = MCtbar_vec.Phi(), MCtbar_vec.M()
+		self.__fillMC__(q_vec,qbar_vec,MCt_vec,MCtbar_vec)
+
 		#get all the info from the event
-		#leptons
-		muVars = [];	elVars = []
-		muVars_dummy = [];	elVars_dummy = []
-		for i in range(len(self.muHandles)) :
-			if i == 0 or i == 4 or i == 9 or i == 10 :
-				event.getByLabel(self.muLabels[i],self.muHandles[i])
-				if not self.muHandles[i].isValid() :
-					self.ERR_CODE = ERR_INVALID_HANDLE
-					return self.ERR_CODE
-				muVars_dummy.append(self.muHandles[i].product())
-			muVars.append([])
-			for j in range(len(muVars_dummy[0])) :
-				muVec = muVars_dummy[0][j]
-				if i == 0 :	app = muVec.Pt();
-				elif i == 1 :	app = muVec.Eta();
-				elif i == 2 :	app = muVec.Phi();
-				elif i == 3 :	app = muVec.M();
-				elif i == 4 :	app = muVars_dummy[1][j];
-				elif i == 9 :	app = muVars_dummy[2][j];
-				elif i == 10 :	app = muVars_dummy[3][j];
-				else :	app = 1.0;
-				muVars[i].append(app)
-		for i in range(len(self.elHandles)) :
-			if i == 0 or i == 4 or i == 5 or i == 6 or i == 7 :
-				event.getByLabel(self.elLabels[i],self.elHandles[i])
-				if not self.elHandles[i].isValid() :
-					self.ERR_CODE = ERR_INVALID_HANDLE
-					return self.ERR_CODE
-				elVars_dummy.append(self.elHandles[i].product())
-			elVars.append([])
-			for j in range(len(elVars_dummy[0])) :
-				elVec = elVars_dummy[0][j]
-				if i == 0 :	app = elVec.Pt();
-				elif i == 1 :	app = elVec.Eta();
-				elif i == 2 :	app = elVec.Phi();
-				elif i == 3 :	app = elVec.M();
-				elif i == 4 :	app = elVars_dummy[1][j];
-				elif i == 5 :	app = elVars_dummy[2][j];
-				elif i == 6 :	app = elVars_dummy[3][j];
-				elif i == 7 :	app = elVars_dummy[4][j];
-				else :	app = 1.0;
-				elVars[i].append(app)
 		#MET
 		metVars = []
 		for i in range(len(self.metHandles)) :
@@ -229,146 +124,113 @@ class treemaker :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			metVars.append(self.metHandles[i].product())
-		#small Jets
-		jetVars_small = []
-		jetVars_small_dummy = []
-		for i in range(len(self.jetHandles_small)) :
-			if i == 0 or i == 4 or i == 5 :
-				event.getByLabel(self.jetLabels_small[i],self.jetHandles_small[i])
-				if not self.jetHandles_small[i].isValid() :
-					self.ERR_CODE = ERR_INVALID_HANDLE
-					return self.ERR_CODE
-				jetVars_small_dummy.append(self.jetHandles_small[i].product())
-			jetVars_small.append([])
-			for j in range(len(jetVars_small_dummy[0])) :
-				jetVec = jetVars_small_dummy[0][j]
-				if i == 0 :		app = jetVec.Pt();
-				elif i == 1 :	app = jetVec.Eta();
-				elif i == 2 :	app = jetVec.Phi();
-				elif i == 3 :	app = jetVec.M();
-				elif i == 4 :	app = jetVars_small_dummy[1][j];
-				elif i == 5 :	app = jetVars_small_dummy[2][j];
-				else :	app = 1.0;
-				jetVars_small[i].append(app)
-		#large Jets
-		jetVars_large = []
-		jetVars_large_dummy = []
-		for i in range(len(self.jetHandles_large_pruned)) :
-			if i == 0 or i == 4 or i == 5 :
-				event.getByLabel(self.jetLabels_large_pruned[i],self.jetHandles_large_pruned[i])
-				if not self.jetHandles_large_pruned[i].isValid() :
-					self.ERR_CODE = ERR_INVALID_HANDLE
-					return self.ERR_CODE
-				jetVars_large_dummy.append(self.jetHandles_large_pruned[i].product())
-			jetVars_large.append([])
-			for j in range(len(jetVars_large_dummy[0])) :
-				jetVec = jetVars_large_dummy[0][j]
-				if i == 0 :	app = jetVec.Pt();
-				elif i == 1 :	app = jetVec.Eta();
-				elif i == 2 :	app = jetVec.Phi();
-				elif i == 3 :	app = jetVec.M();
-				elif i == 4 :	app = jetVars_large_dummy[1][j];
-				elif i == 5 :	app = jetVars_large_dummy[2][j];
-				else :	app = 1.0;
-				jetVars_large[i].append(app)
-		jetVars_large_dummy = []
-		for i in range(len(self.jetHandles_large_unpruned)) :
-			if i == 0 or i == 4 or i == 5 or i == 6 :
-				event.getByLabel(self.jetLabels_large_unpruned[i],self.jetHandles_large_unpruned[i])
-				if not self.jetHandles_large_unpruned[i].isValid() :
-					self.ERR_CODE = ERR_INVALID_HANDLE
-					return self.ERR_CODE
-				jetVars_large_dummy.append(self.jetHandles_large_unpruned[i].product())
-			jetVars_large.append([])
-			for j in range(len(jetVars_large_dummy[0])) :
-				jetVec = jetVars_large_dummy[0][j]
-				if i == 0 :	app = jetVec.Pt();
-				elif i == 1 :	app = jetVec.Eta();
-				elif i == 2 :	app = jetVec.Phi();
-				elif i == 3 :	app = jetVec.M();
-				elif i == 4 :	app = jetVars_large_dummy[1][j];
-				elif i == 5 :	app = jetVars_large_dummy[2][j];
-				elif i == 6 :	app = jetVars_large_dummy[3][j];
-				else :	app = 1.0;
-				jetVars_large[i+4].append(app)
-		#CMS Top Tagged Jets
-		jetVars_tt = []
-		jetVars_tt_dummy = []
-		for i in range(len(self.jetHandles_tt)) :
-			if (i<20 and i%4 == 0) or (i >= 20) :
-				event.getByLabel(self.jetLabels_tt[i],self.jetHandles_tt[i])
-				if not self.jetHandles_tt[i].isValid() :
-					self.ERR_CODE = ERR_INVALID_HANDLE
-					return self.ERR_CODE
-				jetVars_tt_dummy.append(self.jetHandles_tt[i].product())
-			jetVars_tt.append([])
-			for j in range(len(jetVars_tt_dummy[0])) :
-				jetVec = jetVars_tt_dummy[i/4][j]
-				if i<20 and i%4 == 0 :	app = jetVec.Pt();
-				elif i<20 and i%4 == 1 :	app = jetVec.Eta();
-				elif i<20 and i%4 == 2 :	app = jetVec.Phi();
-				elif i<20 and i%4 == 3 :	app = jetVec.M();
-				else :	app = jetVars_tt_dummy[i-15][j];
-				jetVars_tt[i].append(app)
+		met = ROOT.TLorentzVector(); met.SetPtEtaPhiM(metVars[0][0], 0., metVars[0][1], 0.)
+		self.__fillMET__(met)
+		#jets
+		jets = []; jetVars = []
+		for i in range(len(self.jetHandles)) :
+			event.getByLabel(self.jetLabelsi],self.jetHandles[i])
+			if not self.jetHandles[i].isValid() :
+				self.ERR_CODE = ERR_INVALID_HANDLE
+				return self.ERR_CODE
+			jetVars.append(self.jetHandles[i].product())
+		for i in range(len(jetVars[0])) :
+			flavor = -1
+			if len(jetVars>6) :
+				flavor = jetVars[6][i]
+			newJet = jet(jetVars[0][i],jetVars[1],jetVars[2],jetVars[3],jetVars[4],jetVars[5][i],flavor)
+			jets.append(newJet)
+		#separate the jets into the top and b candidates
+		jets = selectJets(jets)
+		self.__fillJets__(jets)
+		if len(jets)<2 :
+			return self.__closeout__(CUTFLOW_NOT_ENOUGH_JETS)
+		self.sf_btag_eff[0] = jets[1].btagSF 
+		self.sf_btag_eff_low[0] = jets[1].btagSFlow 
+		self.sf_btag_eff_hi[0] = jets[1].btagSFhigh
+		#muons
+		muons = []; muVars = []
+		for i in range(len(self.muHandles)) :
+			event.getByLabel(self.muLabels[i],self.muHandles[i])
+			if not self.muHandles[i].isValid() :
+				self.ERR_CODE = ERR_INVALID_HANDLE
+				return self.ERR_CODE
+			muVars.append(self.muHandles[i].product())
+		for i in range(len(muVars[0])) :
+			newMuon = muon(muVars[0][i],muVars[1][i],muVars[2][i],muVars[3][i],jets)
+			muons.append(newMuon)
+		muons.sort(key = lambda x: x.vec.Pt())
+		self.__fillMuons__(muons)
+		if self.lep_type == 0 and len(muons)<1 :
+			return self.__closeout__(CUTFLOW_NO_LEPTON)
+		#electrons
+		electrons = []; elVars = []
+		for i in range(len(self.elHandles)) :
+			event.getByLabel(self.elLabels[i],self.elHandles[i])
+			if not self.elHandles[i].isValid() :
+				self.ERR_CODE = ERR_INVALID_HANDLE
+				return self.ERR_CODE
+			elVars.append(self.elHandles[i].product())
+		for i in range(len(elVars[0])) :
+			newElectron = electron(elVars[0][i],elVars[1][i],elVars[2][i],elVars[3][i],met,jets)
+			electrons.append(newElectron)
+		electrons.sort(key = lambda x: x.vec.Pt())
+		self.__fillElectrons__(electrons)
+		if self.lep_type == 1 and len(electrons)<1 :
+			return self.__closeout__(CUTFLOW_NO_LEPTON)
 		#pileup
 		event.getByLabel(self.pileupLabel,self.pileupHandle)
 		if not self.pileupHandle.isValid() :
 			self.ERR_CODE = ERR_INVALID_HANDLE
 			return self.ERR_CODE
 		pileup = self.pileupHandle.product()[0]
+		MCpileup = 0
 		if self.is_data == 0 :
 			event.getByLabel(self.MCpileupLabel,self.MCpileupHandle)
 			if not self.MCpileupHandle.isValid() :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			MCpileup = self.MCpileupHandle.product()[0]
-		else :
-			MCpileup = 0
-#		print 'pileup = '+str(pileup)+' MCpileup = '+str(MCpileup)+'' #DEBUG
 		self.pileup[0] = int(pileup); self.MC_pileup[0] = int(MCpileup)
-		#met cleaning
-		met_cut = metCut(metVars,self.MET_control_plots) #function in metHelper.py
-		if met_cut!=0 :
-			return self.__closeout__(-1*met_cut)
-		#lepton selection
-		#get the index of the ONE valid lepton OR the cutflow failpoint
-		lepIndex = leptonCuts(self.lep_type,self.side_band,muVars,elVars,metVars,jetVars_small,jetVars_large,self.lepton_control_plots) 
-		#above function in lepHelper.py
-		if lepIndex < 0 :
-			return self.__closeout__(-1*lepIndex)
-		#set the fourvector of the lepton
-		lep_vec, self.Q_l[0] = getLeptonFourVec(self.lep_type,muVars,elVars,lepIndex) #function in lepHelper.py
-		self.lep_pt[0],  self.lep_eta[0] = lep_vec.Pt(),  lep_vec.Eta()
-		self.lep_phi[0], self.lep_M[0]   = lep_vec.Phi(), lep_vec.M()
-		meas_lep_pt = lep_vec.Pt(); meas_lep_eta = lep_vec.Eta()
+
+#		#lepton selection, put nice leptons ahead of high-pT leptons
+#		muons = muonCuts(muons); electrons = electronCuts(electrons)
+#		self.__fillMuons__(muons); self.__fillElectrons__(electrons)
+		
 		#neutrino handling and setup for fit
 		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
 		self.met_pt[0], self.met_eta[0] = met1_vec.Pt(),  met1_vec.Eta() 
 		self.met_phi[0], self.met_M[0]  = met1_vec.Phi(), met1_vec.M()
+		self.nFits[0] = 2
 		if met1_vec.Pz() == met2_vec.Pz() :
-			self.nFits[0] = 2
-		else :
 			self.nFits[0] = 1
-		#jet selection
-		( jetTuples, self.sf_btag_eff[0], self.sf_btag_eff_low[0], self.sf_btag_eff_hi[0],
-			self.top_type[0] ) = selectJets(self.is_data,lep_vec,met1_vec,met2_vec,jetVars_small,jetVars_large,jetVars_tt,self.jet_control_plots) 
-		#above function in jetHelper.py
-		if len(jetTuples)==1 :
-			return self.__closeout__(-1*jetTuples[0])
-		#event reconstruction
-		lep_vec, met_vec, jetTuples, self.chi2[0] = reconstruct(lep_vec,met1_vec,met2_vec,jetTuples) 
+		#fill the rest of the leptonic fourvectors
+		if self.lep_type==0 :
+			self.__fillLepSide__(muons[0].vec,met1_vec,jets[1].vec)
+		elif self.lep_type==1 :
+			self.__fillLepSide__(electrons[0].vec,met1_vec,jets[1].vec)
+
+		#event reconstruction with kinematic fit
+		scaledlep = ROOT.TLorentzVector(); scaledmet = ROOT.TLorentzVector() 
+		scaledlepb = ROOT.TLorentzVector(); scaledhadt = ROOT.TLorentzVector()
+		if self.lep_type == 0 :
+			scaledlep, scaledmet, scaledlepb, scaledhadt, self.chi2[0] = reconstruct(muons[0].vec,met1_vec,met2_vec,jets) 
+		elif self.lep_type == 1 :
+			scaledlep, scaledmet, scaledlepb, scaledhadt, self.chi2[0] = reconstruct(electrons[0].vec,met1_vec,met2_vec,jets) 
 		#above function in ttbarReconstructor.py
-		#fill the TTree with the fourvector variables, and angle and differential cross section variable reconstruction
-		if self.top_type[0] == 1 :
-			self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],jetTuples[3][0]) 		
-			( self.cstar[0], self.x_F[0], 
-			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0]+jetTuples[3][0],self.Q_l[0]) 
-			#above function in angleReconstructor.py
-		elif self.top_type == 2 :
-			self.__fillFourVecs__(lep_vec,met_vec,jetTuples[0][0],jetTuples[1][0],jetTuples[2][0])
-			( self.cstar[0], self.x_F[0], 
-			self.M[0] ) = getObservables(lep_vec+met_vec+jetTuples[0][0],jetTuples[1][0]+jetTuples[2][0],self.Q_l[0]) 
-			#above function in angleReconstructor.py
+
+		#fill the TTree with the scaled fourvector variables
+		self.__fillScaledFourVecs__(scaledlep,scaledmet,scaledlepb,scaledhadt)
+
+		#reconstruct the observables using both the scaled and unscaled vectors
+		if self.lep_type == 0 :
+			self.cstar[0], self.x_F[0], self.M[0] = getObservables(muons[0].vec+met1_vec+jets[1].vec,jets[0].vec,self.Q_l[0]) 
+		elif self.lep_type == 1 :
+			self.cstar[0], self.x_F[0], self.M[0] = getObservables(electrons[0].vec+met1_vec+jets[1].vec,jets[0].vec,self.Q_l[0]) 
+		( self.cstar_scaled[0], self.x_F_scaled[0], 
+			self.M_scaled[0] ) = getObservables(scaledlep+scaledmet+scaledlepb,scaledhadt,self.Q_l[0]) 
+		#above function in angleReconstructor.py
+
 		#MC Truth observable and reweighting calculation
 		if self.is_data==0 :
 			if self.event_type!=4 :
@@ -388,10 +250,10 @@ class treemaker :
 		self.__closeout__(0) #yay! A successful event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,isData,generator,eventType,sideband,lepType,reweight,onGrid) :
+	def __init__(self,fileName,isData,generator,eventType,lepType,reweight,onGrid) :
 		self.ERR_CODE = ERR_NONE
 		#handle input options
-		self.__handleInput__(fileName,isData,generator,eventType,sideband,lepType,reweight)
+		self.__handleInput__(fileName,isData,generator,eventType,lepType,reweight)
 		#book TTree
 		self.__book__()
 		#Set Monte Carlo reweighter
@@ -399,7 +261,7 @@ class treemaker :
 	
 	##################################   #__handleInput__   ##################################   
 	#############################   __init__ helper function   ###############################
-	def __handleInput__(self,fileName,isData,generator,eventType,sideband,lepType,reweight) :
+	def __handleInput__(self,fileName,isData,generator,eventType,lepType,reweight) :
 		self.ERR_CODE = ERR_NONE
 		#output file name
 		self.file_name = fileName
@@ -413,13 +275,14 @@ class treemaker :
 			print '	options.data = '+isData+''
 			self.ERR_CODE = ERR_INVALID_INIT
 		#MC generator?
-		if generator.lower() == 'powheg' or generator.lower() == 'madgraph' or generator.lower() == 'pythia8' :
-			self.MC_generator = generator.lower()
-		elif generator.lower() == 'mg5' :
+		gen = generator.lower()
+		if gen == 'powheg' or gen == 'madgraph' or gen == 'pythia8' :
+			self.MC_generator = gen
+		elif gen == 'mg5' :
 			self.MC_generator = 'madgraph'
-		elif generator.lower() == 'none' :
+		elif gen == 'none' :
 			self.MC_generator = 'none'
-			self.jetLabels_small.pop(); self.jetHandles_small.pop()
+			self.jetLabels.pop(); self.jetHandles.pop()
 		#event type?
 		if eventType == 'qq_semilep' or eventType == 'qqbar_semilep' or eventType == 'qq' or eventType == 'qqbar' :
 			print 'only SEMILEPTONIC QQBAR EVENTS will be analyzed from this file'
@@ -439,17 +302,6 @@ class treemaker :
 		else :
 			print 'ERROR: unrecognized event type specification! Cannot run analysis!'
 			print '	options.event_type = '+eventType+''
-			self.ERR_CODE = ERR_INVALID_INIT
-		#sideband?
-		if sideband == 'no' :
-			print 'Analysis will be performed in SIGNAL REGION'
-			self.side_band = 0
-		elif sideband == 'yes' :
-			print 'Analysis will be performed in ISOLATION SIDEBAND REGION'
-			self.side_band = 1
-		else :
-			print 'ERROR: Invalid sidebanding option! Cannot run analysis!'
-			print '	options.sideband = '+sideband+''
 			self.ERR_CODE = ERR_INVALID_INIT
 		#lepton type?
 		if lepType == 'muons' or lepType == 'muon' or lepType == 'mu' :
@@ -475,8 +327,6 @@ class treemaker :
 		#list of branch variables with initial values
 		self.initial_branches = []
 		#Add branches to TTree
-		#top type
-		self.top_type = array('I',[0]); self.addBranch('top_type',self.top_type,'i',0)
 		#cutflow
 		self.cutflow = array('I',[0]); self.addBranch('cutflow',self.cutflow,'i',0)
 		#weights (renormalization, scale factors, analysis)
@@ -512,7 +362,7 @@ class treemaker :
 		self.nFits = array('I',[0]); self.addBranch('nFits',self.nFits,'i',0)
 		#whether or not this event should be added twice and have its weight halved based on whether its initial state
 		#was symmetric (this will only be nonzero for qqbar and some gg events)
-		self.addTwice = array('I',[0]); self.addBranch('addTwice',self.addTwice,'i',0)
+		self.addTwice = array('I',[2]); self.addBranch('addTwice',self.addTwice,'i',2)
 		#initial quark vector
 		self.q_pt  = array('d',[-1.0]);  self.addBranch('q_pt', self.q_pt, 'D',-1.0)
 		self.q_eta = array('d',[100.0]); self.addBranch('q_eta',self.q_eta,'D',100.0)
@@ -523,46 +373,6 @@ class treemaker :
 		self.qbar_eta = array('d',[100.0]); self.addBranch('qbar_eta',self.qbar_eta,'D',100.0)
 		self.qbar_phi = array('d',[100.0]); self.addBranch('qbar_phi',self.qbar_phi,'D',100.0)
 		self.qbar_M   = array('d',[-1.0]);  self.addBranch('qbar_M',  self.qbar_M,  'D',-1.0)
-		#lepton   vector
-		self.lep_pt  = array('d',[-1.0]);  self.addBranch('lep_pt', self.lep_pt, 'D',-1.0)
-		self.lep_eta = array('d',[100.0]); self.addBranch('lep_eta',self.lep_eta,'D',100.0)
-		self.lep_phi = array('d',[100.0]); self.addBranch('lep_phi',self.lep_phi,'D',100.0)
-		self.lep_M   = array('d',[-1.0]);  self.addBranch('lep_M',  self.lep_M,  'D',-1.0)
-		#neutrino vector
-		self.met_pt  = array('d',[-1.0]);  self.addBranch('met_pt', self.met_pt, 'D',-1.0)
-		self.met_eta = array('d',[100.0]); self.addBranch('met_eta',self.met_eta,'D',100.0)
-		self.met_phi = array('d',[100.0]); self.addBranch('met_phi',self.met_phi,'D',100.0)
-		self.met_M   = array('d',[-1.0]);  self.addBranch('met_M',  self.met_M,  'D',-1.0)
-		#leptonic W vector
-		self.lepW_pt  = array('d',[-1.0]);  self.addBranch('lepW_pt', self.lepW_pt, 'D',-1.0)
-		self.lepW_eta = array('d',[100.0]); self.addBranch('lepW_eta',self.lepW_eta,'D',100.0)
-		self.lepW_phi = array('d',[100.0]); self.addBranch('lepW_phi',self.lepW_phi,'D',100.0)
-		self.lepW_M   = array('d',[-1.0]);  self.addBranch('lepW_M',  self.lepW_M,  'D',-1.0)
-		#leptonic b vector
-		self.lepb_pt  = array('d',[-1.0]);  self.addBranch('lepb_pt', self.lepb_pt, 'D',-1.0)
-		self.lepb_eta = array('d',[100.0]); self.addBranch('lepb_eta',self.lepb_eta,'D',100.0)
-		self.lepb_phi = array('d',[100.0]); self.addBranch('lepb_phi',self.lepb_phi,'D',100.0)
-		self.lepb_M   = array('d',[-1.0]);  self.addBranch('lepb_M',  self.lepb_M,  'D',-1.0)
-		#hadronic W vector
-		self.hadW_pt  = array('d',[-1.0]);  self.addBranch('hadW_pt', self.hadW_pt, 'D',-1.0)
-		self.hadW_eta = array('d',[100.0]); self.addBranch('hadW_eta',self.hadW_eta,'D',100.0)
-		self.hadW_phi = array('d',[100.0]); self.addBranch('hadW_phi',self.hadW_phi,'D',100.0)
-		self.hadW_M   = array('d',[-1.0]);  self.addBranch('hadW_M',  self.hadW_M,  'D',-1.0)
-		#hadronic b vector
-		self.hadb_pt  = array('d',[-1.0]);  self.addBranch('hadb_pt', self.hadb_pt, 'D',-1.0)
-		self.hadb_eta = array('d',[100.0]); self.addBranch('hadb_eta',self.hadb_eta,'D',100.0)
-		self.hadb_phi = array('d',[100.0]); self.addBranch('hadb_phi',self.hadb_phi,'D',100.0)
-		self.hadb_M   = array('d',[-1.0]);  self.addBranch('hadb_M',  self.hadb_M,  'D',-1.0)
-		#leptonic top vector
-		self.lept_pt  = array('d',[-1.0]);  self.addBranch('lept_pt', self.lept_pt, 'D',-1.0)
-		self.lept_eta = array('d',[100.0]); self.addBranch('lept_eta',self.lept_eta,'D',100.0)
-		self.lept_phi = array('d',[100.0]); self.addBranch('lept_phi',self.lept_phi,'D',100.0)
-		self.lept_M   = array('d',[-1.0]);  self.addBranch('lept_M',  self.lept_M,  'D',-1.0)
-		#hadronic top vector
-		self.hadt_pt  = array('d',[-1.0]);  self.addBranch('hadt_pt', self.hadt_pt, 'D',-1.0)
-		self.hadt_eta = array('d',[100.0]); self.addBranch('hadt_eta',self.hadt_eta,'D',100.0)
-		self.hadt_phi = array('d',[100.0]); self.addBranch('hadt_phi',self.hadt_phi,'D',100.0)
-		self.hadt_M   = array('d',[-1.0]);  self.addBranch('hadt_M',  self.hadt_M,  'D',-1.0)
 		#MC top vector
 		self.MCt_pt  = array('d',[-1.0]);  self.addBranch('MCt_pt', self.MCt_pt, 'D',-1.0)
 		self.MCt_eta = array('d',[100.0]); self.addBranch('MCt_eta',self.MCt_eta,'D',100.0)
@@ -573,72 +383,125 @@ class treemaker :
 		self.MCtbar_eta = array('d',[100.0]); self.addBranch('MCtbar_eta',self.MCtbar_eta,'D',100.0)
 		self.MCtbar_phi = array('d',[100.0]); self.addBranch('MCtbar_phi',self.MCtbar_phi,'D',100.0)
 		self.MCtbar_M   = array('d',[-1.0]);  self.addBranch('MCtbar_M',  self.MCtbar_M,  'D',-1.0)
+		#muon 1
+		self.muon1_pt  = array('d',[-1.0]);  self.addBranch('muon1_pt', self.muon1_pt, 'D',-1.0)
+		self.muon1_eta = array('d',[100.0]); self.addBranch('muon1_eta',self.muon1_eta,'D',100.0)
+		self.muon1_phi = array('d',[100.0]); self.addBranch('muon1_phi',self.muon1_phi,'D',100.0)
+		self.muon1_M   = array('d',[-1.0]);  self.addBranch('muon1_M',  self.muon1_M,  'D',-1.0)
+		self.muon1_Q 	   = array('i',[0]); 	self.addBranch('muon1_Q',self.muon1_Q,'I',0)
+		self.muon1_isTight = array('I',[2]); 	self.addBranch('muon1_isTight',self.muon1_isTight,'i',2)
+		self.muon1_isLoose = array('I',[2]); 	self.addBranch('muon1_isLoose',self.muon1_isLoose,'i',2)
+		self.muon1_relPt   = array('d',[-1.0]); self.addBranch('muon1_relPt',self.muon1_relPt,'D',-1.0)
+		self.muon1_dR 	   = array('d',[-1.0]); self.addBranch('muon1_dR',self.muon1_relPt,'D',-1.0)
+		#muon 2
+		self.muon2_pt  = array('d',[-1.0]);  self.addBranch('muon2_pt', self.muon2_pt, 'D',-1.0)
+		self.muon2_eta = array('d',[100.0]); self.addBranch('muon2_eta',self.muon2_eta,'D',100.0)
+		self.muon2_phi = array('d',[100.0]); self.addBranch('muon2_phi',self.muon2_phi,'D',100.0)
+		self.muon2_M   = array('d',[-1.0]);  self.addBranch('muon2_M',  self.muon2_M,  'D',-1.0)
+		self.muon2_Q 	   = array('i',[0]); 	self.addBranch('muon2_Q',self.muon2_Q,'I',0)
+		self.muon2_isTight = array('I',[2]); 	self.addBranch('muon2_isTight',self.muon2_isTight,'i',2)
+		self.muon2_isLoose = array('I',[2]); 	self.addBranch('muon2_isLoose',self.muon2_isLoose,'i',2)
+		self.muon2_relPt   = array('d',[-1.0]); self.addBranch('muon2_relPt',self.muon2_relPt,'D',-1.0)
+		self.muon2_dR 	   = array('d',[-1.0]); self.addBranch('muon2_dR',self.muon2_relPt,'D',-1.0)
+		#electron 1
+		self.ele1_pt  = array('d',[-1.0]);  self.addBranch('ele1_pt', self.ele1_pt, 'D',-1.0)
+		self.ele1_eta = array('d',[100.0]); self.addBranch('ele1_eta',self.ele1_eta,'D',100.0)
+		self.ele1_phi = array('d',[100.0]); self.addBranch('ele1_phi',self.ele1_phi,'D',100.0)
+		self.ele1_M   = array('d',[-1.0]);  self.addBranch('ele1_M',  self.ele1_M,  'D',-1.0)
+		self.ele1_Q 	   	  = array('i',[0]); 	 self.addBranch('ele1_Q',self.ele1_Q,'I',0)
+		self.ele1_isTight 	  = array('I',[2]); 	 self.addBranch('ele1_isTight',self.ele1_isTight,'i',2)
+		self.ele1_isLoose 	  = array('I',[2]); 	 self.addBranch('ele1_isLoose',self.ele1_isLoose,'i',2)
+		self.ele1_relPt 	  = array('d',[-1.0]);   self.addBranch('ele1_relPt',self.ele1_relPt,'D',-1.0)
+		self.ele1_dR 		  = array('d',[-1.0]);   self.addBranch('ele1_dR',self.ele1_relPt,'D',-1.0)
+		self.ele1_tri_el_val  = array('d',[-100.0]); self.addBranch('ele1_dR',self.ele1_relPt,'D',-100.0)
+		self.ele1_tri_jet_val = array('d',[-100.0]); self.addBranch('ele1_dR',self.ele1_relPt,'D',-100.0)
+		self.ele1_tri_cut_val = array('d',[-100.0]); self.addBranch('ele1_dR',self.ele1_relPt,'D',-100.0)
+		#electron 2
+		self.ele2_pt  = array('d',[-1.0]);  self.addBranch('ele2_pt', self.ele2_pt, 'D',-1.0)
+		self.ele2_eta = array('d',[100.0]); self.addBranch('ele2_eta',self.ele2_eta,'D',100.0)
+		self.ele2_phi = array('d',[100.0]); self.addBranch('ele2_phi',self.ele2_phi,'D',100.0)
+		self.ele2_M   = array('d',[-1.0]);  self.addBranch('ele2_M',  self.ele2_M,  'D',-1.0)
+		self.ele2_Q 	   	  = array('i',[0]); 	 self.addBranch('ele2_Q',self.ele2_Q,'I',0)
+		self.ele2_isTight 	  = array('I',[2]); 	 self.addBranch('ele2_isTight',self.ele2_isTight,'i',2)
+		self.ele2_isLoose 	  = array('I',[2]); 	 self.addBranch('ele2_isLoose',self.ele2_isLoose,'i',2)
+		self.ele2_relPt 	  = array('d',[-1.0]);   self.addBranch('ele2_relPt',self.ele2_relPt,'D',-1.0)
+		self.ele2_dR 		  = array('d',[-1.0]);   self.addBranch('ele2_dR',self.ele2_relPt,'D',-1.0)
+		self.ele2_tri_el_val  = array('d',[-100.0]); self.addBranch('ele2_dR',self.ele2_relPt,'D',-100.0)
+		self.ele2_tri_jet_val = array('d',[-100.0]); self.addBranch('ele2_dR',self.ele2_relPt,'D',-100.0)
+		self.ele2_tri_cut_val = array('d',[-100.0]); self.addBranch('ele2_dR',self.ele2_relPt,'D',-100.0)
+		#neutrino
+		self.met_pt  = array('d',[-1.0]);  self.addBranch('met_pt', self.met_pt, 'D',-1.0)
+		self.met_eta = array('d',[100.0]); self.addBranch('met_eta',self.met_eta,'D',100.0)
+		self.met_phi = array('d',[100.0]); self.addBranch('met_phi',self.met_phi,'D',100.0)
+		self.met_M   = array('d',[-1.0]);  self.addBranch('met_M',  self.met_M,  'D',-1.0)
+		#leptonic W
+		self.lepW_pt  = array('d',[-1.0]);  self.addBranch('lepW_pt', self.lepW_pt, 'D',-1.0)
+		self.lepW_eta = array('d',[100.0]); self.addBranch('lepW_eta',self.lepW_eta,'D',100.0)
+		self.lepW_phi = array('d',[100.0]); self.addBranch('lepW_phi',self.lepW_phi,'D',100.0)
+		self.lepW_M   = array('d',[-1.0]);  self.addBranch('lepW_M',  self.lepW_M,  'D',-1.0)
+		#leptonic b
+		self.lepb_pt  = array('d',[-1.0]);  self.addBranch('lepb_pt', self.lepb_pt, 'D',-1.0)
+		self.lepb_eta = array('d',[100.0]); self.addBranch('lepb_eta',self.lepb_eta,'D',100.0)
+		self.lepb_phi = array('d',[100.0]); self.addBranch('lepb_phi',self.lepb_phi,'D',100.0)
+		self.lepb_M   = array('d',[-1.0]);  self.addBranch('lepb_M',  self.lepb_M,  'D',-1.0)
+		self.lepb_tau32  = array('d',[-1.0]); self.addBranch('lepb_tau32',  self.lepb_tau32,  'D',-1.0)
+		self.lepb_tau21  = array('d',[-1.0]); self.addBranch('lepb_tau21',  self.lepb_tau21,  'D',-1.0)
+		self.lepb_csv 	 = array('d',[-1.0]); self.addBranch('lepb_csv',  self.lepb_csv,  'D',-1.0)
+		self.lepb_flavor = array('i',[0]); 	  self.addBranch('lepb_flavor',self.lepb_flavor,'I',0)
+		#leptonic top
+		self.lept_pt  = array('d',[-1.0]);  self.addBranch('lept_pt', self.lept_pt, 'D',-1.0)
+		self.lept_eta = array('d',[100.0]); self.addBranch('lept_eta',self.lept_eta,'D',100.0)
+		self.lept_phi = array('d',[100.0]); self.addBranch('lept_phi',self.lept_phi,'D',100.0)
+		self.lept_M   = array('d',[-1.0]);  self.addBranch('lept_M',  self.lept_M,  'D',-1.0)
+		#hadronic top
+		self.hadt_pt  = array('d',[-1.0]);  self.addBranch('hadt_pt', self.hadt_pt, 'D',-1.0)
+		self.hadt_eta = array('d',[100.0]); self.addBranch('hadt_eta',self.hadt_eta,'D',100.0)
+		self.hadt_phi = array('d',[100.0]); self.addBranch('hadt_phi',self.hadt_phi,'D',100.0)
+		self.hadt_M   = array('d',[-1.0]);  self.addBranch('hadt_M',  self.hadt_M,  'D',-1.0)
+		self.hadt_tau32  = array('d',[-1.0]); self.addBranch('hadt_tau32',  self.hadt_tau32,  'D',-1.0)
+		self.hadt_tau21  = array('d',[-1.0]); self.addBranch('hadt_tau21',  self.hadt_tau21,  'D',-1.0)
+		self.hadt_csv 	 = array('d',[-1.0]); self.addBranch('hadt_csv',  self.hadt_csv,  'D',-1.0)
+		self.hadt_flavor = array('i',[0]); 	  self.addBranch('hadt_flavor',self.hadt_flavor,'I',0)
+		#rescaled fourvectors
+		self.scaled_lep_pt  = array('d',[-1.0]);  self.addBranch('scaled_lep_pt', self.scaled_lep_pt, 'D',-1.0)
+		self.scaled_lep_eta = array('d',[100.0]); self.addBranch('scaled_lep_eta',self.scaled_lep_eta,'D',100.0)
+		self.scaled_lep_phi = array('d',[100.0]); self.addBranch('scaled_lep_phi',self.scaled_lep_phi,'D',100.0)
+		self.scaled_lep_M   = array('d',[-1.0]);  self.addBranch('scaled_lep_M',  self.scaled_lep_M,  'D',-1.0)
+		self.scaled_met_pt  = array('d',[-1.0]);  self.addBranch('scaled_met_pt', self.scaled_met_pt, 'D',-1.0)
+		self.scaled_met_eta = array('d',[100.0]); self.addBranch('scaled_met_eta',self.scaled_met_eta,'D',100.0)
+		self.scaled_met_phi = array('d',[100.0]); self.addBranch('scaled_met_phi',self.scaled_met_phi,'D',100.0)
+		self.scaled_met_M   = array('d',[-1.0]);  self.addBranch('scaled_met_M',  self.scaled_met_M,  'D',-1.0)
+		self.scaled_lepW_pt  = array('d',[-1.0]);  self.addBranch('scaled_lepW_pt', self.scaled_lepW_pt, 'D',-1.0)
+		self.scaled_lepW_eta = array('d',[100.0]); self.addBranch('scaled_lepW_eta',self.scaled_lepW_eta,'D',100.0)
+		self.scaled_lepW_phi = array('d',[100.0]); self.addBranch('scaled_lepW_phi',self.scaled_lepW_phi,'D',100.0)
+		self.scaled_lepW_M   = array('d',[-1.0]);  self.addBranch('scaled_lepW_M',  self.scaled_lepW_M,  'D',-1.0)
+		self.scaled_lepb_pt  = array('d',[-1.0]);  self.addBranch('scaled_lepb_pt', self.scaled_lepb_pt, 'D',-1.0)
+		self.scaled_lepb_eta = array('d',[100.0]); self.addBranch('scaled_lepb_eta',self.scaled_lepb_eta,'D',100.0)
+		self.scaled_lepb_phi = array('d',[100.0]); self.addBranch('scaled_lepb_phi',self.scaled_lepb_phi,'D',100.0)
+		self.scaled_lepb_M   = array('d',[-1.0]);  self.addBranch('scaled_lepb_M',  self.scaled_lepb_M,  'D',-1.0)
+		self.scaled_lept_pt  = array('d',[-1.0]);  self.addBranch('scaled_lept_pt', self.scaled_lept_pt, 'D',-1.0)
+		self.scaled_lept_eta = array('d',[100.0]); self.addBranch('scaled_lept_eta',self.scaled_lept_eta,'D',100.0)
+		self.scaled_lept_phi = array('d',[100.0]); self.addBranch('scaled_lept_phi',self.scaled_lept_phi,'D',100.0)
+		self.scaled_lept_M   = array('d',[-1.0]);  self.addBranch('scaled_lept_M',  self.scaled_lept_M,  'D',-1.0)
+		self.scaled_hadt_pt  = array('d',[-1.0]);  self.addBranch('scaled_hadt_pt', self.scaled_hadt_pt, 'D',-1.0)
+		self.scaled_hadt_eta = array('d',[100.0]); self.addBranch('scaled_hadt_eta',self.scaled_hadt_eta,'D',100.0)
+		self.scaled_hadt_phi = array('d',[100.0]); self.addBranch('scaled_hadt_phi',self.scaled_hadt_phi,'D',100.0)
+		self.scaled_hadt_M   = array('d',[-1.0]);  self.addBranch('scaled_hadt_M',  self.scaled_hadt_M,  'D',-1.0)
 		#cosine(theta)
-		self.cstar     = array('d',[100.0]); self.addBranch('cstar',   self.cstar,   'D',100.0)
-		self.cstar_MC  = array('d',[100.0]); self.addBranch('cstar_MC',self.cstar_MC,'D',100.0)
+		self.cstar 		  = array('d',[100.0]); self.addBranch('cstar', 	  self.cstar, 		'D',100.0)
+		self.cstar_scaled = array('d',[100.0]); self.addBranch('cstar_scaled',self.cstar_scaled,'D',100.0)
+		self.cstar_MC 	  = array('d',[100.0]); self.addBranch('cstar_MC',	  self.cstar_MC, 	'D',100.0)
 		#Feynman x
-		self.x_F  	 = array('d',[100.0]); self.addBranch('x_F',   self.x_F,   'D',100.0)
-		self.x_F_MC  = array('d',[100.0]); self.addBranch('x_F_MC',self.x_F_MC,'D',100.0)
+		self.x_F 		= array('d',[100.0]); self.addBranch('x_F', 	  self.x_F,   	  'D',100.0)
+		self.x_F_scaled = array('d',[100.0]); self.addBranch('x_F_scaled',self.x_F_scaled,'D',100.0)
+		self.x_F_MC 	= array('d',[100.0]); self.addBranch('x_F_MC', 	  self.x_F_MC,	  'D',100.0)
 		#ttbar invariant mass
-		self.M     = array('d',[-1.0]); self.addBranch('M',   self.M,   'D',-1.0)
-		self.M_MC  = array('d',[-1.0]); self.addBranch('M_MC',self.M_MC,'D',-1.0)
+		self.M 		  = array('d',[-1.0]); self.addBranch('M', 		 self.M, 	   'D',-1.0)
+		self.M_scaled = array('d',[-1.0]); self.addBranch('M_scaled',self.M_scaled,'D',-1.0)
+		self.M_MC 	  = array('d',[-1.0]); self.addBranch('M_MC', 	 self.M_MC,    'D',-1.0)
 		#pileup
 		self.pileup = array('i',[0]); self.addBranch('pileup',self.pileup,'I',0)
 		self.MC_pileup = array('i',[0]); self.addBranch('MC_pileup',self.MC_pileup,'I',0)
-
-		self.control_plots_folder = self.f.mkdir('control_plots_folder','control_plots')
-		self.control_plots_folder.cd()
-		#control plots for optimising cuts
-		self.MET_control_plots = []; self.lepton_control_plots = []; self.jet_control_plots = []
-		#MET
-		self.MET_control_plots.append(ROOT.TH1F('met_pt','p_{T} of MET; GeV',60,0.,300.))
-		#leptons
-		self.lepton_control_plots.append(ROOT.TH1F('lep1_pt','p_{T} of first lepton; p_{T} (GeV)',40,0.,200.))
-		self.lepton_control_plots.append(ROOT.TH1F('lep1_eta','#eta of first lepton; #eta',60,-3.0,3.0))
-		self.lepton_control_plots.append(ROOT.TH1F('lep2_pt','p_{T} of second lepton; p_{T} (GeV)',40,0.,200.))
-		self.lepton_control_plots.append(ROOT.TH1F('lep2_eta','#eta of second lepton; #eta',60,-3.0,3.0))
-		self.lepton_control_plots.append(ROOT.TH1F('other_lep1_pt',
-			'p_{T} of first "other" lepton; p_{T} (GeV)',40,0.,200.))
-		self.lepton_control_plots.append(ROOT.TH1F('other_lep1_eta','#eta of first "other" lepton; #eta',60,-3.0,3.0))
-		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_pt',
-			'p_{T} of second "other" lepton; p_{T} (GeV)',40,0.,200.))
-		self.lepton_control_plots.append(ROOT.TH1F('other_lep2_eta','#eta of second "other" lepton; #eta',60,-3.0,3.0))
-		self.lepton_control_plots.append(ROOT.TH2F('jet_pre_cut',
-			'p_{T} of hardest small and large jets; p_{T} of hardest large jet (GeV); p_{T} of hardest small jet (GeV)',
-			50,0.0,500.,50,0.0,200.))
-		self.lepton_control_plots.append(ROOT.TH2F('lep_2D_cut',
-			'selected lepton #Delta R and p_{T,rel} from nearest jet; #Delta R; p_{T,rel} (GeV)',75,0.0,1.5,75,0.0,75.))
-		self.lepton_control_plots.append(ROOT.TH2F('triangle_cut_el',
-			'|#Delta #phi(e^{-},E^{miss}_{T})-1.5| vs. E^{miss}_{T}; E^{miss}_{T} (GeV); |#Delta #phi(e^{-},E^{miss}_{T})-1.5|',
-			60,0,300,50,0.,5.))
-		self.lepton_control_plots.append(ROOT.TH2F('triangle_cut_jet',
-			'|#Delta #phi(jet,E^{miss}_{T})-1.5| vs. E^{miss}_{T}; E^{miss}_{T} (GeV); |#Delta #phi(jet,E^{miss}_{T})-1.5|',
-			60,0,300,50,0.,5.))
-		#jets
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_pT','p_{T} of small jets; p_{T} (GeV)',50,0.0,350.0))
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_dPhi',
-			'#Delta #phi(lepton) of hard small jets; #Delta #phi',35,0.0,3.5))
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_comb_mass',
-			'Best combined mass of (lepton, MET, leptonic bjet); M (GeV)',40,100.,300.))
-		self.jet_control_plots.append(ROOT.TH1F('lep_bjet_CSV','CSV of small jets; CSV value',20,0.0,1.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_pT','p_{T} of CMS Top Tagger jets; p_{T} (GeV)',100,0.0,500.0))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_nsub','N_{subjets} of hard CMS Top Tagger jets; N_{subjets}',5,0,5))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_mmin','m_{min} of hard CMS Top Tagger Jets with 3 subjets; m_{min} (GeV)',50,0.0,250.))
-		self.jet_control_plots.append(ROOT.TH1F('t1_top_mjet','m_{jet} of top-like CMS Top Tagger jets; m_{jet} (GeV)',60,0.0,300.0))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_pT','p_{T} of large jets; p_{T} (GeV)',100,0.0,500.0))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_mass','Mass of hard large jets; M (GeV)',50,0.0,250.0))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_dPhi',
-			'#Delta #phi(leptonic top) of W-like jets; #Delta #phi',35,0.0,3.5))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_tau21','#tau_{2}/#tau_{1} of hadronic W-like jets; #tau_{21}',20,0.0,1.0))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_W_mult','number of hadronic W candidates',4,0.0,4.0))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_b_dPhi',
-			'#Delta #phi(leptonic top) of hard small jets; #Delta #phi',35,0.0,3.5))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_comb_mass',
-			'hadronic top candidate combined mass; M (GeV)',60,0.0,300.0))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_b_W_dR',
-			'#Delta R(W,b) (hadronic top constituent jets); #Delta R',35,0.0,3.5))
-		self.jet_control_plots.append(ROOT.TH1F('t2_top_best_comb_mass','best combined mass of hadronic top',50,130.,230.))
-		self.all_control_plots = self.MET_control_plots + self.lepton_control_plots + self.jet_control_plots 
 
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to zero to get ready for next event  ##########
@@ -653,27 +516,94 @@ class treemaker :
 		self.tree.Branch(name,var,name+'/'+vartype)
 		self.initial_branches.append((var,ini_val))
 
-	################ function to fill fourvector branch values (type 2 tops) ###############
-	def __fillFourVecs__(self,lepton,met,lepb,hadW,hadb) :
-		self.lep_pt[0] 	= lepton.Pt(); 	self.lep_eta[0] = lepton.Eta()
-		self.lep_phi[0] = lepton.Phi(); self.lep_M[0] 	= lepton.M()
-		self.met_pt[0] 	= met.Pt(); 	self.met_eta[0] = met.Eta()
-		self.met_phi[0] = met.Phi(); 	self.met_M[0] 	= met.M()
+	##############################   tree filling functions  ###############################		
+	def __fillMC__(qvec,qbarvec,MCtvec,MCtbarvec) :
+		self.q_pt[0], 		self.q_eta[0] 	   = qvec.Pt(), 	  qvec.Eta()
+		self.q_phi[0], 		self.q_M[0] 	   = qvec.Phi(), 	  qvec.M()
+		self.qbar_pt[0], 	self.qbar_eta[0]   = qbarvec.Pt(),    qbarvec.Eta()
+		self.qbar_phi[0], 	self.qbar_M[0] 	   = qbarvec.Phi(),   qbarvec.M()
+		self.MCt_pt[0], 	self.MCt_eta[0]    = MCtvec.Pt(), 	  MCtvec.Eta()
+		self.MCt_phi[0], 	self.MCt_M[0] 	   = MCtvec.Phi(),    MCtvec.M()
+		self.MCtbar_pt[0], 	self.MCtbar_eta[0] = MCtbarvec.Pt(),  MCtbarvec.Eta()
+		self.MCtbar_phi[0], self.MCtbar_M[0]   = MCtbarvec.Phi(), MCtbarvec.M()
+
+	def __fillMET__(self,metvec) :
+		self.met_pt[0]  = metvec.Pt(); self.met_eta[0] = metvec.Eta()
+		self.met_phi[0] = metvec.Phi(); self.met_M[0] 	= metvec.M()
+
+	def __fillJets__(self,jetList) :
+		if len(jetList) > 0 :
+			self.hadt_pt  = jetList[0].vec.Pt(); self.hadt_eta = jetList[0].vec.Eta()
+			self.hadt_phi = jetList[0].vec.Phi(); self.hadt_M   = jetList[0].vec.M()
+			self.hadt_tau32  = jetList[0].tau32; self.hadt_tau21  = jetList[0].tau21
+			self.hadt_csv 	 = jetList[0].csv; self.hadt_flavor = jetList[0].flavor
+		if len(jetList) > 1 :
+			self.lepb_pt  = jetList[1].vec.Pt(); self.lepb_eta = jetList[1].vec.Eta()
+			self.lepb_phi = jetList[1].vec.Phi(); self.lepb_M   = jetList[1].vec.M()
+			self.lepb_tau32  = jetList[1].tau32; self.lepb_tau21  = jetList[1].tau21
+			self.lepb_csv 	 = jetList[1].csv; self.lepb_flavor = jetList[1].flavor
+
+	def __fillMuons__(self,mulist) :
+		if len(mulist) > 0 :
+			self.muon1_pt  = mulist[0].vec.Pt(); self.muon1_eta = mulist[0].vec.Eta()
+			self.muon1_phi = mulist[0].vec.Phi(); self.muon1_M   = mulist[0].vec.M()
+			self.muon1_Q 	   = mulist[0].charge; self.muon1_isTight = mulist[0].isTight
+			self.muon1_isLoose = mulist[0].isLoose; self.muon1_relPt   = mulist[0].relPt
+			self.muon1_dR 	   = mulist[0].dR
+			if self.lep_type == 0 :
+				self.Q_l[0] = mulist[0].charge
+		if len(mulist) > 1 :
+			self.muon2_pt  = mulist[1].vec.Pt(); self.muon2_eta = mulist[1].vec.Eta()
+			self.muon2_phi = mulist[1].vec.Phi(); self.muon2_M   = mulist[1].vec.M()
+			self.muon2_Q 	   = mulist[1].charge; self.muon2_isTight = mulist[1].isTight
+			self.muon2_isLoose = mulist[1].isLoose; self.muon2_relPt   = mulist[1].relPt
+			self.muon2_dR 	   = mulist[1].dR
+
+	def __fillElectrons__(self,ellist) :
+		if len(ellist) > 0 :
+			self.ele1_pt  = ellist[0].vec.Pt(); self.ele1_eta = ellist[0].vec.Eta()
+			self.ele1_phi = ellist[0].vec.Phi(); self.ele1_M   = ellist[0].vec.M()
+			self.ele1_Q 	   = ellist[0].charge; self.ele1_isTight = ellist[0].isTight
+			self.ele1_isLoose = ellist[0].isLoose; self.ele1_relPt   = ellist[0].relPt
+			self.ele1_dR 	   = ellist[0].dR
+			self.ele1_tri_el_val  = ellist[0].triangle_el_val
+			self.ele1_tri_jet_val = ellist[0].triangle_jet_val
+			self.ele1_tri_cut_val = ellist[0].triangle_cut_val
+			if self.lep_type == 1 :
+				self.Q_l[0] = ellist[0].charge
+		if len(ellist) > 1 :
+			self.ele2_pt  = ellist[1].vec.Pt(); self.ele2_eta = ellist[1].vec.Eta()
+			self.ele2_phi = ellist[1].vec.Phi(); self.ele2_M   = ellist[1].vec.M()
+			self.ele2_Q 	   = ellist[1].charge; self.ele2_isTight = ellist[1].isTight
+			self.ele2_isLoose = ellist[1].isLoose; self.ele2_relPt   = ellist[1].relPt
+			self.ele2_dR 	   = ellist[1].dR
+			self.ele2_tri_el_val  = ellist[1].triangle_el_val
+			self.ele2_tri_jet_val = ellist[1].triangle_jet_val
+			self.ele2_tri_cut_val = ellist[1].triangle_cut_val
+
+	def __fillLepSide__(self,lepton,met,lepb) :
 		lepW = lepton+met
-		self.lepW_pt[0]  = lepW.Pt();  self.lepW_eta[0] = lepW.Eta()
-		self.lepW_phi[0] = lepW.Phi(); self.lepW_M[0] 	= lepW.M()
-		self.lepb_pt[0]  = lepb.Pt();  self.lepb_eta[0] = lepb.Eta()
-		self.lepb_phi[0] = lepb.Phi(); self.lepb_M[0] 	= lepb.M()
-		self.hadW_pt[0]  = hadW.Pt();  self.hadW_eta[0] = hadW.Eta()
-		self.hadW_phi[0] = hadW.Phi(); self.hadW_M[0] 	= hadW.M()
-		self.hadb_pt[0]  = hadb.Pt();  self.hadb_eta[0] = hadb.Eta()
-		self.hadb_phi[0] = hadb.Phi(); self.hadb_M[0] 	= hadb.M()
+		self.lepW_pt[0] 	= lepW.Pt(); 	self.lepW_eta[0] = lepW.Eta()
+		self.lepW_phi[0] = lepW.Phi(); 	self.lepW_M[0] 	= lepW.M()
 		lept = lepW+lepb
-		self.lept_pt[0]  = lept.Pt();  self.lept_eta[0] = lept.Eta()
-		self.lept_phi[0] = lept.Phi(); self.lept_M[0] 	= lept.M()
-		hadt = hadW+hadb
-		self.hadt_pt[0]  = hadt.Pt();  self.hadt_eta[0] = hadt.Eta()
-		self.hadt_phi[0] = hadt.Phi(); self.hadt_M[0] 	= hadt.M()
+		self.lept_pt[0] 	= lept.Pt(); 	self.lept_eta[0] = lept.Eta()
+		self.lept_phi[0] = lept.Phi(); 	self.lept_M[0] 	= lept.M()
+
+	def __fillScaledFourVecs__(self,lepton,met,lepb,hadt) :
+		self.scaled_lep_pt[0] 	= lepton.Pt(); 	self.scaled_lep_eta[0] = lepton.Eta()
+		self.scaled_lep_phi[0] = lepton.Phi(); self.scaled_lep_M[0] 	= lepton.M()
+		self.scaled_met_pt[0] 	= met.Pt(); 	self.scaled_met_eta[0] = met.Eta()
+		self.scaled_met_phi[0] = met.Phi(); 	self.scaled_met_M[0] 	= met.M()
+		lepW = lepton+met
+		self.scaled_lepW_pt[0] 	= lepW.Pt(); 	self.scaled_lepW_eta[0] = lepW.Eta()
+		self.scaled_lepW_phi[0] = lepW.Phi(); 	self.scaled_lepW_M[0] 	= lepW.M()
+		self.scaled_lepb_pt[0]  = lepb.Pt();  self.scaled_lepb_eta[0] = lepb.Eta()
+		self.scaled_lepb_phi[0] = lepb.Phi(); self.scaled_lepb_M[0] 	= lepb.M()
+		lept = lepW+lepb
+		self.scaled_lept_pt[0] 	= lept.Pt(); 	self.scaled_lept_eta[0] = lept.Eta()
+		self.scaled_lept_phi[0] = lept.Phi(); 	self.scaled_lept_M[0] 	= lept.M()
+		self.scaled_hadt_pt[0]  = hadt.Pt();  self.scaled_hadt_eta[0] = hadt.Eta()
+		self.scaled_hadt_phi[0] = hadt.Phi(); self.scaled_hadt_M[0] 	= hadt.M()
 
 	########## function to close out the event, called before kicking back to runner #########
 	def __closeout__(self,cut_flow) :
