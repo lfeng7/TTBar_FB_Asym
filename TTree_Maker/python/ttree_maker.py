@@ -129,7 +129,7 @@ class treemaker :
 		#jets
 		jets = []; jetVars = []
 		for i in range(len(self.jetHandles)) :
-			event.getByLabel(self.jetLabelsi],self.jetHandles[i])
+			event.getByLabel(self.jetLabels[i],self.jetHandles[i])
 			if not self.jetHandles[i].isValid() :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
