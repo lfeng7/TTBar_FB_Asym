@@ -5,11 +5,13 @@
 import ROOT
 from math import *
 
-#muonCuts puts high quality muons above high quality electrons in the list
+#muonCuts puts high quality muons above others in the list
 def muonCuts(mulist) :
 	return mulist #DEBUG RETURN
 
-
+#muonCuts puts high quality electrons above others in the list
+def electronCuts(ellist) :
+	return ellist #DEBUG RETURN
 
 #findNearestJet returns the jet object of the jet closest to this lepton
 def findNearestJet(lepvec,jets_list) :

@@ -41,10 +41,14 @@ def selectJets(jetlist) :
 
 #matchUnprunedVec matches a pruned jet to an unpruned jet and returns the index of said unpruned jet in the list
 def matchUnprunedVec(pruned_jet_vec,unpruned_fourvecs) :
-	closestDR = pruned_jet_vec.DeltaR(unpruned_fourvecs[0])
+	if len(unpruned_fourvecs)<1 :
+		return -1
+	thisVec = ROOT.TLorentzVector(unpruned_fourvecs[0].X(),unpruned_fourvecs[0].Y(),unpruned_fourvecs[0].Z(),unpruned_fourvecs[0].T())
+	closestDR = thisVec.DeltaR(pruned_jet_vec)
 	matchedJetIndex = 0
 	for i in range(1,len(unpruned_fourvecs)) :
-		checkDR = pruned_jet_vec.DeltaR(unpruned_fourvecs[i])
+		thisVec = ROOT.TLorentzVector(unpruned_fourvecs[i].X(),unpruned_fourvecs[i].Y(),unpruned_fourvecs[i].Z(),unpruned_fourvecs[i].T())
+		checkDR = thisVec.DeltaR(pruned_jet_vec)
 		if checkDR < closestDR :
 			closestDR = checkDR
 			matchedJetIndex = i
@@ -126,6 +130,6 @@ def get_CSVL_SFlight(pT,eta) :
 		SF = ((1.00022+(0.0010998*pT))+(-3.10672e-06*(pT*pT)))+(2.35006e-09*(pT*(pT*pT)))
 		SF_low = ((0.970045+(0.000862284*pT))+(-2.31714e-06*(pT*pT)))+(1.68866e-09*(pT*(pT*pT)))
 		SF_hi  = ((1.03039+(0.0013358*pT))+(-3.89284e-06*(pT*pT)))+(3.01155e-09*(pT*(pT*pT)))
-	else :
-		print 'WARNING: EVENT WITH JET OUTSIDE OF ETA RANGE! CANNOT GET BTAG EFFICIENCY! |eta| = '+str(eta)+''
+#	else :
+#		print 'WARNING: EVENT WITH JET OUTSIDE OF ETA RANGE! CANNOT GET BTAG EFFICIENCY! |eta| = '+str(eta)+''
 	return SF,SF_low,SF_hi

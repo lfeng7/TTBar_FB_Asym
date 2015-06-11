@@ -16,7 +16,7 @@ class muon :
 
 	#init function
 	def __init__(self,fourvec,charge,tight,loose,jets_list) :
-		self.vec = ROOT.TLorentzVector(fourvec)
+		self.vec = ROOT.TLorentzVector(fourvec.X(),fourvec.Y(),fourvec.Z(),fourvec.T())
 		self.charge = charge
 		self.isTight = tight
 		self.isLoose = loose
@@ -24,7 +24,7 @@ class muon :
 			print '		WARNING, VERY STRANGE MUON ADDED!'
 			print '		muon = (%.2f,%.2f,%.2f,%.2f), charge = %d, loose = %d, tight = %d'%(fourvec.Pt(),fourvec.Eta(),
 				fourvec.Phi(),fourvec.M(),charge,loose,tight)
-		nearestJetVec = findNearestJet(self.vec,jets_list)
+		nearestJetVec = findNearestJet(self.vec,jets_list).vec
 		self.relPt = nearestJetVec.Pt(self.vec.Vect())
 		self.dR = nearestJetVec.DeltaR(self.vec)
 

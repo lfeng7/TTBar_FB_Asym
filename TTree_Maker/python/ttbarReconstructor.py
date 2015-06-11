@@ -95,8 +95,8 @@ def reconstruct(lepton,met1,met2,jetlist) :
 		finalChi2s[0] = finalChi2s[1]
 	#rescale the lepton and jet four vectors based on the final parameters
 	lep_return = rescale(lepton,final_par_vals[1])
-	lepb_return = rescale(jetlist[1],final_par_vals[2])
-	hadt_return = rescale(jetlist[0],final_par_vals[3])
+	lepb_return = rescale(jetlist[1].vec,final_par_vals[2])
+	hadt_return = rescale(jetlist[0].vec,final_par_vals[3])
 	#rebuild the neutrino post-rescaling
 	newmetx = final_met.Px()+ (1.0-final_par_vals[1])*lep_return.Px()
 	newmety = final_met.Py()+ (1.0-final_par_vals[1])*lep_return.Py()

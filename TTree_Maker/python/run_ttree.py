@@ -44,10 +44,6 @@ parser.add_option('--n_events', 	 type='float',  action='store', default=1.0,  	
 
 ##########							Set Up Event Loop								##########
 
-#append 'sb' to the name for a sideband file
-if options.sideband.lower() == 'yes' :
-	options.name = options.name+'_sb'
-
 print 'Opening files for sample '+options.name+' . . .'  
 #Build path to input file
 input_files_list = ''

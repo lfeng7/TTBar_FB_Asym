@@ -71,6 +71,15 @@ class treemaker :
 	jetLabels.append(('jhuCa8','UnprunedCA8tau3')); 		 jetHandles.append(Handle('vector<double>'))
 	jetLabels.append(('jhuCa8pp','PrunedCA8csv')); 			 jetHandles.append(Handle('vector<double>'))
 	jetLabels.append(('jhuCa8pp','PrunedCA8PartonFlavour')); jetHandles.append(Handle('vector<int>'))
+	#pythia8 nTuple GenParticles
+	genPartHandles = [];	genPartLabels = []
+	#genPartLabels.append(('genPart','genPartPt')); 	   genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartEta'));    genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartPhi'));    genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartMass'));   genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartID')); 	   genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartMomID'));  genPartHandles.append(Handle('vector<float>'))
+	#genPartLabels.append(('genPart','genPartStatus')); genPartHandles.append(Handle('vector<float>'))
 	#pileup
 	pileupLabel = ('jhuGen','npv'); 	  pileupHandle 	= Handle('unsigned int')
 	MCpileupLabel = ('jhuGen','npvTrue'); MCpileupHandle = Handle('unsigned int')
@@ -127,7 +136,7 @@ class treemaker :
 		met = ROOT.TLorentzVector(); met.SetPtEtaPhiM(metVars[0][0], 0., metVars[0][1], 0.)
 		self.__fillMET__(met)
 		#jets
-		jets = []; jetVars = []
+		alljets = []; jets = []; jetVars = []
 		for i in range(len(self.jetHandles)) :
 			event.getByLabel(self.jetLabels[i],self.jetHandles[i])
 			if not self.jetHandles[i].isValid() :
@@ -136,10 +145,10 @@ class treemaker :
 			jetVars.append(self.jetHandles[i].product())
 		for i in range(len(jetVars[0])) :
 			flavor = -1
-			if len(jetVars>6) :
+			if len(jetVars)>6 :
 				flavor = jetVars[6][i]
 			newJet = jet(jetVars[0][i],jetVars[1],jetVars[2],jetVars[3],jetVars[4],jetVars[5][i],flavor)
-			jets.append(newJet)
+			jets.append(newJet); alljets.append(newJet)
 		#separate the jets into the top and b candidates
 		jets = selectJets(jets)
 		self.__fillJets__(jets)
@@ -157,7 +166,7 @@ class treemaker :
 				return self.ERR_CODE
 			muVars.append(self.muHandles[i].product())
 		for i in range(len(muVars[0])) :
-			newMuon = muon(muVars[0][i],muVars[1][i],muVars[2][i],muVars[3][i],jets)
+			newMuon = muon(muVars[0][i],muVars[1][i],muVars[2][i],muVars[3][i],alljets)
 			muons.append(newMuon)
 		muons.sort(key = lambda x: x.vec.Pt())
 		self.__fillMuons__(muons)
@@ -172,7 +181,7 @@ class treemaker :
 				return self.ERR_CODE
 			elVars.append(self.elHandles[i].product())
 		for i in range(len(elVars[0])) :
-			newElectron = electron(elVars[0][i],elVars[1][i],elVars[2][i],elVars[3][i],met,jets)
+			newElectron = electron(elVars[0][i],elVars[1][i],elVars[2][i],elVars[3][i],met,alljets)
 			electrons.append(newElectron)
 		electrons.sort(key = lambda x: x.vec.Pt())
 		self.__fillElectrons__(electrons)
@@ -198,12 +207,16 @@ class treemaker :
 #		self.__fillMuons__(muons); self.__fillElectrons__(electrons)
 		
 		#neutrino handling and setup for fit
-		met1_vec, met2_vec = setupMET(lep_vec,metVars) #function in metHelper.py
+		if self.lep_type==0 :
+			met1_vec, met2_vec = setupMET(muons[0].vec,metVars) #function in metHelper.py
+		elif self.lep_type==1 :
+			met1_vec, met2_vec = setupMET(electrons[0].vec,metVars) #function in metHelper.py
 		self.met_pt[0], self.met_eta[0] = met1_vec.Pt(),  met1_vec.Eta() 
 		self.met_phi[0], self.met_M[0]  = met1_vec.Phi(), met1_vec.M()
 		self.nFits[0] = 2
 		if met1_vec.Pz() == met2_vec.Pz() :
 			self.nFits[0] = 1
+		
 		#fill the rest of the leptonic fourvectors
 		if self.lep_type==0 :
 			self.__fillLepSide__(muons[0].vec,met1_vec,jets[1].vec)
@@ -240,6 +253,10 @@ class treemaker :
 					self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
 					self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
 			#scale factor and reweighting calculations
+			if self.lep_type==0 :
+				meas_lep_pt=muons[0].vec.Pt(); meas_lep_eta=muons[0].vec.Eta()
+			elif self.lep_type==1 :
+				meas_lep_pt=electrons[0].vec.Pt(); meas_lep_eta=electrons[0].vec.Eta()
 			#8TeV numbers
 			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
 			self.sf_pileup[0] = self.corrector.getpileup_reweight(MCpileup)
@@ -392,7 +409,7 @@ class treemaker :
 		self.muon1_isTight = array('I',[2]); 	self.addBranch('muon1_isTight',self.muon1_isTight,'i',2)
 		self.muon1_isLoose = array('I',[2]); 	self.addBranch('muon1_isLoose',self.muon1_isLoose,'i',2)
 		self.muon1_relPt   = array('d',[-1.0]); self.addBranch('muon1_relPt',self.muon1_relPt,'D',-1.0)
-		self.muon1_dR 	   = array('d',[-1.0]); self.addBranch('muon1_dR',self.muon1_relPt,'D',-1.0)
+		self.muon1_dR 	   = array('d',[-1.0]); self.addBranch('muon1_dR',self.muon1_dR,'D',-1.0)
 		#muon 2
 		self.muon2_pt  = array('d',[-1.0]);  self.addBranch('muon2_pt', self.muon2_pt, 'D',-1.0)
 		self.muon2_eta = array('d',[100.0]); self.addBranch('muon2_eta',self.muon2_eta,'D',100.0)
@@ -402,7 +419,7 @@ class treemaker :
 		self.muon2_isTight = array('I',[2]); 	self.addBranch('muon2_isTight',self.muon2_isTight,'i',2)
 		self.muon2_isLoose = array('I',[2]); 	self.addBranch('muon2_isLoose',self.muon2_isLoose,'i',2)
 		self.muon2_relPt   = array('d',[-1.0]); self.addBranch('muon2_relPt',self.muon2_relPt,'D',-1.0)
-		self.muon2_dR 	   = array('d',[-1.0]); self.addBranch('muon2_dR',self.muon2_relPt,'D',-1.0)
+		self.muon2_dR 	   = array('d',[-1.0]); self.addBranch('muon2_dR',self.muon2_dR,'D',-1.0)
 		#electron 1
 		self.ele1_pt  = array('d',[-1.0]);  self.addBranch('ele1_pt', self.ele1_pt, 'D',-1.0)
 		self.ele1_eta = array('d',[100.0]); self.addBranch('ele1_eta',self.ele1_eta,'D',100.0)
@@ -412,10 +429,10 @@ class treemaker :
 		self.ele1_isTight 	  = array('I',[2]); 	 self.addBranch('ele1_isTight',self.ele1_isTight,'i',2)
 		self.ele1_isLoose 	  = array('I',[2]); 	 self.addBranch('ele1_isLoose',self.ele1_isLoose,'i',2)
 		self.ele1_relPt 	  = array('d',[-1.0]);   self.addBranch('ele1_relPt',self.ele1_relPt,'D',-1.0)
-		self.ele1_dR 		  = array('d',[-1.0]);   self.addBranch('ele1_dR',self.ele1_relPt,'D',-1.0)
-		self.ele1_tri_el_val  = array('d',[-100.0]); self.addBranch('ele1_dR',self.ele1_relPt,'D',-100.0)
-		self.ele1_tri_jet_val = array('d',[-100.0]); self.addBranch('ele1_dR',self.ele1_relPt,'D',-100.0)
-		self.ele1_tri_cut_val = array('d',[-100.0]); self.addBranch('ele1_dR',self.ele1_relPt,'D',-100.0)
+		self.ele1_dR 		  = array('d',[-1.0]);   self.addBranch('ele1_dR',self.ele1_dR,'D',-1.0)
+		self.ele1_tri_el_val  = array('d',[-100.0]); self.addBranch('ele1_tri_el_val',self.ele1_tri_el_val,'D',-100.0)
+		self.ele1_tri_jet_val = array('d',[-100.0]); self.addBranch('ele1_tri_jet_val',self.ele1_tri_jet_val,'D',-100.0)
+		self.ele1_tri_cut_val = array('d',[-100.0]); self.addBranch('ele1_tri_cut_val',self.ele1_tri_cut_val,'D',-100.0)
 		#electron 2
 		self.ele2_pt  = array('d',[-1.0]);  self.addBranch('ele2_pt', self.ele2_pt, 'D',-1.0)
 		self.ele2_eta = array('d',[100.0]); self.addBranch('ele2_eta',self.ele2_eta,'D',100.0)
@@ -425,10 +442,10 @@ class treemaker :
 		self.ele2_isTight 	  = array('I',[2]); 	 self.addBranch('ele2_isTight',self.ele2_isTight,'i',2)
 		self.ele2_isLoose 	  = array('I',[2]); 	 self.addBranch('ele2_isLoose',self.ele2_isLoose,'i',2)
 		self.ele2_relPt 	  = array('d',[-1.0]);   self.addBranch('ele2_relPt',self.ele2_relPt,'D',-1.0)
-		self.ele2_dR 		  = array('d',[-1.0]);   self.addBranch('ele2_dR',self.ele2_relPt,'D',-1.0)
-		self.ele2_tri_el_val  = array('d',[-100.0]); self.addBranch('ele2_dR',self.ele2_relPt,'D',-100.0)
-		self.ele2_tri_jet_val = array('d',[-100.0]); self.addBranch('ele2_dR',self.ele2_relPt,'D',-100.0)
-		self.ele2_tri_cut_val = array('d',[-100.0]); self.addBranch('ele2_dR',self.ele2_relPt,'D',-100.0)
+		self.ele2_dR 		  = array('d',[-1.0]);   self.addBranch('ele2_dR',self.ele2_dR,'D',-1.0)
+		self.ele2_tri_el_val  = array('d',[-100.0]); self.addBranch('ele2_tri_el_val',self.ele2_tri_el_val,'D',-100.0)
+		self.ele2_tri_jet_val = array('d',[-100.0]); self.addBranch('ele2_tri_jet_val',self.ele2_tri_jet_val,'D',-100.0)
+		self.ele2_tri_cut_val = array('d',[-100.0]); self.addBranch('ele2_tri_cut_val',self.ele2_tri_cut_val,'D',-100.0)
 		#neutrino
 		self.met_pt  = array('d',[-1.0]);  self.addBranch('met_pt', self.met_pt, 'D',-1.0)
 		self.met_eta = array('d',[100.0]); self.addBranch('met_eta',self.met_eta,'D',100.0)
@@ -517,7 +534,7 @@ class treemaker :
 		self.initial_branches.append((var,ini_val))
 
 	##############################   tree filling functions  ###############################		
-	def __fillMC__(qvec,qbarvec,MCtvec,MCtbarvec) :
+	def __fillMC__(self,qvec,qbarvec,MCtvec,MCtbarvec) :
 		self.q_pt[0], 		self.q_eta[0] 	   = qvec.Pt(), 	  qvec.Eta()
 		self.q_phi[0], 		self.q_M[0] 	   = qvec.Phi(), 	  qvec.M()
 		self.qbar_pt[0], 	self.qbar_eta[0]   = qbarvec.Pt(),    qbarvec.Eta()
@@ -533,53 +550,53 @@ class treemaker :
 
 	def __fillJets__(self,jetList) :
 		if len(jetList) > 0 :
-			self.hadt_pt  = jetList[0].vec.Pt(); self.hadt_eta = jetList[0].vec.Eta()
-			self.hadt_phi = jetList[0].vec.Phi(); self.hadt_M   = jetList[0].vec.M()
-			self.hadt_tau32  = jetList[0].tau32; self.hadt_tau21  = jetList[0].tau21
-			self.hadt_csv 	 = jetList[0].csv; self.hadt_flavor = jetList[0].flavor
+			self.hadt_pt[0]  = jetList[0].vec.Pt(); self.hadt_eta[0] = jetList[0].vec.Eta()
+			self.hadt_phi[0] = jetList[0].vec.Phi(); self.hadt_M[0]   = jetList[0].vec.M()
+			self.hadt_tau32[0]  = jetList[0].tau32; self.hadt_tau21[0]  = jetList[0].tau21
+			self.hadt_csv[0] 	 = jetList[0].csv; self.hadt_flavor[0] = jetList[0].flavor
 		if len(jetList) > 1 :
-			self.lepb_pt  = jetList[1].vec.Pt(); self.lepb_eta = jetList[1].vec.Eta()
-			self.lepb_phi = jetList[1].vec.Phi(); self.lepb_M   = jetList[1].vec.M()
-			self.lepb_tau32  = jetList[1].tau32; self.lepb_tau21  = jetList[1].tau21
-			self.lepb_csv 	 = jetList[1].csv; self.lepb_flavor = jetList[1].flavor
+			self.lepb_pt[0]  = jetList[1].vec.Pt(); self.lepb_eta[0] = jetList[1].vec.Eta()
+			self.lepb_phi[0] = jetList[1].vec.Phi(); self.lepb_M[0]   = jetList[1].vec.M()
+			self.lepb_tau32[0]  = jetList[1].tau32; self.lepb_tau21[0]  = jetList[1].tau21
+			self.lepb_csv[0] 	 = jetList[1].csv; self.lepb_flavor[0] = jetList[1].flavor
 
 	def __fillMuons__(self,mulist) :
 		if len(mulist) > 0 :
-			self.muon1_pt  = mulist[0].vec.Pt(); self.muon1_eta = mulist[0].vec.Eta()
-			self.muon1_phi = mulist[0].vec.Phi(); self.muon1_M   = mulist[0].vec.M()
-			self.muon1_Q 	   = mulist[0].charge; self.muon1_isTight = mulist[0].isTight
-			self.muon1_isLoose = mulist[0].isLoose; self.muon1_relPt   = mulist[0].relPt
-			self.muon1_dR 	   = mulist[0].dR
+			self.muon1_pt[0]  = mulist[0].vec.Pt(); self.muon1_eta[0] = mulist[0].vec.Eta()
+			self.muon1_phi[0] = mulist[0].vec.Phi(); self.muon1_M[0]   = mulist[0].vec.M()
+			self.muon1_Q[0] 	   = mulist[0].charge; self.muon1_isTight[0] = mulist[0].isTight
+			self.muon1_isLoose[0] = mulist[0].isLoose; self.muon1_relPt[0]   = mulist[0].relPt
+			self.muon1_dR[0] 	   = mulist[0].dR
 			if self.lep_type == 0 :
 				self.Q_l[0] = mulist[0].charge
 		if len(mulist) > 1 :
-			self.muon2_pt  = mulist[1].vec.Pt(); self.muon2_eta = mulist[1].vec.Eta()
-			self.muon2_phi = mulist[1].vec.Phi(); self.muon2_M   = mulist[1].vec.M()
-			self.muon2_Q 	   = mulist[1].charge; self.muon2_isTight = mulist[1].isTight
-			self.muon2_isLoose = mulist[1].isLoose; self.muon2_relPt   = mulist[1].relPt
-			self.muon2_dR 	   = mulist[1].dR
+			self.muon2_pt[0]  = mulist[1].vec.Pt(); self.muon2_eta[0] = mulist[1].vec.Eta()
+			self.muon2_phi[0] = mulist[1].vec.Phi(); self.muon2_M[0]   = mulist[1].vec.M()
+			self.muon2_Q[0] 	   = mulist[1].charge; self.muon2_isTight[0] = mulist[1].isTight
+			self.muon2_isLoose[0] = mulist[1].isLoose; self.muon2_relPt[0]   = mulist[1].relPt
+			self.muon2_dR[0] 	   = mulist[1].dR
 
 	def __fillElectrons__(self,ellist) :
 		if len(ellist) > 0 :
-			self.ele1_pt  = ellist[0].vec.Pt(); self.ele1_eta = ellist[0].vec.Eta()
-			self.ele1_phi = ellist[0].vec.Phi(); self.ele1_M   = ellist[0].vec.M()
-			self.ele1_Q 	   = ellist[0].charge; self.ele1_isTight = ellist[0].isTight
-			self.ele1_isLoose = ellist[0].isLoose; self.ele1_relPt   = ellist[0].relPt
-			self.ele1_dR 	   = ellist[0].dR
-			self.ele1_tri_el_val  = ellist[0].triangle_el_val
-			self.ele1_tri_jet_val = ellist[0].triangle_jet_val
-			self.ele1_tri_cut_val = ellist[0].triangle_cut_val
+			self.ele1_pt[0]  = ellist[0].vec.Pt(); self.ele1_eta[0] = ellist[0].vec.Eta()
+			self.ele1_phi[0] = ellist[0].vec.Phi(); self.ele1_M[0]   = ellist[0].vec.M()
+			self.ele1_Q[0] 	   = ellist[0].charge; self.ele1_isTight[0] = ellist[0].isTight
+			self.ele1_isLoose[0] = ellist[0].isLoose; self.ele1_relPt[0]   = ellist[0].relPt
+			self.ele1_dR[0] 	   = ellist[0].dR
+			self.ele1_tri_el_val[0]  = ellist[0].triangle_el_val
+			self.ele1_tri_jet_val[0] = ellist[0].triangle_jet_val
+			self.ele1_tri_cut_val[0] = ellist[0].triangle_cut_val
 			if self.lep_type == 1 :
 				self.Q_l[0] = ellist[0].charge
 		if len(ellist) > 1 :
-			self.ele2_pt  = ellist[1].vec.Pt(); self.ele2_eta = ellist[1].vec.Eta()
-			self.ele2_phi = ellist[1].vec.Phi(); self.ele2_M   = ellist[1].vec.M()
-			self.ele2_Q 	   = ellist[1].charge; self.ele2_isTight = ellist[1].isTight
-			self.ele2_isLoose = ellist[1].isLoose; self.ele2_relPt   = ellist[1].relPt
-			self.ele2_dR 	   = ellist[1].dR
-			self.ele2_tri_el_val  = ellist[1].triangle_el_val
-			self.ele2_tri_jet_val = ellist[1].triangle_jet_val
-			self.ele2_tri_cut_val = ellist[1].triangle_cut_val
+			self.ele2_pt[0]  = ellist[1].vec.Pt(); self.ele2_eta[0] = ellist[1].vec.Eta()
+			self.ele2_phi[0] = ellist[1].vec.Phi(); self.ele2_M[0]   = ellist[1].vec.M()
+			self.ele2_Q[0] 	   = ellist[1].charge; self.ele2_isTight[0] = ellist[1].isTight
+			self.ele2_isLoose[0] = ellist[1].isLoose; self.ele2_relPt[0]   = ellist[1].relPt
+			self.ele2_dR[0] 	   = ellist[1].dR
+			self.ele2_tri_el_val[0]  = ellist[1].triangle_el_val
+			self.ele2_tri_jet_val[0] = ellist[1].triangle_jet_val
+			self.ele2_tri_cut_val[0] = ellist[1].triangle_cut_val
 
 	def __fillLepSide__(self,lepton,met,lepb) :
 		lepW = lepton+met
