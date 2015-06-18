@@ -13,8 +13,14 @@ draw_log = False
 
 #OptionsParser
 parser = OptionParser()
-parser.add_option('--n', metavar='F', type='string', action='store',dest='outname',default='comparison_plots_low_mass',help='')
+parser.add_option('--n', metavar='F', type='string', action='store',dest='outname',default='NEW_PLOTS',help='')
+parser.add_option('--lep', metavar='F', type='string', action='store',dest='lep',default='mu',help='')
 (options, args) = parser.parse_args()
+leptype = 'none'
+if 'mu' in options.lep.lower() :
+	leptype = 'mu'
+elif 'el' in options.lep.lower() :
+	leptype = 'el'
 
 #lists of filenames, fill colors, and pointers
 filenames = []
@@ -44,11 +50,11 @@ filenames.append('Powheg_dilep_TT'); 				 fillcolors.append(kRed-7);	linestyles.
 filenames.append('Powheg_dilep_TT_SC'); 			 fillcolors.append(kRed-7);	linestyles.append(2)
 filenames.append('Powheg_dilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7);	linestyles.append(3)
 filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7);	linestyles.append(4)
-#hadronic
-filenames.append('Powheg_had_TT'); 				   fillcolors.append(kRed-7);	linestyles.append(1)
-filenames.append('Powheg_had_TT_SC'); 			   fillcolors.append(kRed-7);	linestyles.append(2)
-filenames.append('Powheg_had_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7);	linestyles.append(3)
-filenames.append('Powheg_had_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7);	linestyles.append(4)
+##hadronic
+#filenames.append('Powheg_had_TT'); 				   fillcolors.append(kRed-7);	linestyles.append(1)
+#filenames.append('Powheg_had_TT_SC'); 			   fillcolors.append(kRed-7);	linestyles.append(2)
+#filenames.append('Powheg_had_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7);	linestyles.append(3)
+#filenames.append('Powheg_had_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7);	linestyles.append(4)
 #semileptonic qq
 filenames.append('Powheg_qq_semilep_TT'); 				  fillcolors.append(kRed+1);	linestyles.append(1)
 filenames.append('Powheg_qq_semilep_TT_SC'); 			  fillcolors.append(kRed+1);	linestyles.append(2)
@@ -60,7 +66,11 @@ filenames.append('Powheg_gg_semilep_TT_SC'); 			  fillcolors.append(kRed+1);	lin
 filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed+1);	linestyles.append(3)
 filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed+1);	linestyles.append(4)
 #data
-data_filename = 'SingleEl_Run2012'
+data_filename = 'Powheg_semilep_TT'
+if leptype == 'mu' :
+	data_filename = 'SingleMu_Run2012'
+elif leptype == 'el' :
+	data_filename = 'SingleEl_Run2012'
 
 for i in range(len(filenames)) :
 	filenames[i] = filenames[i] + '_all.root'
@@ -95,405 +105,144 @@ set_maxes = []
 include_data = []
 sum_same_colors = []
 
+#Cut Strings
+MARC_CUTS_MUONS = 'lepW_pt>50. && muon1_pt>10. && muon1_pt>ele1_pt && abs(muon1_eta)<2.4 && muon1_isLoose==1'
+MARC_CUTS_MUONS+= ' && (muon1_relPt>25. || muon1_dR>0.5)'
+MARC_CUTS_MUONS+= ' && lepb_M<50. && lept_M>140. && lept_M<250. && hadt_pt>400. && hadt_M>140. && hadt_M<250.'
+MARC_CUTS_MUONS+= ' && hadt_tau32<0.55 && hadt_tau21>0.1 && cutflow==0'
+MORE_SELECTIVE_MUONS = MARC_CUTS_MUONS+' && (muon2_isLoose!=1 || muon2_pt<40. || abs(muon2_eta)>2.4)'
+MORE_SELECTIVE_MUONS+=' && (ele1_isLoose!=1 || ele1_pt<25. || abs(ele1_eta)>2.4)'
+MORE_SELECTIVE_MUONS+=' && (ele2_isLoose!=1 || ele2_pt<25. || abs(ele2_eta)>2.4)'
+MARC_CUTS_ELECTRONS = 'lepW_pt>50. && ele1_pt>25. && ele1_pt>muon1_pt && abs(ele1_eta)<2.4 && ele1_isLoose==1'
+MARC_CUTS_ELECTRONS+= ' && (ele1_relPt>25. || ele1_dR>0.5)'
+MARC_CUTS_ELECTRONS+= ' && lepb_M<50. && lept_M>140. && lept_M<250. && hadt_pt>400. && hadt_M>140. && hadt_M<250.'
+MARC_CUTS_ELECTRONS+= ' && hadt_tau32<0.55 && hadt_tau21>0.1 && cutflow==0'
+MORE_SELECTIVE_ELECTRONS = MARC_CUTS_ELECTRONS+' && (ele2_isLoose!=1 || ele2_pt<25. || abs(ele2_eta)>2.4)'
+MORE_SELECTIVE_ELECTRONS+=' && (muon1_isLoose!=1 || muon1_pt<40. || abs(muon1_eta)>2.4)'
+MORE_SELECTIVE_ELECTRONS+=' && (muon2_isLoose!=1 || muon2_pt<40. || abs(muon2_eta)>2.4)'
+MARC_PLUS_TRIANGLE = MARC_CUTS_ELECTRONS+' && ele1_tri_el_val<ele1_tri_cut_val && ele1_tri_jet_val<ele1_tri_cut_val'
+MORE_SELECTIVE_PLUS_TRIANGLE = MARC_PLUS_TRIANGLE+' && (ele2_isLoose!=1 || ele2_pt<25. || abs(ele2_eta)>2.4)'
+MORE_SELECTIVE_PLUS_TRIANGLE+=' && (muon1_isLoose!=1 || muon1_pt<40. || abs(muon1_eta)>2.4)'
+MORE_SELECTIVE_PLUS_TRIANGLE+=' && (muon2_isLoose!=1 || muon2_pt<40. || abs(muon2_eta)>2.4)'
+#Weight strings
+STD_WEIGHTS = 'weight*sf_pileup'
+
 ##############################################################################################################
 ############################						  PLOTS 					  ############################
 ##############################################################################################################
 
-#met pT
-control_plot_names.append('met_pt')
-control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-sum_same_colors.append(True)
-control_plot_lines[len(control_plot_lines)-1].append(TLine(10.,0.0,10.,0.0))
-control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(10.,0.0,10.+40.,0.0,0.04,'|> SAME'))
+if leptype == 'mu' :
 
-##leading lepton pT
-#control_plot_names.append('lep1_pt')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(45.,0.0,45.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(45.,0.0,45.+40.,0.0,0.04,'|> SAME'))
-#
-##leading lepton eta
-#control_plot_names.append('lep1_eta')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(2.1,0.0,2.1,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.1,0.0,2.1-0.4,0.0,0.04,'|> SAME'))
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.1,0.0,-2.1,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.1,0.0,-2.1+0.4,0.0,0.04,'|> SAME'))
-#
-##second lepton pT
-#control_plot_names.append('lep2_pt')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(45.,0.0,45.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(45.,0.0,45.-40.,0.0,0.04,'|> SAME'))
-#
-##second lepton eta
-#control_plot_names.append('lep2_eta')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(2.1,0.0,2.1,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.1,0.0,2.1+0.4,0.0,0.04,'|> SAME'))
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.1,0.0,-2.1,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.1,0.0,-2.1-0.4,0.0,0.04,'|> SAME'))
-#
-##leading other lepton pT
-#control_plot_names.append('other_lep1_pt')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(35.,0.0,35.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(35.,0.0,35.-30.,0.0,0.04,'|> SAME'))
-#
-##leading other lepton eta
-#control_plot_names.append('other_lep1_eta')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(2.5,0.0,2.5,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(2.5,0.0,2.5+0.4,0.0,0.04,'|> SAME'))
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(-2.5,0.0,-2.5,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(-2.5,0.0,-2.5-0.4,0.0,0.04,'|> SAME'))
-#
-##leptonic bjet pT
-#control_plot_names.append('lep_bjet_pT')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(25.,0.0,25.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(25.,0.0,25.+30.,0.0,0.04,'|> SAME'))
-#
-##leptonic bjet dR
-#control_plot_names.append('lep_bjet_dPhi')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.-0.4,0.0,0.04,'|> SAME'))
-#
-##leptonic bjet combined mass
-#control_plot_names.append('lep_bjet_comb_mass')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(140.,0.0,140.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(140.,0.0,140.+40.,0.0,0.04,'|> SAME'))
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(210.,0.0,210.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(210.,0.0,210.-40.,0.0,0.04,'|> SAME'))
-#
-##leptonic bjet CSV
-#control_plot_names.append('lep_bjet_CSV')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(0.244,0.0,0.244,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.244,0.0,0.244+0.15,0.0,0.04,'|> SAME'))
-#
-##top cand pT
-#control_plot_names.append('t1_top_pT')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(350.,0.0,350.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(350.,0.0,350.+30.,0.0,0.04,'|> SAME'))
-#
-##top cand nsubjets
-#control_plot_names.append('t1_top_nsub')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#
-##top cand minimum pairwise mass
-#control_plot_names.append('t1_top_mmin')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#
-##top cand jet mass
-#control_plot_names.append('t1_top_mjet')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#
-##hadronic W pT
-#control_plot_names.append('t2_top_W_pT')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(200.,0.0,200.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(200.,0.0,200.+30.,0.0,0.04,'|> SAME'))
-#
-##hadronic W mass
-#control_plot_names.append('t2_top_W_mass')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(65.,0.0,65.,0.0))
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(105.,0.0,105.,0.0))
-#
-##hadronic W tau21
-#control_plot_names.append('t2_top_W_tau21')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(0.75,0.0,0.75,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.75,0.0,0.75-0.15,0.0,0.04,'|> SAME'))
-#
-##hadronic W dR
-#control_plot_names.append('t2_top_W_dPhi')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.+0.4,0.0,0.04,'|> SAME'))
-#
-##hadronic W multiplicity
-#control_plot_names.append('t2_top_W_mult')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(1.0,0.0,1.0,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(1.0,0.0,1.0-0.2,0.0,0.04,'|> SAME'))
-#
-##combined top mass
-#control_plot_names.append('t2_top_comb_mass')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(140.,0.0,140.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(140.,0.0,140.+25.,0.0,0.04,'|> SAME'))
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(210.,0.0,210.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(210.,0.0,210.-25.,0.0,0.04,'|> SAME'))
-#
-##hadronic b dR
-#control_plot_names.append('t2_top_b_dPhi')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(pi/2.,0.0,pi/2.,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(pi/2.,0.0,pi/2.+0.4,0.0,0.04,'|> SAME'))
-#
-##hadronic b dR WRT to hadronic W
-#control_plot_names.append('t2_top_b_W_dR')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
-#control_plot_lines[len(control_plot_lines)-1].append(TLine(0.6,0.0,0.6,0.0))
-#control_plot_arrows[len(control_plot_arrows)-1].append(TArrow(0.6,0.0,0.6+0.4,0.0,0.04,'|> SAME'))
-#
-##hadronic top best combined mass
-#control_plot_names.append('t2_top_best_comb_mass')
-#control_plot_lines.append([]); control_plot_arrows.append([]); set_maxes.append(True); include_data.append(True)
-#sum_same_colors.append(True)
+	#M
+	histonames.append('M_muons')
+	drawstrings.append('M')
+	cutstrings.append(MARC_CUTS_MUONS)
+	xbins = 25; xlow = 0.; xhigh = 2500.;
+	title = 'M in Simulation and Data; M (GeV)'
+	for i in range(len(filenames)) :
+		histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+	datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+	histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+	optionstrings.append('')
+	weightstrings.append(STD_WEIGHTS)
+	includedata.append(True)
+	renormalize.append(True)
+	binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
+	
+	#M
+	histonames.append('M_selective_muons')
+	drawstrings.append('M')
+	cutstrings.append(MORE_SELECTIVE_MUONS)
+	xbins = 25; xlow = 0.; xhigh = 2500.;
+	title = 'M in Simulation and Data; M (GeV)'
+	for i in range(len(filenames)) :
+		histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+	datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+	histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+	optionstrings.append('')
+	weightstrings.append(STD_WEIGHTS)
+	includedata.append(True)
+	renormalize.append(True)
+	binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
 
-#######################################################################################################################
-###########################							Comparison Plots 						###########################
-#######################################################################################################################
+elif leptype == 'el' :
 
-#Pileup Comparison
-histonames.append('pileup_comp')
-drawstrings.append('pileup')
-cutstrings.append('cutflow==0 && M>350.')
-xbins = 40; xlow = 0.0; xhigh = 40.0;
-title = 'Pileup in Simulation and Data; npv'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#costheta Comparison
-histonames.append('costheta_comp')
-drawstrings.append('cstar')
-cutstrings.append('cutflow==0 && M>350.')
-xbins = 20; xlow = -1.0; xhigh = 1.0;
-title = 'c^{*} in Simulation and Data; c^{*}'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#x_F Comparison
-histonames.append('x_F_comp')
-drawstrings.append('x_F')
-cutstrings.append('cutflow==0 && M>350.')
-xbins = 30; xlow = 0.0; xhigh = 0.6;
-title = '|x_{F}| in Simulation and Data; |x_{F}|'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#M Comparison
-histonames.append('M_comp')
-drawstrings.append('M')
-cutstrings.append('cutflow==0 && M>350.')
-xbins = 40; xlow = 350.; xhigh = 1750.;
-title = 'M in Simulation and Data; M (GeV)'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_top_pT*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#No Top pT Reweighting
-
-#costheta Comparison
-histonames.append('costheta_comp_no_top_pT')
-drawstrings.append('cstar')
-cutstrings.append('cutflow==0 && M>350.')
-xbins = 20; xlow = -1.0; xhigh = 1.0;
-title = 'c^{*} in Simulation and Data; c^{*}'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#x_F Comparison
-histonames.append('x_F_comp_no_top_pT')
-drawstrings.append('x_F')
-cutstrings.append('cutflow==0 && M>350.')
-xbins = 30; xlow = 0.0; xhigh = 0.6;
-title = '|x_{F}| in Simulation and Data; |x_{F}|'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#M Comparison
-histonames.append('M_comp_no_top_pT')
-drawstrings.append('M')
-cutstrings.append('cutflow==0 && M>350.')
-xbins = 40; xlow = 350.; xhigh = 1750.;
-title = 'M in Simulation and Data; M (GeV)'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#No Top pT Reweighting, type 1 tops only
-
-#costheta Comparison
-histonames.append('costheta_comp_no_top_pT_t1')
-drawstrings.append('cstar')
-cutstrings.append('cutflow==0 && top_type==1 && M>350.')
-xbins = 20; xlow = -1.0; xhigh = 1.0;
-title = 'c^{*} in Simulation and Data; c^{*}'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#x_F Comparison
-histonames.append('x_F_comp_no_top_pT_t1')
-drawstrings.append('x_F')
-cutstrings.append('cutflow==0 && top_type==1 && M>350.')
-xbins = 30; xlow = 0.0; xhigh = 0.6;
-title = '|x_{F}| in Simulation and Data; |x_{F}|'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#M Comparison
-histonames.append('M_comp_no_top_pT_t1')
-drawstrings.append('M')
-cutstrings.append('cutflow==0 && top_type==1 && M>350.')
-xbins = 40; xlow = 350.; xhigh = 1750.;
-title = 'M in Simulation and Data; M (GeV)'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#No Top pT Reweighting, type 2 tops only
-
-#costheta Comparison
-histonames.append('costheta_comp_no_top_pT_t2')
-drawstrings.append('cstar')
-cutstrings.append('cutflow==0 && top_type==2 && M>350.')
-xbins = 20; xlow = -1.0; xhigh = 1.0;
-title = 'c^{*} in Simulation and Data; c^{*}'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#x_F Comparison
-histonames.append('x_F_comp_no_top_pT_t2')
-drawstrings.append('x_F')
-cutstrings.append('cutflow==0 && top_type==2 && M>350.')
-xbins = 30; xlow = 0.0; xhigh = 0.6;
-title = '|x_{F}| in Simulation and Data; |x_{F}|'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
-#M Comparison
-histonames.append('M_comp_no_top_pT_t2')
-drawstrings.append('M')
-cutstrings.append('cutflow==0 && top_type==2 && M>350.')
-xbins = 40; xlow = 350.; xhigh = 1750.;
-title = 'M in Simulation and Data; M (GeV)'
-for i in range(len(filenames)) :
-	histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
-datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
-histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
-optionstrings.append('')
-weightstrings.append('weight*sf_btag_eff*sf_pileup*sf_lep_ID')
-includedata.append(True)
-renormalize.append(True)
-binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
-
+	#M
+	histonames.append('M_electrons')
+	drawstrings.append('M')
+	cutstrings.append(MARC_CUTS_ELECTRONS)
+	xbins = 25; xlow = 0.; xhigh = 2500.;
+	title = 'M in Simulation and Data; M (GeV)'
+	for i in range(len(filenames)) :
+		histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+	datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+	histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+	optionstrings.append('')
+	weightstrings.append(STD_WEIGHTS)
+	includedata.append(True)
+	renormalize.append(True)
+	binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
+	
+	#M
+	histonames.append('M_selective_electrons')
+	drawstrings.append('M')
+	cutstrings.append(MORE_SELECTIVE_ELECTRONS)
+	xbins = 25; xlow = 0.; xhigh = 2500.;
+	title = 'M in Simulation and Data; M (GeV)'
+	for i in range(len(filenames)) :
+		histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+	datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+	histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+	optionstrings.append('')
+	weightstrings.append(STD_WEIGHTS)
+	includedata.append(True)
+	renormalize.append(True)
+	binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
+	
+	#M
+	histonames.append('M_electrons_plus_triangle')
+	drawstrings.append('M')
+	cutstrings.append(MARC_PLUS_TRIANGLE)
+	xbins = 25; xlow = 0.; xhigh = 2500.;
+	title = 'M in Simulation and Data; M (GeV)'
+	for i in range(len(filenames)) :
+		histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+	datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+	histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+	optionstrings.append('')
+	weightstrings.append(STD_WEIGHTS)
+	includedata.append(True)
+	renormalize.append(True)
+	binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
+	
+	#M
+	histonames.append('M_selective_electrons_plus_triangle')
+	drawstrings.append('M')
+	cutstrings.append(MORE_SELECTIVE_PLUS_TRIANGLE)
+	xbins = 25; xlow = 0.; xhigh = 2500.;
+	title = 'M in Simulation and Data; M (GeV)'
+	for i in range(len(filenames)) :
+		histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),xbins,xlow,xhigh))
+	datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,xbins,xlow,xhigh))
+	histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+	optionstrings.append('')
+	weightstrings.append(STD_WEIGHTS)
+	includedata.append(True)
+	renormalize.append(True)
+	binningstrings.append('('+str(xbins)+','+str(xlow)+','+str(xhigh)+')')
 
 ##############################################################################################################
 ############################						  PLOTS 					  ############################
 ##############################################################################################################
 
 #Draw data events into histograms
-data_tree = data_file.Get('tree')
+data_tree_unpruned = data_file.Get('tree')
+prunestring = 'cutflow == 0'
+if 'El' in data_filename :
+	prunestring = MARC_CUTS_ELECTRONS
+elif 'Mu' in data_filename :
+	prunestring = MARC_CUTS_MUONS
+data_tree = data_tree_unpruned.CopyTree(prunestring)
 trees = []
 print 'Drawing events from data file into histograms...'
 for j in range(len(histonames)) :
@@ -507,7 +256,8 @@ renorms = []
 for j in range(len(histonames)) :
 	renorms.append(0.0)
 for i in range(len(filenames)) :
-	trees.append(filelist[i].Get('tree'))
+	unpruned = filelist[i].Get('tree')
+	trees.append(unpruned.CopyTree(prunestring))
 	print ( 'Drawing events from file '+filenames[i]+' into histograms to build renormalization values('
 			+str(i+1)+' out of '+str(len(filenames))+')' )
 	weight_array = array('d',[0.])
@@ -574,80 +324,6 @@ for i in range(len(histonames)) :
 	leg.Draw()
 	canvs.append(tmp_canv)
 
-#Do all the control plots stuff
-control_plots = []
-control_plot_max_ys = []
-control_plot_canvs = []
-#Get each plot from the files
-for i in range(len(control_plot_names)) :
-	control_plots.append([]); control_plot_max_ys.append(0.)
-	#get this plot from all the MC files
-	for j in range(len(filelist)) :
-		newPlot = filelist[j].Get('control_plots_folder/'+control_plot_names[i]).Clone()
-		newPlot.SetDirectory(0)
-		newPlot.Scale(sample_weights[j])
-		if sum_same_colors[i] :
-			#add to this sample all of the other samples of this color
-			for k in range(len(filelist)) :
-				if fillcolors[k] == fillcolors[j] :
-					addPlot = filelist[k].Get('control_plots_folder/'+control_plot_names[i]).Clone()
-					addPlot.SetDirectory(0)
-					addPlot.Scale(sample_weights[k])
-					newPlot.Add(addPlot)
-		#normalize
-		newPlot.Scale(1.0/newPlot.Integral())
-		#reset maximum if necessary
-		if 1.02*newPlot.GetMaximum() > control_plot_max_ys[i] :
-			control_plot_max_ys[i] = 1.02*newPlot.GetMaximum()
-		#set line width and color accordingly
-		newPlot.SetLineWidth(3); newPlot.SetLineColor(fillcolors[j]); newPlot.SetLineStyle(linestyles[j])
-		control_plots[i].append(newPlot)
-	#get this plot from the data file
-	new_data_plot = data_file.Get('control_plots_folder/'+control_plot_names[i]).Clone()
-	new_data_plot.SetDirectory(0)
-	if new_data_plot.Integral() != 0. :
-		new_data_plot.Scale(1.0/new_data_plot.Integral())
-	if 1.02*new_data_plot.GetMaximum() > control_plot_max_ys[i] :
-		control_plot_max_ys[i] = 1.02*new_data_plot.GetMaximum()
-	#set line width and color accordingly
-	new_data_plot.SetLineWidth(3); new_data_plot.SetLineColor(kBlack); new_data_plot.SetLineStyle(1)
-	control_plots[i].append(new_data_plot)
-	#If the line and arrow ys have to be reset, reset them.
-	if set_maxes[i] :
-		for line in control_plot_lines[i] :
-			line.SetY2((0.98*control_plot_max_ys[i]))
-		for arrow in control_plot_arrows[i] :
-			arrow.SetY1((0.98*control_plot_max_ys[i])/2.)
-			arrow.SetY2((0.98*control_plot_max_ys[i])/2.)
-	#Set line and arrow widths and colors
-	for line in control_plot_lines[i] :
-		line.SetLineWidth(6); line.SetLineColor(kRed)
-	for arrow in control_plot_arrows[i] :
-		arrow.SetLineWidth(6); arrow.SetLineColor(kRed); arrow.SetAngle(40); arrow.SetFillColor(kRed)
-	#make a canvas for this plot and draw all the plots on it
-	tmp_canv_name = control_plot_names[i]+'_canv'
-	tmp_canv = TCanvas(tmp_canv_name,tmp_canv_name,1200,900)
-	if draw_log :
-		tmp_canv.SetLogy()
-	tmp_canv.cd()
-	drawn_colors = []
-	control_plots[i][0].SetMaximum(control_plot_max_ys[i])
-	control_plots[i][0].Draw()
-	drawn_colors.append(fillcolors[0])
-	for j in range(1,len(control_plots[i])-1) :
-		if sum_same_colors[i] and fillcolors[j] in drawn_colors :
-			continue
-		control_plots[i][j].Draw("SAME")
-		drawn_colors.append(fillcolors[j])
-	if include_data[i] :
-		control_plots[i][len(control_plots[i])-1].Draw("SAME")
-	for line in control_plot_lines[i] :
-		line.Draw("SAME")
-	for arrow in control_plot_arrows[i] :
-		arrow.Draw()
-	leg.Draw()
-	control_plot_canvs.append(tmp_canv)
-
 # Make a new root file and save the histogram stacks to it
 name = options.outname
 if draw_log :
@@ -657,8 +333,6 @@ else :
 f = TFile(name+'.root', 'Recreate' )
 f.cd()
 for canv in canvs :
-	canv.Write()
-for canv in control_plot_canvs :
 	canv.Write()
 f.Write()
 f.Close()

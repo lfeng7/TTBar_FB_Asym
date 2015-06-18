@@ -11,26 +11,24 @@ TOP_MASS = 172.5
 CSVL_WORKING_POINT = 0.244
 #cut values
 MAX_LEPB_MASS = 50. #GeV
-MIN_HAD_TOP_MASS_WINDOW = 140. #GeV
-MAX_HAD_TOP_MASS_WINDOW = 210. #GeV
+MIN_HAD_TOP_MASS = 100. #GeV
 
 #selectJets makes the first element of the jets list the top candidate and the second element the leptonic b candidate
 #hadronic top: hardest jet with appropriate jet mass
 #leptonic b: hardest jet with low jet mass
 def selectJets(jetlist) :
 	#start with just the hardest jets
-	jetlist.sort(key = lambda x: x.vec.Pt())
+	jetlist.sort(key = lambda x: x.vec.Pt(),reverse=True)
 	newjets = []
 	if len(jetlist)>1 :
 		newjets.append(jetlist[0]); newjets.append(jetlist[1])
 	else :
-		newjets = jetlist
-		return newjets
+		return jetlist
 	#make some mass requirements
 	top_cands = []; b_cands = []
-	for i in range(len(jetlist)) :
+	for i in range(0,2) :
 		mass = jetlist[i].vec.M()
-		if mass > MIN_HAD_TOP_MASS_WINDOW and mass < MAX_HAD_TOP_MASS_WINDOW :
+		if mass > MIN_HAD_TOP_MASS :
 			top_cands.append(jetlist[i])
 		elif mass < MAX_LEPB_MASS :
 			b_cands.append(jetlist[i])

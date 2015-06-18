@@ -19,8 +19,6 @@ parser.add_option('--on_grid', 	  type='string', action='store', default='no',	 
 	help='Changes everything to relative paths if running on the grid, default is "no"')
 parser.add_option('--event_type', type='string', action='store', default='none',  dest='event_type',  
 	help='ttbar event type: "qq_semilep","gg_semilep","dilep", or "had", or "none" for background (default "none")')
-parser.add_option('--leptons', 	  type='string', action='store', default='muons', dest='leptons',	  
-	help='Specify "muons" or "electrons" lepton type, default is "muons"')
 parser.add_option('--max_events', type='int',    action='store', default=-1,	  dest='max_events',  
 	help='Maximum number of events to process (default is -1 for "all")')
 parser.add_option('--print_every',type='int',    action='store', default=1000,	  dest='print_every', 
@@ -72,7 +70,7 @@ if options.n_jobs>1 :
 filename+='_tree.root'
 #Initialize analyzer
 analyzer = treemaker(filename, options.data, options.generator, options.event_type,
-	options.leptons, options.cross_section/options.n_events, options.on_grid)
+						options.cross_section/options.n_events, options.on_grid)
 
 #Counters
 real_count = 0

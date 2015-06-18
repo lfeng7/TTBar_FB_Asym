@@ -11,7 +11,7 @@ ALPHA = -0.129 #This is the value for the 8TeV Powheg sample as far as we can te
 #Default Lorentz Rotation
 S = ROOT.TLorentzRotation()
 #Beam energy
-SQRT_S=13000.0
+SQRT_S=8000.0
 BEAM_ENERGY=SQRT_S/2.0
 
 #getObservables takes in the reconstructed top quark vectors and lepton charge

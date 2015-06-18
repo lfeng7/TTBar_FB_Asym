@@ -9,13 +9,8 @@
 ERR_NONE = 0 		   #	0 = no Error
 ERR_INVALID_INIT = 1   #	1 = invalid initialization options
 ERR_INVALID_HANDLE = 2 #	2 = invalid Handle for event
-#Cutflow codes:
-CUTFLOW_FULL_EVENT = 0
-CUTFLOW_NOT_ENOUGH_JETS = 1
-CUTFLOW_NO_LEPTON = 2
-CUTFLOW_KINEMATIC_FIT_FAIL = 3
 #Beam energy
-SQRT_S=13000.0
+SQRT_S=8000.0
 BEAM_ENERGY=SQRT_S/2.0
 
 ##########								   Imports  								##########
@@ -153,7 +148,7 @@ class treemaker :
 		jets = selectJets(jets)
 		self.__fillJets__(jets)
 		if len(jets)<2 :
-			return self.__closeout__(CUTFLOW_NOT_ENOUGH_JETS)
+			continue
 		self.sf_btag_eff[0] = jets[1].btagSF 
 		self.sf_btag_eff_low[0] = jets[1].btagSFlow 
 		self.sf_btag_eff_hi[0] = jets[1].btagSFhigh
@@ -168,10 +163,8 @@ class treemaker :
 		for i in range(len(muVars[0])) :
 			newMuon = muon(muVars[0][i],muVars[1][i],muVars[2][i],muVars[3][i],alljets)
 			muons.append(newMuon)
-		muons.sort(key = lambda x: x.vec.Pt())
+		muons.sort(key = lambda x: x.vec.Pt(),reverse=True)
 		self.__fillMuons__(muons)
-		if self.lep_type == 0 and len(muons)<1 :
-			return self.__closeout__(CUTFLOW_NO_LEPTON)
 		#electrons
 		electrons = []; elVars = []
 		for i in range(len(self.elHandles)) :
@@ -183,10 +176,13 @@ class treemaker :
 		for i in range(len(elVars[0])) :
 			newElectron = electron(elVars[0][i],elVars[1][i],elVars[2][i],elVars[3][i],met,alljets)
 			electrons.append(newElectron)
-		electrons.sort(key = lambda x: x.vec.Pt())
+		electrons.sort(key = lambda x: x.vec.Pt(),reverse=True)
 		self.__fillElectrons__(electrons)
-		if self.lep_type == 1 and len(electrons)<1 :
-			return self.__closeout__(CUTFLOW_NO_LEPTON)
+		if len(muons)<1 and len(electrons)<1 :
+			continue
+		self.lep_type = 0
+		if electrons[0].vec.Pt()>muons[0].vec.Pt() :
+			self.lep_type = 1
 		#pileup
 		event.getByLabel(self.pileupLabel,self.pileupHandle)
 		if not self.pileupHandle.isValid() :
@@ -264,13 +260,13 @@ class treemaker :
 				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta)
 			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
 				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta)
-		self.__closeout__(0) #yay! A successful event!
+		self.__closeout__() #yay! A successful event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,isData,generator,eventType,lepType,reweight,onGrid) :
+	def __init__(self,fileName,isData,generator,eventType,reweight,onGrid) :
 		self.ERR_CODE = ERR_NONE
 		#handle input options
-		self.__handleInput__(fileName,isData,generator,eventType,lepType,reweight)
+		self.__handleInput__(fileName,isData,generator,eventType,reweight)
 		#book TTree
 		self.__book__()
 		#Set Monte Carlo reweighter
@@ -278,7 +274,7 @@ class treemaker :
 	
 	##################################   #__handleInput__   ##################################   
 	#############################   __init__ helper function   ###############################
-	def __handleInput__(self,fileName,isData,generator,eventType,lepType,reweight) :
+	def __handleInput__(self,fileName,isData,generator,eventType,reweight) :
 		self.ERR_CODE = ERR_NONE
 		#output file name
 		self.file_name = fileName
@@ -320,17 +316,6 @@ class treemaker :
 			print 'ERROR: unrecognized event type specification! Cannot run analysis!'
 			print '	options.event_type = '+eventType+''
 			self.ERR_CODE = ERR_INVALID_INIT
-		#lepton type?
-		if lepType == 'muons' or lepType == 'muon' or lepType == 'mu' :
-			print 'File will be analyzed using MUON selection'
-			self.lep_type = 0
-		elif (lepType == 'electrons' or lepType == 'electron' or lepType == 'ele') :
-			print 'File will be analyzed using ELECTRON selection'
-			self.lep_type = 1
-		else :
-			print 'ERROR: cannot determine if muon or electron analysis is being performed!'
-			print '	lepType = '+lepType+''
-			self.ERR_CODE = ERR_INVALID_INIT
 		#event scaling?
 		self.w = reweight
 
@@ -344,8 +329,6 @@ class treemaker :
 		#list of branch variables with initial values
 		self.initial_branches = []
 		#Add branches to TTree
-		#cutflow
-		self.cutflow = array('I',[0]); self.addBranch('cutflow',self.cutflow,'i',0)
 		#weights (renormalization, scale factors, analysis)
 		self.weight    = array('d',[self.w]); self.addBranch('weight',self.weight,'D',self.w)
 		self.w_a 	   	   = array('d',[1.0]); self.addBranch('w_a',		  self.w_a,	   	   	 'D',1.0)
@@ -623,9 +606,7 @@ class treemaker :
 		self.scaled_hadt_phi[0] = hadt.Phi(); self.scaled_hadt_M[0] 	= hadt.M()
 
 	########## function to close out the event, called before kicking back to runner #########
-	def __closeout__(self,cut_flow) :
-		#update cutflow
-		self.cutflow[0] = cut_flow
+	def __closeout__(self) :
 		#update error code
 		self.error_code[0] = int(self.ERR_CODE)
 		#fill ttree
