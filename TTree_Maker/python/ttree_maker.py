@@ -148,7 +148,7 @@ class treemaker :
 		jets = selectJets(jets)
 		self.__fillJets__(jets)
 		if len(jets)<2 :
-			continue
+			return self.ERR_CODE
 		self.sf_btag_eff[0] = jets[1].btagSF 
 		self.sf_btag_eff_low[0] = jets[1].btagSFlow 
 		self.sf_btag_eff_hi[0] = jets[1].btagSFhigh
@@ -179,7 +179,7 @@ class treemaker :
 		electrons.sort(key = lambda x: x.vec.Pt(),reverse=True)
 		self.__fillElectrons__(electrons)
 		if len(muons)<1 and len(electrons)<1 :
-			continue
+			return self.ERR_CODE
 		self.lep_type = 0
 		if electrons[0].vec.Pt()>muons[0].vec.Pt() :
 			self.lep_type = 1
