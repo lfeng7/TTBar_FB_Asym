@@ -81,7 +81,7 @@ class treemaker :
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,event) :
-		self.ERR_CODE = ERR_NONE; self.cutflow[0] = CUTFLOW_FULL_EVENT
+		self.ERR_CODE = ERR_NONE
 		#keep track of whether event has been cut
 		keepEvent = True
 		#event type split
@@ -164,7 +164,6 @@ class treemaker :
 			newMuon = muon(muVars[0][i],muVars[1][i],muVars[2][i],muVars[3][i],alljets)
 			muons.append(newMuon)
 		muons.sort(key = lambda x: x.vec.Pt(),reverse=True)
-		self.__fillMuons__(muons)
 		#electrons
 		electrons = []; elVars = []
 		for i in range(len(self.elHandles)) :
@@ -177,12 +176,14 @@ class treemaker :
 			newElectron = electron(elVars[0][i],elVars[1][i],elVars[2][i],elVars[3][i],met,alljets)
 			electrons.append(newElectron)
 		electrons.sort(key = lambda x: x.vec.Pt(),reverse=True)
-		self.__fillElectrons__(electrons)
+		#assign the lepton type and fill the tree
 		if len(muons)<1 and len(electrons)<1 :
 			return self.ERR_CODE
 		self.lep_type = 0
-		if electrons[0].vec.Pt()>muons[0].vec.Pt() :
+		if len(muons)<1 or (len(electrons)>0 and len(muons)>0 and electrons[0].vec.Pt()>muons[0].vec.Pt()) :
 			self.lep_type = 1
+		self.__fillMuons__(muons)
+		self.__fillElectrons__(electrons)
 		#pileup
 		event.getByLabel(self.pileupLabel,self.pileupHandle)
 		if not self.pileupHandle.isValid() :
@@ -257,9 +258,9 @@ class treemaker :
 			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
 			self.sf_pileup[0] = self.corrector.getpileup_reweight(MCpileup)
 			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
-				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta)
+				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
 			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
-				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta)
+				self.sf_trig_eff_hi[0] ) = self.corrector.gettrig_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
 		self.__closeout__() #yay! A successful event!
 
 	##################################  #__init__ function  ##################################
@@ -270,7 +271,7 @@ class treemaker :
 		#book TTree
 		self.__book__()
 		#Set Monte Carlo reweighter
-		self.corrector = MC_corrector(self.MC_generator,self.event_type,self.lep_type,onGrid)
+		self.corrector = MC_corrector(self.MC_generator,self.event_type,onGrid)
 	
 	##################################   #__handleInput__   ##################################   
 	#############################   __init__ helper function   ###############################
