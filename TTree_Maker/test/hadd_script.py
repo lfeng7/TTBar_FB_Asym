@@ -31,27 +31,56 @@ sample_names.append('T_tW')
 sample_names.append('Tbar_s')
 sample_names.append('Tbar_t')
 sample_names.append('Tbar_tW')
-sample_names.append('SingleMu_Run2012A')
-sample_names.append('SingleMu_Run2012B')
-sample_names.append('SingleMu_Run2012C')
-sample_names.append('SingleMu_Run2012D')
-sample_names.append('SingleEl_Run2012A')
-sample_names.append('SingleEl_Run2012B')
-sample_names.append('SingleEl_Run2012C')
-sample_names.append('SingleEl_Run2012D')
+#sample_names.append('SingleMu_Run2012A')
+#sample_names.append('SingleMu_Run2012B')
+#sample_names.append('SingleMu_Run2012C')
+#sample_names.append('SingleMu_Run2012D')
+#sample_names.append('SingleEl_Run2012A')
+#sample_names.append('SingleEl_Run2012B')
+#sample_names.append('SingleEl_Run2012C')
+#sample_names.append('SingleEl_Run2012D')
 
 for name in sample_names :
+    print 'doing '+name
+    
+    #make directories
+    os.system('mkdir '+name)
+    
     os.chdir(name)
-    os.system('hadd '+name+'_all.root '+name+'*tree.root')
-    os.system('mv *_all.root ../total_ttree_files')
+    
+    #copy scripts
+    os.system('cp ../grid_sub.csh .; cp ../cleanup.bash .')
+    #make input file
+    directory = raw_input('nTuple directory for '+name+': ')
+    os.system('python ../make_ttree_input_file.py --directory '+directory)
+    #make ana.listOfJobs
+    eventType = 'none'
+    if 'qq_semilep' in name :
+        eventType = 'qq_semilep'
+    elif 'gg_semilep' in name :
+        eventType = 'gg_semilep'
+    elif 'dilep' in name :
+        eventType = 'dilep'
+    elif 'had' in name :
+        eventType = 'had'
+    nJobs = raw_input('number of jobs for '+name+': ')
+    generator = raw_input('MC generator for '+name+': ')
+    crossSection = raw_input('cross section for '+name+': ')
+    nEvents = raw_input('number of events for '+name+': ')
+    cmd = 'python ../make_list_of_jobs.py --event_type '+eventType+' --n_jobs '+nJobs+' --name '+name
+    cmd+= ' --generator '+generator+' --cross_section '+crossSection+' --n_events '+nEvents
+    if 'Run2012' in name :
+        cmd+=' --data yes'
+    os.system(cmd)
+    #submit jobs
+    os.system('tcsh grid_sub.csh')
+    #hadd files
+    #os.system('hadd '+name+'_all.root '+name+'*tree.root')
+    #os.system('mv *_all.root ../total_ttree_files')
     os.chdir('..')
-    os.chdir(name+'_sb')
-    os.system('hadd '+name+'_sb_all.root '+name+'*tree.root')
-    os.system('mv *_all.root ../total_ttree_files')
-    os.chdir('..')
-os.chdir('total_ttree_files')
-os.system('hadd SingleMu_Run2012_all.root SingleMu_Run2012*_all.root')
-cmd = 'hadd Powheg_semilep_TT_all.root Powheg_qq_semilep_TT_all.root'
-cmd += ' Powheg_qq_semilep_TT_SC_all.root Powheg_gg_semilep_TT_all.root Powheg_gg_semilep_TT_SC_all.root'
-os.system(cmd)
-os.chdir('..')
+#os.chdir('total_ttree_files')
+#os.system('hadd SingleMu_Run2012_all.root SingleMu_Run2012*_all.root')
+#cmd = 'hadd Powheg_semilep_TT_all.root Powheg_qq_semilep_TT_all.root'
+#cmd += ' Powheg_qq_semilep_TT_SC_all.root Powheg_gg_semilep_TT_all.root Powheg_gg_semilep_TT_SC_all.root'
+#os.system(cmd)
+#os.chdir('..')
