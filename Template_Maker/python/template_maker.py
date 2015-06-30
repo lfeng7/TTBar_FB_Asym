@@ -6,14 +6,14 @@
 #NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
 #This code available on github at https://github.com/eminizer/TTBar_FB_Asym
 
-import ROOT
+import ROOT, glob
 from array import array
 
 #global variables
 #histogram limits
 XBINS = 20;		XMIN = -1.0;	XMAX = 1.0
-YBINS = 20;		YMIN = 0.0;		YMAX = 1.0
-ZBINS = 20;		ZMIN = 350.;	ZMAX = 1550.
+YBINS = 20;		YMIN = 0.0;		YMAX = 0.6
+ZBINS = 20;		ZMIN = 500.;	ZMAX = 2500.
 
 ##############################		   Template File Class  		##############################
 
@@ -22,10 +22,15 @@ class template_file :
 	"""template_file class; holds all the details of the final template file with the summed distributions"""
 	
 	#__init__function
-	def __init__(self,filename,sumCharges) :
+	def __init__(self,filename,sumCharges,leptons) :
 		#set the input variables
 		self.f = TFile(filename,'recreate')
-		self.sum_charge = sumCharges.lower() == 'yes'
+		self.sum_charge = sumCharges == 'yes'
+		self.leptype = 'none'
+		if 'mu' in leptons :
+			self.leptype = 'muons'
+		if 'el' in leptons :
+			self.leptype = 'electrons'
 		#final distributions
 		self.all_histo_names = []; self.all_histos = []
 		if self.sum_charge :
@@ -56,25 +61,46 @@ class template_file :
 			self.__addDistribution__('fbck_minus',	    'background distribution, Q_{l}<0')
 
 	#addTemplate function adds a new set of histograms for the given file, and sums the new template into the appropriate distribution
-	def addToTemplate(self,ttree_filepath,template_name,template_ifd) :
+	def addToTemplate(self,ttree_dir_path,template_name,template_ifd) :
 		#make a new 3D histogram and projections for this sample file
 		new_3D_histo = ROOT.TH3D(template_name,template_name+' distribution; cos(#theta); x_{F}; M (GeV)',XBINS,XMIN,XMAX,YBINS,YMIN,YMAX,ZBINS,ZMIN,ZMAX)
 		new_histo_x  = ROOT.TH1D(name+'_x',formatted_name+' distribution X Projection; cos(#theta)',	  XBINS,XMIN,XMAX)
 		new_histo_y  = ROOT.TH1D(name+'_y',formatted_name+' distribution Y Projection; x_{F}',			  YBINS,YMIN,YMAX)
 		new_histo_z  = ROOT.TH1D(name+'_z',formatted_name+' distribution Z Projection; M (GeV)',		  ZBINS,ZMIN,ZMAX)
-		#open the ttree file
-		ttree_file = TFile(ttree_filepath)
-		tree = ttree_file.Get('tree')
+		#chain up the ttree files
+		chain = TChain('tree')
+		filenamelist = glob.glob(ttree_dir_path+'/*_skim_tree.root')
+		for filename in filenamelist :
+			chain.Add(filename)
+		#copy the chain into a tree after making selection cuts
+		muon_preselection = 'muon1_pt>ele1_pt && lepW_pt>50. && hadt_pt>300. && hadt_M>100.'
+		muon_kinematics = 'muon1_pt>40. && abs(muon1_eta)<2.4'
+		muon_ID = 'muon1_isLoose==1'
+		muon_2D = '(muon1_relPt>25. || muon1_dR>0.5)'
+		ele_preselection = 'ele1_pt>muon1_pt && lepW_pt>50. && hadt_pt>300. && hadt_M>100.'
+		ele_kinematics = 'ele1_pt>40. && abs(ele1_eta)<2.4'
+		ele_ID = 'ele1_isLoose==1'
+		ele_2D = '(ele1_relPt>25. || ele1_dR>0.5)'
+		lep_top_mass = 'lept_M>140. && lept_M<250.'
+		muon_full_leptonic = muon_preselection+' && '+muon_kinematics+' && '+muon_ID+' && '+muon_2D+' && '+lep_top_mass
+		muon_hadronic_pretag = muon_full_leptonic+' && hadt_tau21>0.1'
+		ele_full_leptonic = ele_preselection+' && '+ele_kinematics+' && '+ele_ID+' && '+ele_2D+' && '+lep_top_mass
+		ele_hadronic_pretag = ele_full_leptonic+' && hadt_tau21>0.1'
+		signal_mass = 'hadt_M>140. && hadt_M<250.'
+		signal_tau32 = 'hadt_tau32<0.55' 
+		cuts = signal_mass+' && '+signal_tau32
+		if self.leptype=='muons' :
+			cuts+=' && '+muon_hadronic_pretag
+		if self.leptype=='electrons' :
+			cuts+=' && '+ele_hadronic_pretag
+		tree = chain.CopyTree(cuts)
 		#define where to put all the branch variables we need
 		self.__initializeBranchesToRead__(tree)
 		#loop over all events in the tree
-		for entry in tree.GetEntriesFast() :
+		for entry in chain.GetEntriesFast() :
 			tree.GetEntry(entry)
-			#skip the event if the cutflow isn't zero
-			if self.cutflow[0] != 0 :
-				continue
 			#calculate the reweighting factor
-			eventweight = self.weight[0] #this will eventually be much more complicated when we have scalefactors for corrections and efficiencies, etc.
+			eventweight = self.weight[0]*self.sf_pileup[0] #this will eventually be much more complicated
 			#add to the new histograms (only once, these are just for double-checks)
 			new_3D_histo.Fill(self.cstar[0],self.x_F[0],self.M[0],eventweight)
 			new_histo_x.Fill(self.cstar[0],eventweight)
@@ -188,7 +214,6 @@ class template_file :
 
 	#__initializeBranchesToRead__ function just puts all the variables from the inputted TTree into variables we can use
 	def __initializeBranchesToRead__(self,tree) :
-		self.cutflow = array('I',[0]); tree.SetBranchAddress('cutflow',self.cutflow)
 		#weights (renormalization, scale factors, analysis)
 		self.weight    = array('d',[self.w]); tree.SetBranchAddress('weight',self.weight)
 		self.w_a 	   	   = array('d',[1.0]); tree.SetBranchAddress('w_a',		  self.w_a)
@@ -201,6 +226,7 @@ class template_file :
 		self.w_a_xi_opp    = array('d',[1.0]); tree.SetBranchAddress('w_a_xi_opp',	  self.w_a_xi_opp)
 		self.w_s_delta_opp = array('d',[1.0]); tree.SetBranchAddress('w_s_delta_opp',self.w_s_delta_opp)
 		self.w_a_delta_opp = array('d',[1.0]); tree.SetBranchAddress('w_a_delta_opp',self.w_a_delta_opp)
+		self.sf_pileup 	   = array('d',[1.0]); self.SetBranchAddress('sf_pileup', self.sf_pileup)
 		#lepton charge
 		self.Q_l = array('i',[0]); tree.SetBranchAddress('Q_l',self.Q_l)
 		#kinematic fit chi2
@@ -209,11 +235,11 @@ class template_file :
 		#was symmetric (this will only be nonzero for qqbar and some gg events)
 		self.addTwice = array('I',[0]); tree.SetBranchAddress('addTwice',self.addTwice)
 		#cosine(theta)
-		self.cstar = array('d',[100.0]); tree.SetBranchAddress('cstar',self.cstar)
+		self.cstar = array('d',[100.0]); tree.SetBranchAddress('cstar_scaled',self.cstar)
 		#Feynman x
-		self.x_F = array('d',[100.0]); tree.SetBranchAddress('x_F',self.x_F)
+		self.x_F = array('d',[100.0]); tree.SetBranchAddress('x_F_scaled',self.x_F)
 		#ttbar invariant mass
-		self.M = array('d',[-1.0]); tree.SetBranchAddress('M',self.M)
+		self.M = array('d',[-1.0]); tree.SetBranchAddress('M_scaled',self.M)
 
 	#__Fill__ function just fills the 3D histo and its 1D projections
 	def Fill(self,i,c,x,m,w) :

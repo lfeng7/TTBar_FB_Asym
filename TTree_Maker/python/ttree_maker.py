@@ -363,7 +363,7 @@ class treemaker :
 		self.nFits = array('I',[0]); self.addBranch('nFits',self.nFits,'i',0)
 		#whether or not this event should be added twice and have its weight halved based on whether its initial state
 		#was symmetric (this will only be nonzero for qqbar and some gg events)
-		self.addTwice = array('I',[2]); self.addBranch('addTwice',self.addTwice,'i',2)
+		self.addTwice = array('I',[2]); self.addBranch('addTwice',self.addTwice,'i',0)
 		#initial quark vector
 		self.q_pt  = array('d',[-1.0]);  self.addBranch('q_pt', self.q_pt, 'D',-1.0)
 		self.q_eta = array('d',[100.0]); self.addBranch('q_eta',self.q_eta,'D',100.0)

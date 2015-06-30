@@ -1,10 +1,9 @@
 from ROOT import *
 from array import array
 from math import *
-import os
+import os, glob
 
-#top type to look at
-toptype = str(1)
+cutflow_filename = 'cutflow_table_electrons.txt'
 
 filenames = []
 shortnames = []
@@ -48,111 +47,136 @@ filenames.append('Tbar_s');		shortnames.append('Single Top')
 filenames.append('Tbar_t');		shortnames.append('Single Top')
 filenames.append('Tbar_tW');	shortnames.append('Single Top')
 
+muon_data_filenames = []; ele_data_filenames = []
 #data
-data_filename = 'SingleMu_Run2012'
+muon_data_filenames.append('SingleMu_Run2012A')
+muon_data_filenames.append('SingleMu_Run2012B')
+muon_data_filenames.append('SingleMu_Run2012C')
+muon_data_filenames.append('SingleMu_Run2012D')
+ele_data_filenames.append('SingleEl_Run2012A')
+ele_data_filenames.append('SingleEl_Run2012B')
+ele_data_filenames.append('SingleEl_Run2012C')
+ele_data_filenames.append('SingleEl_Run2012D')
 
-#Get the files
-files = []
+#Chain up the files
+MC_chains = []
+muon_data_chain = TChain('tree')
+ele_data_chain = TChain('tree')
+shortnames_done = []
 for i in range(len(filenames)) :
-	filenames[i] += '_all.root'
-	files.append(TFile(filenames[i]))
-data_file = TFile(data_filename+'_all.root')
-
-N_CUTFLOWS = 10+1
-events_at_cutflow = []
-#For each file, cut on each cutflow value, then rescale the integral to get the number of events
-for i in range(len(files)) :
-	print 'Getting event numbers for file '+filenames[i]+' ('+str(i+1)+' out of '+str(len(files))+')'
-	events_at_cutflow.append([])
-	tree = files[i].Get('tree')
-	#Get the weight of each sample
-	weight_array = array('d',[0.])
-	tree.SetBranchAddress('weight',weight_array)
-	tree.GetEntry(0)
-	weights.append(weight_array[0])
-	#Get the total number of events of this type	
-	tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)')
-	events_at_cutflow[i].append(1.0*gDirectory.Get('tmp').Integral())
-	#Get the number of events at each cutflow except the last
-	for cutflow in range(1,N_CUTFLOWS) :
-		if cutflow < 7 :
-			tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*((cutflow==0 || cutflow>'+str(cutflow)+'))')
-		else :
-			tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*((top_type==0 || top_type=='+toptype+') && (cutflow==0 || cutflow>'+str(cutflow)+'))')
-		events_at_cutflow[i].append(1.0*gDirectory.Get('tmp').Integral())
-	#Get the final number of selected events
-	tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(weight)*((top_type==0 || top_type=='+toptype+') && (cutflow==0))')
-	nfinalevents = 1.0*gDirectory.Get('tmp').Integral()
-	events_at_cutflow[i].append(nfinalevents)
-	print '	Total number of selected events (unweighted) = '+str(nfinalevents/weights[i])+''
-	files[i].Close()
-
-print 'Getting event numbers from data file (get comfortable)'
-data_events_at_cutflow = []
-data_tree = data_file.Get('tree')
-#Get the total number of events
-data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')')
-data_events_at_cutflow.append(1.0*gDirectory.Get('tmp').Integral())
-for cutflow in range(1,N_CUTFLOWS) :
-	#Get the number of events at each cutflow
-	if cutflow <= 7 :
-		data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','(cutflow==0 || cutflow>'+str(cutflow)+')')
+	index = 0
+	if shortnames[i] not in shortnames_done :
+		MC_chains.append(TChain('tree'))
+		index = len(MC_chains)-1
+		shortnames_done.append(shortnames[i])
 	else :
-		data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','((top_type==0 || top_type=='+toptype+') && (cutflow==0 || cutflow>'+str(cutflow)+'))')
-	data_events_at_cutflow.append(1.0*gDirectory.Get('tmp').Integral())
-#Get the total number of reconstructed events
-data_tree.Draw('cutflow>>tmp('+str(N_CUTFLOWS)+',0,'+str(N_CUTFLOWS)+')','((top_type==0 || top_type=='+toptype+') && (cutflow==0))')
-data_events_at_cutflow.append(1.0*gDirectory.Get('tmp').Integral())
-data_file.Close()
+		index = shortnames_done.index(shortnames[i])
+	filenamelist = glob.glob('../'+filenames[i]+'/'+filenames[i]+'*_skim_tree.root')
+	for filename in filenamelist :
+		MC_chains[index].Add(filename)
+for muon_data_filename in muon_data_filenames :
+	filenamelist = glob.glob('../'+muon_data_filename+'/'+muon_data_filename+'*_skim_tree.root')
+	for filename in filenamelist :
+		muon_data_chain.Add(filename)
+for ele_data_filename in ele_data_filenames :
+	filenamelist = glob.glob('../'+ele_data_filename+'/'+ele_data_filename+'*_skim_tree.root')
+	for filename in filenamelist :
+		ele_data_chain.Add(filename)
+
+
+#Cut details
+cutnames = []; cutstrings = []; prior_cutstrings = []
+muon_preselection = 'muon1_pt>ele1_pt && lepW_pt>50. && hadt_pt>300. && hadt_M>100.'
+muon_kinematics = 'muon1_pt>40. && abs(muon1_eta)<2.4'
+muon_ID = 'muon1_isLoose==1'
+muon_2D = '(muon1_relPt>25. || muon1_dR>0.5)'
+ele_preselection = 'ele1_pt>muon1_pt && lepW_pt>50. && hadt_pt>300. && hadt_M>100.'
+ele_kinematics = 'ele1_pt>40. && abs(ele1_eta)<2.4'
+ele_ID = 'ele1_isLoose==1'
+ele_2D = '(ele1_relPt>25. || ele1_dR>0.5)'
+lep_top_mass = 'lept_M>140. && lept_M<250.'
+muon_full_leptonic = muon_preselection+' && '+muon_kinematics+' && '+muon_ID+' && '+muon_2D+' && '+lep_top_mass
+muon_hadronic_pretag = muon_full_leptonic+' && hadt_tau21>0.1'
+ele_full_leptonic = ele_preselection+' && '+ele_kinematics+' && '+ele_ID+' && '+ele_2D+' && '+lep_top_mass
+ele_hadronic_pretag = ele_full_leptonic+' && hadt_tau21>0.1'
+signal_mass = 'hadt_M>140. && hadt_M<250.'
+signal_tau32 = 'hadt_tau32<0.55' 
+#cutnames.append('muon skim'); 			   cutstrings.append('muon1_pt>ele1_pt'); 										   prior_cutstrings.append('muon1_pt>ele1_pt')
+#cutnames.append('muon preselection'); 	   cutstrings.append(muon_preselection); 										   prior_cutstrings.append('muon1_pt>ele1_pt')
+#cutnames.append('muon kinematics'); 	   cutstrings.append(muon_preselection+' && '+muon_kinematics); 				   prior_cutstrings.append(muon_preselection)
+#cutnames.append('muon ID'); 			   cutstrings.append(muon_preselection+' && '+muon_ID); 						   prior_cutstrings.append(muon_preselection)
+#cutnames.append('muon 2D cut'); 		   cutstrings.append(muon_preselection+' && '+muon_2D); 						   prior_cutstrings.append(muon_preselection)
+#cutnames.append('muon leptonic top mass'); cutstrings.append(muon_preselection+' && '+lep_top_mass); 					   prior_cutstrings.append(muon_preselection)
+#cutnames.append('muon full leptonic'); 	   cutstrings.append(muon_full_leptonic); 										   prior_cutstrings.append(muon_preselection)
+#cutnames.append('muon hadronic pretag');   cutstrings.append(muon_hadronic_pretag); 									   prior_cutstrings.append(muon_preselection)
+#cutnames.append('muon signal mass'); 	   cutstrings.append(muon_hadronic_pretag+' && '+signal_mass); 					   prior_cutstrings.append(muon_hadronic_pretag)
+#cutnames.append('muon signal tau32'); 	   cutstrings.append(muon_hadronic_pretag+' && '+signal_tau32); 				   prior_cutstrings.append(muon_hadronic_pretag)
+#cutnames.append('muon full selection');    cutstrings.append(muon_hadronic_pretag+' && '+signal_mass+' && '+signal_tau32); prior_cutstrings.append(muon_preselection)
+cutnames.append('ele skim'); 			  cutstrings.append('ele1_pt>muon1_pt'); 										 prior_cutstrings.append('ele1_pt>muon1_pt')
+cutnames.append('ele preselection'); 	  cutstrings.append(ele_preselection); 											 prior_cutstrings.append('ele1_pt>muon1_pt')
+cutnames.append('ele kinematics'); 		  cutstrings.append(ele_preselection+' && '+ele_kinematics); 					 prior_cutstrings.append(ele_preselection)
+cutnames.append('ele ID'); 				  cutstrings.append(ele_preselection+' && '+ele_ID); 							 prior_cutstrings.append(ele_preselection)
+cutnames.append('ele 2D cut'); 			  cutstrings.append(ele_preselection+' && '+ele_2D); 							 prior_cutstrings.append(ele_preselection)
+cutnames.append('ele leptonic top mass'); cutstrings.append(ele_preselection+' && '+lep_top_mass); 						 prior_cutstrings.append(ele_preselection)
+cutnames.append('ele full leptonic'); 	  cutstrings.append(ele_full_leptonic); 										 prior_cutstrings.append(ele_preselection)
+cutnames.append('ele hadronic pretag');   cutstrings.append(ele_hadronic_pretag); 										 prior_cutstrings.append(ele_preselection)
+cutnames.append('ele signal mass'); 	  cutstrings.append(ele_hadronic_pretag+' && '+signal_mass); 					 prior_cutstrings.append(ele_hadronic_pretag)
+cutnames.append('ele signal tau32'); 	  cutstrings.append(ele_hadronic_pretag+' && '+signal_tau32); 					 prior_cutstrings.append(ele_hadronic_pretag)
+cutnames.append('ele full selection');    cutstrings.append(ele_hadronic_pretag+' && '+signal_mass+' && '+signal_tau32); prior_cutstrings.append(ele_preselection)
+
+data_events_at_cut = []; data_events_at_prior_cut = []
+events_at_cut = []; events_at_prior_cut = []
+dist = TH1D('dist','distribution',20,-1.0,1.0)
+for i in range(len(cutnames)) :
+	print 'Getting numbers of data events for cut '+cutnames[i]+' ('+str(i+1)+' out of '+str(len(cutnames))+')'
+	if 'muon' in cutnames[i] :
+		tmp = dist.Clone('tmp')
+		muon_data_chain.CopyTree(cutstrings[i]).Draw('cstar>>tmp','weight')
+		data_events_at_cut.append(tmp.Integral())
+		tmp = dist.Clone('tmp')
+		muon_data_chain.CopyTree(prior_cutstrings[i]).Draw('cstar>>tmp','weight')
+		data_events_at_prior_cut.append(tmp.Integral())
+	elif 'ele' in cutnames[i] :
+		tmp = dist.Clone('tmp')
+		ele_data_chain.CopyTree(cutstrings[i]).Draw('cstar>>tmp','weight')
+		data_events_at_cut.append(tmp.Integral())
+		tmp = dist.Clone('tmp')
+		ele_data_chain.CopyTree(prior_cutstrings[i]).Draw('cstar>>tmp','weight')
+		data_events_at_prior_cut.append(tmp.Integral())
+	events_at_cut.append([]); events_at_prior_cut.append([])
+	print 'Getting numbers of MC events for cut '+cutnames[i]+' ('+str(i+1)+' out of '+str(len(cutnames))+')'
+	for j in range(len(MC_chains)) :
+		print '	Doing '+shortnames_done[j]+' ('+str(j+1)+' out of '+str(len(MC_chains))+')'
+		tmp = dist.Clone('tmp')
+		MC_chains[j].CopyTree(cutstrings[i]).Draw('cstar>>tmp','weight*(21560109./245.8)')
+		events_at_cut[i].append(tmp.Integral())
+		tmp = dist.Clone('tmp')
+		MC_chains[j].CopyTree(prior_cutstrings[i]).Draw('cstar>>tmp','weight*(21560109./245.8)')
+		events_at_prior_cut[i].append(tmp.Integral())
 
 #print out the number of events in data and the efficiencies for the MC samples
 #first line is just table headings for each cutflow and each sample type
-cutflow_filename = 'cutflow_table_type'+toptype+'.txt'
-first_line = 'Cutflow 	Data Events 		'
-added_shortnames = []
-for shortname in shortnames :
-	if not shortname in added_shortnames :
-		added_shortnames.append(shortname)
-		first_line += shortname+' eff		'
+first_line = 'Cut 		 	Data Events 		'
+for shortname in shortnames_done :
+	first_line += shortname+' eff		'
 print first_line
 os.system('echo "'+first_line+'" > '+cutflow_filename+'')
 #second line is just the total number of events in data
-second_line = '	 	'+str(data_events_at_cutflow[0])+' 			'
-for shortname in added_shortnames :
-	second_line += '					'
+second_line = '	 	'+str(data_events_at_cut[0])+' 			'
+for shortname in shortnames_done :
+	second_line += '		'
 print second_line
 os.system('echo "'+second_line+'" >> '+cutflow_filename+'')
 #Each line after that is the cutflow number, then the number of events in data, then the eff. with uncertainty for each sample type
-for cutflow in range(1,N_CUTFLOWS+1) :
+for i in range(1,len(cutnames)) :
 	#Begin with the cutflow number and the number of events in data
 	next_line = ''
-	if cutflow!=N_CUTFLOWS :
-		next_line += str(cutflow)
-	else :
-		next_line += 'tot'
-	next_line+=' 		%.2f'%(data_events_at_cutflow[cutflow])
-	for i in range(len(added_shortnames)) :
+	next_line += cutnames[i]
+	next_line+=' 	%.2f'%(data_events_at_cut[i])
+	for j in range(len(MC_chains)) :
 		#calculate the efficiency for this sample type
-		prev_number_of_events = 0.
-		prev_number_of_events_variance = 0.
-		number_of_events = 0.
-		number_of_events_variance = 0.
-		for j in range(len(shortnames)) :
-			if shortnames[j] == added_shortnames[i] :
-				prev_number_of_events += events_at_cutflow[j][cutflow-1]
-				prev_number_of_events_variance += (weights[j])*events_at_cutflow[j][cutflow-1]
-				number_of_events += events_at_cutflow[j][cutflow]
-				number_of_events_variance += (weights[j])*events_at_cutflow[j][cutflow]
-		eff = 1.0
-		if prev_number_of_events != 0. :
-			eff = number_of_events/prev_number_of_events
-		if number_of_events == 0. :
-			eff = 0.0
-		eff_err = 1.0
-		if number_of_events!=0. and prev_number_of_events!=0. :
-			frac_var1 = number_of_events_variance/(number_of_events*number_of_events)
-			frac_var2 = prev_number_of_events_variance/(prev_number_of_events*prev_number_of_events)
-			eff_err = eff*sqrt(frac_var1+frac_var2)
+		eff = events_at_cut[i][j]/events_at_prior_cut[i][j]
+		eff_err = eff*sqrt(1./events_at_cut[i][j]+1./events_at_prior_cut[i][j])
 		#add to the line
 		next_line+='		%.6f (%.6f)'%(eff,eff_err)
 	print next_line
