@@ -4,7 +4,7 @@
 #This code available on github at https://github.com/eminizer/TTBar_FB_Asym
 
 from optparse import OptionParser
-from template_maker import background_template, signal_template, template_file
+from template_maker import template_file
 
 ##########								Parser Options								##########
 
@@ -32,7 +32,7 @@ input_file_path = ''
 if options.on_grid=='yes' :
 	input_file_path+='tardir/'
 else :
-	input_file_path+='.'
+	input_file_path+='./'
 input_file_path+=options.input
 if not '.txt' in options.input :
 	input_file_path+='.txt'
@@ -42,7 +42,9 @@ for line in input_file :
 	if line.startswith('#') :
 		continue
 	[ttree_dir_path,name,ifd] = line.rstrip().split()
-	output_file.addToTemplate(ttree_dir_path,name,ifd.lower())
+	ifd = ifd.lower()
+	print 'adding to templates from file '+name+' '
+	output_file.addToTemplate(ttree_dir_path,name,ifd)
 #Normalize the total distributions in preparation for fitting
 output_file.normalizeDistributions()
 #clean up after yourself
