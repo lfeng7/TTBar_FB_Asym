@@ -78,12 +78,20 @@ class template_file :
 			self.__addNTMJDistribution__('fntmj_minus_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}<0')
 			self.__addNTMJDistribution__('fntmj_minus_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}<0')
 		self.NTMJ_tree = TTree('NTMJ_tree','NTMJ_tree')
-		self.NTMJ_weight = array('d',[1.0]); self.NTMJ_tree.Branch('NTMJ_weight',self.NTMJ_weight,'NTMJ_weight/D')
+		self.NTMJ_tree.SetDirectory(0)
+		self.NTMJ_w = array('d',[1.0]); self.NTMJ_tree.Branch('NTMJ_weight',self.NTMJ_w,'NTMJ_weight/D')
 		self.NTMJ_cstar  = array('d',[100.]); self.NTMJ_tree.Branch('NTMJ_cstar',self.NTMJ_cstar,'NTMJ_cstar/D')
 		self.NTMJ_x_F  = array('d',[100.]); self.NTMJ_tree.Branch('NTMJ_x_F',self.NTMJ_x_F,'NTMJ_x_F/D')
 		self.NTMJ_M  = array('d',[-1.0]); self.NTMJ_tree.Branch('NTMJ_M',self.NTMJ_M,'NTMJ_M/D')
 		self.NTMJ_hadt_M  = array('d',[-1.0]); self.NTMJ_tree.Branch('NTMJ_hadt_M',self.NTMJ_hadt_M,'NTMJ_hadt_M/D')
 		self.NTMJ_Q_l  = array('i',[0]); self.NTMJ_tree.Branch('NTMJ_Q_l',self.NTMJ_Q_l,'NTMJ_Q_l/I')
+		self.data_tree = TTree('data_tree','data_tree')
+		self.data_chi2  = array('d',[-100.]); self.data_tree.Branch('chi2',self.data_chi2,'chi2/D')
+		self.data_cstar  = array('d',[100.]); self.data_tree.Branch('cstar',self.data_cstar,'cstar/D')
+		self.data_x_F  = array('d',[100.]); self.data_tree.Branch('x_F',self.data_x_F,'x_F/D')
+		self.data_M  = array('d',[-1.0]); self.data_tree.Branch('M',self.data_M,'M/D')
+		self.data_Q_l  = array('i',[0]); self.data_tree.Branch('Q_l',self.data_Q_l,'Q_l/I')
+		self.data_tree.SetDirectory(0)
 
 	#addTemplate function adds a new set of histograms for the given file, and sums the new template into the appropriate distribution
 	def addToTemplate(self,ttree_dir_path,template_name,template_ifd) :
@@ -116,10 +124,11 @@ class template_file :
 		cuts = ''
 		if self.leptype=='muons' :
 			cuts+=muon_hadronic_pretag
-			#cuts+=' && (('+muon_hadronic_pretag+') || ('+ele_hadronic_pretag+'))'
+			#cuts+='(('+muon_hadronic_pretag+') || ('+ele_hadronic_pretag+'))'
 		if self.leptype=='electrons' :
 			cuts+=ele_hadronic_pretag
 		tree = chain.CopyTree(cuts)
+		tree.SetDirectory(0)
 		#define where to put all the branch variables we need
 		self.__initializeBranchesToRead__(tree)
 		#loop over all events in the tree
@@ -131,8 +140,8 @@ class template_file :
 				print '	'+str((int)(percent_done))+'%'
 			tree.GetEntry(entry)
 			#calculate the reweighting factor
-			eventweight = self.weight[0]*self.sf_pileup[0] #this will eventually be much more complicated
-			NTMJ_weight = -1.0*LUMINOSITY*eventweight
+			eventweight = LUMINOSITY*self.weight[0]*self.sf_pileup[0]*self.sf_top_pT[0] #this will eventually be much more complicated
+			NTMJ_weight = -1.0*eventweight
 			if (template_ifd == 'mudata' and self.leptype=='muons') or (template_ifd == 'eledata' and self.leptype=='electrons') :
 				NTMJ_weight = 1.0
 			if (template_ifd == 'eledata' and self.leptype=='muons') or (template_ifd == 'mudata' and self.leptype=='electrons') :
@@ -144,24 +153,33 @@ class template_file :
 			new_histo_z.Fill(self.M[0],eventweight)
 			#add antitagged events to the NTMJ tree
 			if self.hadt_tau32[0]>0.55 and self.hadt_M[0]>140. and self.hadt_M[0]<250. :
-				self.NTMJ_weight[0]=NTMJ_weight
+				self.NTMJ_w[0]=NTMJ_weight
 				self.NTMJ_cstar[0]=self.cstar[0]
 				self.NTMJ_x_F[0]=self.x_F[0] 
 				self.NTMJ_M[0]=self.M[0] 
 				self.NTMJ_hadt_M[0]=self.hadt_M[0] 
 				self.NTMJ_Q_l[0]=self.Q_l[0]
 				self.NTMJ_tree.Fill() 
+			#If it's a data file and a signal event, add it to the final data tree
+			if (template_ifd == 'mudata' and self.leptype=='muons') or (template_ifd == 'eledata' and self.leptype=='electrons') :
+				if self.hadt_tau32[0]<0.55 and self.hadt_M[0]>140. and self.hadt_M[0]<250. :
+					self.data_chi2[0] = self.chi2[0]
+					self.data_cstar[0] = self.cstar[0]
+					self.data_x_F[0] = self.x_F[0]
+					self.data_M[0] = self.M[0]
+					self.data_Q_l[0] = self.Q_l[0]
+					self.data_tree.Fill()
 			#add to the appropriate distributions
 			for i in range(len(self.all_histos)/4) :
 				dist_name = self.all_histo_names[4*i]
 				#First add to the NTMJ background templates because they're sort of complex and require fewer cuts overall
-				if ( 'fntmj' in dist_name and (('pass' in dist_name and self.hadt_tau32[0]<0.55) or ('pass' not in dist_name and self.hadt_tau32[0]>0.55))
+				if ( 'fntmj' in dist_name and (('pass' in dist_name and self.hadt_tau32[0]<0.55) or ('fail' in dist_name and self.hadt_tau32[0]>0.55))
 					and (('low' in dist_name and self.hadt_M[0]<140.) or ('hi' in dist_name and self.hadt_M[0]>250.)) ) :
 					if self.sum_charge :
-						self.__Fill__(i,self.cstar[0],self.x_F[0],self.hadt_M[0],NTMJ_weight)
+						self.__FillNTMJ__(i,self.cstar[0],self.x_F[0],self.M[0],self.hadt_M[0],NTMJ_weight)
 					else :
 						if (self.Q_l[0]>0 and 'plus' in dist_name) or (self.Q_l[0]<0 and 'minus' in dist_name) :
-							self.__Fill__(i,self.cstar[0],self.x_F[0],self.hadt_M[0],NTMJ_weight)
+							self.__FillNTMJ__(i,self.cstar[0],self.x_F[0],self.M[0],self.hadt_M[0],NTMJ_weight)
 				#continue if the event isn't a signal event from this point forward
 				if self.hadt_tau32[0]>0.55 or self.hadt_M[0]<140. or self.hadt_M[0]>250. :
 					continue
@@ -268,20 +286,24 @@ class template_file :
 				if not 'fntmj' in dist_name :
 					continue
 				if 'low' in dist_name and 'pass' in dist_name :
-					low_passed_i = 4*i+3
+					low_passed_i = 4*i
 				elif 'low' in dist_name and 'fail' in dist_name :
-					low_failed_i = 4*i+3
+					low_failed_i = 4*i
 				elif 'hi' in dist_name and 'pass' in dist_name :
-					hi_passed_i = 4*i+3
+					hi_passed_i = 4*i
 				elif 'hi' in dist_name and 'fail' in dist_name :
-					hi_failed_i = 4*i+3
-			all_low = all_histos[low_passed_i]+all_histos[low_failed_i]
-			all_hi  = all_histos[hi_passed_i]+all_histos[hi_failed_i]
+					hi_failed_i = 4*i
+			all_low = self.all_histos[low_passed_i+3]+self.all_histos[low_failed_i+3]
+			all_hi  = self.all_histos[hi_passed_i+3]+self.all_histos[hi_failed_i+3]
 			conv_factor_low_x = all_low.GetMean(); conv_factor_hi_x = all_hi.GetMean()
-			print 'mean X value for low mass bin = %f'%(conv_factor_low_x)
-			print 'mean X value for high mass bin = %f'%(conv_factor_hi_x)
-			conv_factor_low = all_histos[low_passed_i].Integral()/all_histos[low_failed_i].Integral()
-			conv_factor_hi = all_histos[hi_passed_i].Integral()/all_histos[hi_failed_i].Integral()
+			print 'mean X value for low mass bin = %f +/- %f'%(conv_factor_low_x,all_low.GetMeanError())
+			print 'mean X value for high mass bin = %f +/- %f'%(conv_factor_hi_x,all_hi.GetMeanError())
+			conv_factor_low = self.all_histos[low_passed_i].Integral()/self.all_histos[low_failed_i].Integral()
+			conv_factor_low_err = conv_factor_low*sqrt(1./abs(self.all_histos[low_passed_i].Integral())+1./abs(self.all_histos[low_failed_i].Integral()))
+			conv_factor_hi = self.all_histos[hi_passed_i].Integral()/self.all_histos[hi_failed_i].Integral()
+			conv_factor_hi_err = conv_factor_hi*sqrt(1./abs(self.all_histos[hi_passed_i].Integral())+1./abs(self.all_histos[hi_failed_i].Integral()))
+			print 'conversion factor for low mass bin = %f +/- %f'%(conv_factor_low,conv_factor_low_err)
+			print 'conversion factor for high mass bin = %f +/- %f'%(conv_factor_hi,conv_factor_hi_err)
 			slope = (conv_factor_hi-conv_factor_low)/(conv_factor_hi_x-conv_factor_low_x)
 			intercept = conv_factor_low-(slope*conv_factor_low_x)
 			print 'linear function: y = %f*x+%f'%(slope,intercept)
@@ -295,35 +317,43 @@ class template_file :
 				if not 'fntmj' in dist_name :
 					continue
 				if 'low' in dist_name and 'pass' in dist_name and 'plus' in dist_name :
-					low_passed_i_plus = 4*i+3
+					low_passed_i_plus = 4*i
 				elif 'low' in dist_name and 'fail' in dist_name and 'plus' in dist_name :
-					low_failed_i_plus = 4*i+3
+					low_failed_i_plus = 4*i
 				elif 'hi' in dist_name and 'pass' in dist_name and 'plus' in dist_name :
-					hi_passed_i_plus = 4*i+3
+					hi_passed_i_plus = 4*i
 				elif 'hi' in dist_name and 'fail' in dist_name and 'plus' in dist_name :
-					hi_failed_i_plus = 4*i+3
+					hi_failed_i_plus = 4*i
 				elif 'low' in dist_name and 'pass' in dist_name and 'minus' in dist_name :
-					low_passed_i_minus = 4*i+3
+					low_passed_i_minus = 4*i
 				elif 'low' in dist_name and 'fail' in dist_name and 'minus' in dist_name :
-					low_failed_i_minus = 4*i+3
+					low_failed_i_minus = 4*i
 				elif 'hi' in dist_name and 'pass' in dist_name and 'minus' in dist_name :
-					hi_passed_i_minus = 4*i+3
+					hi_passed_i_minus = 4*i
 				elif 'hi' in dist_name and 'fail' in dist_name and 'minus' in dist_name :
-					hi_failed_i_minus = 4*i+3
-			all_low_plus = all_histos[low_passed_i_plus]+all_histos[low_failed_i_plus]
-			all_hi_plus  = all_histos[hi_passed_i_plus]+all_histos[hi_failed_i_plus]
-			all_low_minus = all_histos[low_passed_i_minus]+all_histos[low_failed_i_minus]
-			all_hi_minus  = all_histos[hi_passed_i_minus]+all_histos[hi_failed_i_minus]
+					hi_failed_i_minus = 4*i
+			all_low_plus = self.all_histos[low_passed_i_plus+3]+self.all_histos[low_failed_i_plus+3]
+			all_hi_plus  = self.all_histos[hi_passed_i_plus+3]+self.all_histos[hi_failed_i_plus+3]
+			all_low_minus = self.all_histos[low_passed_i_minus+3]+self.all_histos[low_failed_i_minus+3]
+			all_hi_minus  = self.all_histos[hi_passed_i_minus+3]+self.all_histos[hi_failed_i_minus+3]
 			conv_factor_low_x_plus = all_low_plus.GetMean(); conv_factor_hi_x_plus = all_hi_plus.GetMean()
 			conv_factor_low_x_minus = all_low_minus.GetMean(); conv_factor_hi_x_minus = all_hi_minus.GetMean()
-			print 'mean X value for low mass bin (positive leptons) = %f'%(conv_factor_low_x_plus)
-			print 'mean X value for high mass bin (positive leptons) = %f'%(conv_factor_hi_x_plus)
-			print 'mean X value for low mass bin (negative leptons) = %f'%(conv_factor_low_x_minus)
-			print 'mean X value for high mass bin (negative leptons) = %f'%(conv_factor_hi_x_minus)
-			conv_factor_low_plus = all_histos[low_passed_i_plus].Integral()/all_histos[low_failed_i_plus].Integral()
-			conv_factor_hi_plus = all_histos[hi_passed_i_plus].Integral()/all_histos[hi_failed_i_plus].Integral()
-			conv_factor_low_minus = all_histos[low_passed_i_minus].Integral()/all_histos[low_failed_i_minus].Integral()
-			conv_factor_hi_minus = all_histos[hi_passed_i_minus].Integral()/all_histos[hi_failed_i_minus].Integral()
+			print 'mean X value for low mass bin (positive leptons) = %f +/- %f'%(conv_factor_low_x_plus,all_low_plus.GetMeanError())
+			print 'mean X value for high mass bin (positive leptons) = %f +/- %f'%(conv_factor_hi_x_plus,all_hi_plus.GetMeanError())
+			print 'mean X value for low mass bin (negative leptons) = %f +/- %f'%(conv_factor_low_x_minus,all_low_minus.GetMeanError())
+			print 'mean X value for high mass bin (negative leptons) = %f +/- %f'%(conv_factor_hi_x_minus,all_hi_minus.GetMeanError())
+			conv_factor_low_plus = self.all_histos[low_passed_i_plus].Integral()/self.all_histos[low_failed_i_plus].Integral()
+			conv_factor_low_plus_err = conv_factor_low_plus*sqrt(1./abs(self.all_histos[low_passed_i_plus].Integral())+1./abs(self.all_histos[low_failed_i_plus].Integral()))
+			conv_factor_hi_plus = self.all_histos[hi_passed_i_plus].Integral()/self.all_histos[hi_failed_i_plus].Integral()
+			conv_factor_hi_plus_err = conv_factor_hi_plus*sqrt(1./abs(self.all_histos[hi_passed_i_plus].Integral())+1./abs(self.all_histos[hi_failed_i_plus].Integral()))
+			conv_factor_low_minus = self.all_histos[low_passed_i_minus].Integral()/self.all_histos[low_failed_i_minus].Integral()
+			conv_factor_low_minus_err = conv_factor_low_minus*sqrt(1./abs(self.all_histos[low_passed_i_minus].Integral())+1./abs(self.all_histos[low_failed_i_minus].Integral()))
+			conv_factor_hi_minus = self.all_histos[hi_passed_i_minus].Integral()/self.all_histos[hi_failed_i_minus].Integral()
+			conv_factor_hi_minus_err = conv_factor_hi_minus*sqrt(1./abs(self.all_histos[hi_passed_i_minus].Integral())+1./abs(self.all_histos[hi_failed_i_minus].Integral()))
+			print 'conversion factor for low mass bin (positive leptons) = %f +/- %f'%(conv_factor_low_plus,conv_factor_low_plus_err)
+			print 'conversion factor for high mass bin (positive leptons) = %f +/- %f'%(conv_factor_hi_plus,conv_factor_hi_plus_err)
+			print 'conversion factor for low mass bin (negative leptons) = %f +/- %f'%(conv_factor_low_minus,conv_factor_low_minus_err)
+			print 'conversion factor for high mass bin (negative leptons) = %f +/- %f'%(conv_factor_hi_minus,conv_factor_hi_minus_err)
 			slope_plus = (conv_factor_hi_plus-conv_factor_low_plus)/(conv_factor_hi_x_plus-conv_factor_low_x_plus)
 			intercept_plus = conv_factor_low_plus-(slope_plus*conv_factor_low_x_plus)
 			slope_minus = (conv_factor_hi_minus-conv_factor_low_minus)/(conv_factor_hi_x_minus-conv_factor_low_x_minus)
@@ -343,6 +373,7 @@ class template_file :
 		self.all_histo_names.append(name); self.all_histo_names.append(name+'_x') 
 		self.all_histo_names.append(name+'_y'); self.all_histo_names.append(name+'_z')
 		self.all_histos.append(histo_3D); self.all_histos.append(histo_x); self.all_histos.append(histo_y); self.all_histos.append(histo_z)
+		histo_3D.SetDirectory(0); histo_x.SetDirectory(0); histo_y.SetDirectory(0); histo_z.SetDirectory(0)
 
 	#__addNTMJDistribution__ function adds a 3D histogram and 1D projections to the file and to the lists 
 	#but with hadronic t mass instead of ttbar mass on the z-axis
@@ -354,6 +385,7 @@ class template_file :
 		self.all_histo_names.append(name); self.all_histo_names.append(name+'_x') 
 		self.all_histo_names.append(name+'_y'); self.all_histo_names.append(name+'_z')
 		self.all_histos.append(histo_3D); self.all_histos.append(histo_x); self.all_histos.append(histo_y); self.all_histos.append(histo_z)
+		histo_3D.SetDirectory(0); histo_x.SetDirectory(0); histo_y.SetDirectory(0); histo_z.SetDirectory(0)
 
 	#__initializeBranchesToRead__ function just puts all the variables from the inputted TTree into variables we can use
 	def __initializeBranchesToRead__(self,tree) :
@@ -373,6 +405,7 @@ class template_file :
 		self.w_s_delta_opp = array('d',[1.0]); tree.SetBranchAddress('w_s_delta_opp',self.w_s_delta_opp)
 		self.w_a_delta_opp = array('d',[1.0]); tree.SetBranchAddress('w_a_delta_opp',self.w_a_delta_opp)
 		self.sf_pileup 	   = array('d',[1.0]); tree.SetBranchAddress('sf_pileup', self.sf_pileup)
+		self.sf_top_pT 	   = array('d',[1.0]); tree.SetBranchAddress('sf_top_pT', self.sf_top_pT)
 		#lepton charge
 		self.Q_l = array('i',[0]); tree.SetBranchAddress('Q_l',self.Q_l)
 		#kinematic fit chi2
@@ -394,15 +427,22 @@ class template_file :
 		self.all_histos[4*i+2].Fill(x,w)
 		self.all_histos[4*i+3].Fill(m,w)
 
+	#__FillNTMJ__ function just fills the 3D histo, some 1-D projections, and the hadronic top mass distribution
+	def __FillNTMJ__(self,i,c,x,m,tm,w) :
+		self.all_histos[4*i].Fill(c,x,m,w)
+		self.all_histos[4*i+1].Fill(c,w)
+		self.all_histos[4*i+2].Fill(x,w)
+		self.all_histos[4*i+3].Fill(tm,w)
+
 	def __build_NTMJ_template__(self,plus_func,minus_func) :
 		#find the distributions to fill
 		plus_index = 0; minus_index = 0;
 		for i in range(len(self.all_histos)/4) :
 			dist_name = self.all_histo_names[4*i]
-			if 'fntmj' in dist_name and ('plus' in dist_name or self.sum_charge) :
-				plus_index = 4*i
-			if 'fntmj' in dist_name and ('minus' in dist_name or self.sum_charge) :
-				minus_index = 4*i
+			if 'fntmj' in dist_name and ('plus' in dist_name or self.sum_charge) and not 'pass' in dist_name and not 'fail' in dist_name :
+				plus_index = i
+			if 'fntmj' in dist_name and ('minus' in dist_name or self.sum_charge) and not 'pass' in dist_name and not 'fail' in dist_name :
+				minus_index = i
 		#initialize the branches to read from
 		w = array('d',[1.0]); self.NTMJ_tree.SetBranchAddress('NTMJ_weight',w)
 		c = array('d',[100.]); self.NTMJ_tree.SetBranchAddress('NTMJ_cstar',c)
@@ -420,12 +460,24 @@ class template_file :
 			self.NTMJ_tree.GetEntry(entry)
 			#recalculate weights and fill histograms
 			if Q[0]>0 :
+				#new_weight = w[0]
 				new_weight = plus_func.Eval(t_M[0])*w[0]
 				self.__Fill__(plus_index,c[0],x[0],M[0],new_weight)
 			elif Q[0]<0 :
+				#new_weight = w[0]
 				new_weight = minus_func.Eval(t_M[0])*w[0]
 				self.__Fill__(minus_index,c[0],x[0],M[0],new_weight)
-
+		plus_integral  = self.all_histos[4*plus_index].Integral()
+		minus_integral = self.all_histos[4*minus_index].Integral()
+		self.all_histos[4*plus_index+0].Scale(1.0/plus_integral)
+		self.all_histos[4*plus_index+1].Scale(1.0/plus_integral)
+		self.all_histos[4*plus_index+2].Scale(1.0/plus_integral)
+		self.all_histos[4*plus_index+3].Scale(1.0/plus_integral)
+		if plus_index!=minus_index :
+			self.all_histos[4*minus_index+0].Scale(1.0/minus_integral)
+			self.all_histos[4*minus_index+1].Scale(1.0/minus_integral)
+			self.all_histos[4*minus_index+2].Scale(1.0/minus_integral)
+			self.all_histos[4*minus_index+3].Scale(1.0/minus_integral)
 
 
 	#__del__ function
@@ -434,5 +486,6 @@ class template_file :
 		self.f.cd()
 		for histo in self.all_histos :
 			histo.Write()
+		self.data_tree.Write()
 		self.f.Write()
 		self.f.Close()

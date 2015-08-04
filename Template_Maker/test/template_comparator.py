@@ -1,6 +1,6 @@
 from ROOT import *
 
-filename = 'templates_both.root'
+filename = 'templates_muons_charge_summed.root'
 
 x_canv = TCanvas('x_canv','x_canv',1200,900)
 y_canv = TCanvas('y_canv','y_canv',1200,900)
@@ -9,18 +9,28 @@ z_canv = TCanvas('z_canv','z_canv',1200,900)
 tfile = TFile(filename)
 
 all_histo_names = []; all_histo_colors = []
-all_histo_names.append('fqqs_minus_x'); all_histo_names.append('fqqs_minus_y'); all_histo_names.append('fqqs_minus_z')
+all_histo_names.append('fqqs_x'); all_histo_names.append('fqqs_y'); all_histo_names.append('fqqs_z')
 all_histo_colors.append(kBlack); all_histo_colors.append(kBlack); all_histo_colors.append(kBlack)
-all_histo_names.append('fqqa_minus_x'); all_histo_names.append('fqqa_minus_y'); all_histo_names.append('fqqa_minus_z')
+all_histo_names.append('fqqa_x'); all_histo_names.append('fqqa_y'); all_histo_names.append('fqqa_z')
 all_histo_colors.append(kBlue); all_histo_colors.append(kBlue); all_histo_colors.append(kBlue)
-all_histo_names.append('fgg_minus_x');  all_histo_names.append('fgg_minus_y');  all_histo_names.append('fgg_minus_z')
+all_histo_names.append('fgg_x');  all_histo_names.append('fgg_y');  all_histo_names.append('fgg_z')
 all_histo_colors.append(kRed); all_histo_colors.append(kRed); all_histo_colors.append(kRed)
-all_histo_names.append('fbck_minus_x'); all_histo_names.append('fbck_minus_y'); all_histo_names.append('fbck_minus_z')
+all_histo_names.append('fbck_x'); all_histo_names.append('fbck_y'); all_histo_names.append('fbck_z')
 all_histo_colors.append(kGreen); all_histo_colors.append(kGreen); all_histo_colors.append(kGreen)
+all_histo_names.append('fntmj_x'); all_histo_names.append('fntmj_y'); all_histo_names.append('fntmj_z')
+all_histo_colors.append(kYellow); all_histo_colors.append(kYellow); all_histo_colors.append(kYellow)
 
 all_histos = []
 for histo_name in all_histo_names :
 	all_histos.append(tfile.Get(histo_name))
+
+ntmj_histo = tfile.Get('fntmj')
+ntmj_factor = 1.0/ntmj_histo.Integral()
+
+for i in range(len(all_histos)) :
+	if 'ntmj' in all_histo_names[i] :
+		all_histos[i].Scale(ntmj_factor)
+
 
 for i in range(len(all_histos)) :
 	all_histos[i].SetLineWidth(4)
@@ -87,7 +97,7 @@ x_canv.cd(); x_leg.Draw()
 y_canv.cd(); y_leg.Draw()
 z_canv.cd(); z_leg.Draw()
 
-outfile = TFile('template_comparator_plots_minus.root','recreate')
+outfile = TFile('template_comparator_plots_with_NTMJ.root','recreate')
 outfile.cd()
 x_canv.Write()
 y_canv.Write()

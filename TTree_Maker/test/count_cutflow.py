@@ -3,7 +3,7 @@ from array import array
 from math import *
 import os, glob
 
-cutflow_filename = 'cutflow_table_electrons.txt'
+cutflow_filename = 'cutflow_table_muons.txt'
 
 filenames = []
 shortnames = []
@@ -11,24 +11,24 @@ weights = []
 #POWHEG TT
 #semileptonic qq
 filenames.append('Powheg_qq_semilep_TT');					shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_qq_semilep_TT_SC');				shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_qq_semilep_TT_Mtt_700_to_1000');	shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf');	shortnames.append('Semileptonic TTBar')
+#filenames.append('Powheg_qq_semilep_TT_SC');				shortnames.append('Semileptonic TTBar')
+#filenames.append('Powheg_qq_semilep_TT_Mtt_700_to_1000');	shortnames.append('Semileptonic TTBar')
+#filenames.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf');	shortnames.append('Semileptonic TTBar')
 #semileptonic gg
 filenames.append('Powheg_gg_semilep_TT');					shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_gg_semilep_TT_SC');				shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000');	shortnames.append('Semileptonic TTBar')
-filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf');	shortnames.append('Semileptonic TTBar')
+#filenames.append('Powheg_gg_semilep_TT_SC');				shortnames.append('Semileptonic TTBar')
+#filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000');	shortnames.append('Semileptonic TTBar')
+#filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf');	shortnames.append('Semileptonic TTBar')
 #dileptonic 
 filenames.append('Powheg_dilep_TT');						shortnames.append('Dileptonic TTBar')
-filenames.append('Powheg_dilep_TT_SC');						shortnames.append('Dileptonic TTBar')
-filenames.append('Powheg_dilep_TT_Mtt_700_to_1000');		shortnames.append('Dileptonic TTBar')
-filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf');		shortnames.append('Dileptonic TTBar')
+#filenames.append('Powheg_dilep_TT_SC');						shortnames.append('Dileptonic TTBar')
+#filenames.append('Powheg_dilep_TT_Mtt_700_to_1000');		shortnames.append('Dileptonic TTBar')
+#filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf');		shortnames.append('Dileptonic TTBar')
 #hadronic
 filenames.append('Powheg_had_TT');							shortnames.append('Hadronic TTBar')
-filenames.append('Powheg_had_TT_SC');						shortnames.append('Hadronic TTBar')
-filenames.append('Powheg_had_TT_Mtt_700_to_1000');			shortnames.append('Hadronic TTBar')
-filenames.append('Powheg_had_TT_Mtt_1000_to_Inf');			shortnames.append('Hadronic TTBar')
+#filenames.append('Powheg_had_TT_SC');						shortnames.append('Hadronic TTBar')
+#filenames.append('Powheg_had_TT_Mtt_700_to_1000');			shortnames.append('Hadronic TTBar')
+#filenames.append('Powheg_had_TT_Mtt_1000_to_Inf');			shortnames.append('Hadronic TTBar')
 #WnJets samples
 filenames.append('W1Jets');		shortnames.append('WJets')
 filenames.append('W2Jets');		shortnames.append('WJets')
@@ -101,28 +101,28 @@ ele_full_leptonic = ele_preselection+' && '+ele_kinematics+' && '+ele_ID+' && '+
 ele_hadronic_pretag = ele_full_leptonic+' && hadt_tau21>0.1'
 signal_mass = 'hadt_M>140. && hadt_M<250.'
 signal_tau32 = 'hadt_tau32<0.55' 
-#cutnames.append('muon skim'); 			   cutstrings.append('muon1_pt>ele1_pt'); 										   prior_cutstrings.append('muon1_pt>ele1_pt')
-#cutnames.append('muon preselection'); 	   cutstrings.append(muon_preselection); 										   prior_cutstrings.append('muon1_pt>ele1_pt')
-#cutnames.append('muon kinematics'); 	   cutstrings.append(muon_preselection+' && '+muon_kinematics); 				   prior_cutstrings.append(muon_preselection)
-#cutnames.append('muon ID'); 			   cutstrings.append(muon_preselection+' && '+muon_ID); 						   prior_cutstrings.append(muon_preselection)
-#cutnames.append('muon 2D cut'); 		   cutstrings.append(muon_preselection+' && '+muon_2D); 						   prior_cutstrings.append(muon_preselection)
-#cutnames.append('muon leptonic top mass'); cutstrings.append(muon_preselection+' && '+lep_top_mass); 					   prior_cutstrings.append(muon_preselection)
-#cutnames.append('muon full leptonic'); 	   cutstrings.append(muon_full_leptonic); 										   prior_cutstrings.append(muon_preselection)
-#cutnames.append('muon hadronic pretag');   cutstrings.append(muon_hadronic_pretag); 									   prior_cutstrings.append(muon_preselection)
-#cutnames.append('muon signal mass'); 	   cutstrings.append(muon_hadronic_pretag+' && '+signal_mass); 					   prior_cutstrings.append(muon_hadronic_pretag)
-#cutnames.append('muon signal tau32'); 	   cutstrings.append(muon_hadronic_pretag+' && '+signal_tau32); 				   prior_cutstrings.append(muon_hadronic_pretag)
-#cutnames.append('muon full selection');    cutstrings.append(muon_hadronic_pretag+' && '+signal_mass+' && '+signal_tau32); prior_cutstrings.append(muon_preselection)
-cutnames.append('ele skim'); 			  cutstrings.append('ele1_pt>muon1_pt'); 										 prior_cutstrings.append('ele1_pt>muon1_pt')
-cutnames.append('ele preselection'); 	  cutstrings.append(ele_preselection); 											 prior_cutstrings.append('ele1_pt>muon1_pt')
-cutnames.append('ele kinematics'); 		  cutstrings.append(ele_preselection+' && '+ele_kinematics); 					 prior_cutstrings.append(ele_preselection)
-cutnames.append('ele ID'); 				  cutstrings.append(ele_preselection+' && '+ele_ID); 							 prior_cutstrings.append(ele_preselection)
-cutnames.append('ele 2D cut'); 			  cutstrings.append(ele_preselection+' && '+ele_2D); 							 prior_cutstrings.append(ele_preselection)
-cutnames.append('ele leptonic top mass'); cutstrings.append(ele_preselection+' && '+lep_top_mass); 						 prior_cutstrings.append(ele_preselection)
-cutnames.append('ele full leptonic'); 	  cutstrings.append(ele_full_leptonic); 										 prior_cutstrings.append(ele_preselection)
-cutnames.append('ele hadronic pretag');   cutstrings.append(ele_hadronic_pretag); 										 prior_cutstrings.append(ele_preselection)
-cutnames.append('ele signal mass'); 	  cutstrings.append(ele_hadronic_pretag+' && '+signal_mass); 					 prior_cutstrings.append(ele_hadronic_pretag)
-cutnames.append('ele signal tau32'); 	  cutstrings.append(ele_hadronic_pretag+' && '+signal_tau32); 					 prior_cutstrings.append(ele_hadronic_pretag)
-cutnames.append('ele full selection');    cutstrings.append(ele_hadronic_pretag+' && '+signal_mass+' && '+signal_tau32); prior_cutstrings.append(ele_preselection)
+cutnames.append('muon skim'); 			   cutstrings.append('muon1_pt>ele1_pt'); 										   prior_cutstrings.append('muon1_pt>ele1_pt')
+cutnames.append('muon preselection'); 	   cutstrings.append(muon_preselection); 										   prior_cutstrings.append('muon1_pt>ele1_pt')
+cutnames.append('muon kinematics'); 	   cutstrings.append(muon_preselection+' && '+muon_kinematics); 				   prior_cutstrings.append(muon_preselection)
+cutnames.append('muon ID'); 			   cutstrings.append(muon_preselection+' && '+muon_ID); 						   prior_cutstrings.append(muon_preselection)
+cutnames.append('muon 2D cut'); 		   cutstrings.append(muon_preselection+' && '+muon_2D); 						   prior_cutstrings.append(muon_preselection)
+cutnames.append('muon leptonic top mass'); cutstrings.append(muon_preselection+' && '+lep_top_mass); 					   prior_cutstrings.append(muon_preselection)
+cutnames.append('muon full leptonic'); 	   cutstrings.append(muon_full_leptonic); 										   prior_cutstrings.append(muon_preselection)
+cutnames.append('muon hadronic pretag');   cutstrings.append(muon_hadronic_pretag); 									   prior_cutstrings.append(muon_preselection)
+cutnames.append('muon signal mass'); 	   cutstrings.append(muon_hadronic_pretag+' && '+signal_mass); 					   prior_cutstrings.append(muon_hadronic_pretag)
+cutnames.append('muon signal tau32'); 	   cutstrings.append(muon_hadronic_pretag+' && '+signal_tau32); 				   prior_cutstrings.append(muon_hadronic_pretag)
+cutnames.append('muon full selection');    cutstrings.append(muon_hadronic_pretag+' && '+signal_mass+' && '+signal_tau32); prior_cutstrings.append(muon_preselection)
+#cutnames.append('ele skim'); 			  cutstrings.append('ele1_pt>muon1_pt'); 										 prior_cutstrings.append('ele1_pt>muon1_pt')
+#cutnames.append('ele preselection'); 	  cutstrings.append(ele_preselection); 											 prior_cutstrings.append('ele1_pt>muon1_pt')
+#cutnames.append('ele kinematics'); 		  cutstrings.append(ele_preselection+' && '+ele_kinematics); 					 prior_cutstrings.append(ele_preselection)
+#cutnames.append('ele ID'); 				  cutstrings.append(ele_preselection+' && '+ele_ID); 							 prior_cutstrings.append(ele_preselection)
+#cutnames.append('ele 2D cut'); 			  cutstrings.append(ele_preselection+' && '+ele_2D); 							 prior_cutstrings.append(ele_preselection)
+#cutnames.append('ele leptonic top mass'); cutstrings.append(ele_preselection+' && '+lep_top_mass); 						 prior_cutstrings.append(ele_preselection)
+#cutnames.append('ele full leptonic'); 	  cutstrings.append(ele_full_leptonic); 										 prior_cutstrings.append(ele_preselection)
+#cutnames.append('ele hadronic pretag');   cutstrings.append(ele_hadronic_pretag); 										 prior_cutstrings.append(ele_preselection)
+#cutnames.append('ele signal mass'); 	  cutstrings.append(ele_hadronic_pretag+' && '+signal_mass); 					 prior_cutstrings.append(ele_hadronic_pretag)
+#cutnames.append('ele signal tau32'); 	  cutstrings.append(ele_hadronic_pretag+' && '+signal_tau32); 					 prior_cutstrings.append(ele_hadronic_pretag)
+#cutnames.append('ele full selection');    cutstrings.append(ele_hadronic_pretag+' && '+signal_mass+' && '+signal_tau32); prior_cutstrings.append(ele_preselection)
 
 data_events_at_cut = []; data_events_at_prior_cut = []
 events_at_cut = []; events_at_prior_cut = []

@@ -58,26 +58,26 @@ filenames.append('W4Jets'); fillcolors.append(kGreen-3)
 #POWHEG TT
 #dileptonic 
 filenames.append('Powheg_dilep_TT'); 				 fillcolors.append(kRed-7)
-filenames.append('Powheg_dilep_TT_SC'); 			 fillcolors.append(kRed-7)
-filenames.append('Powheg_dilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7)
-filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7)
+#filenames.append('Powheg_dilep_TT_SC'); 			 fillcolors.append(kRed-7)
+#filenames.append('Powheg_dilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7)
+#filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7)
 #hadronic
 filenames.append('Powheg_had_TT'); 				   fillcolors.append(kRed-7)
-filenames.append('Powheg_had_TT_SC'); 			   fillcolors.append(kRed-7)
-filenames.append('Powheg_had_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7)
-filenames.append('Powheg_had_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7)
+#filenames.append('Powheg_had_TT_SC'); 			   fillcolors.append(kRed-7)
+#filenames.append('Powheg_had_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7)
+#filenames.append('Powheg_had_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7)
 #semileptonic qq
 filenames.append('Powheg_qq_semilep_TT'); 				  fillcolors.append(kRed+1)
-filenames.append('Powheg_qq_semilep_TT_SC'); 			  fillcolors.append(kRed+1)
-filenames.append('Powheg_qq_semilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed+1)
-filenames.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed+1)
+#filenames.append('Powheg_qq_semilep_TT_SC'); 			  fillcolors.append(kRed+1)
+#filenames.append('Powheg_qq_semilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed+1)
+#filenames.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed+1)
 #semileptonic gg
 filenames.append('Powheg_gg_semilep_TT'); 				  fillcolors.append(kRed+1)
-filenames.append('Powheg_gg_semilep_TT_SC'); 			  fillcolors.append(kRed+1)
-filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed+1)
-filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed+1)
+#filenames.append('Powheg_gg_semilep_TT_SC'); 			  fillcolors.append(kRed+1)
+#filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed+1)
+#filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed+1)
 #data
-data_filenames.append('Powheg_semilep_TT')
+#data_filenames.append('Powheg_semilep_TT')
 if leptype == 'mu' :
 	data_filenames.append('SingleMu_Run2012A')
 	data_filenames.append('SingleMu_Run2012B')
@@ -176,34 +176,34 @@ newPlot('x_F_scaled','abs(x_F_scaled)',full_selection_cuts,30,0.,0.6,'scaled x_{
 
 ##leading muon pT
 #newPlot('muon1_pt','muon1_pt',MARC_PRESELECTION,20,0.,100.,'leading muon p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
-##leading muon eta
-#newPlot('muon1_eta','muon1_eta',MARC_PRESELECTION,35,-3.5,3.5,'leading muon #eta; #eta','',STD_WEIGHTS,True)
-##second leading muon pT
-#newPlot('muon2_pt','muon2_pt',MARC_PRESELECTION,20,0.,100.,'second leading muon p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
-##second leading muon eta
-#newPlot('muon2_eta','muon2_eta',MARC_PRESELECTION,35,-3.5,3.5,'second leading muon #eta; #eta','',STD_WEIGHTS,True)
+###leading muon eta
+##newPlot('muon1_eta','muon1_eta',MARC_PRESELECTION,35,-3.5,3.5,'leading muon #eta; #eta','',STD_WEIGHTS,True)
+###second leading muon pT
+##newPlot('muon2_pt','muon2_pt',MARC_PRESELECTION,20,0.,100.,'second leading muon p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
+###second leading muon eta
+##newPlot('muon2_eta','muon2_eta',MARC_PRESELECTION,35,-3.5,3.5,'second leading muon #eta; #eta','',STD_WEIGHTS,True)
 ##leading electron pT
 #newPlot('ele1_pt','ele1_pt',MARC_PRESELECTION,20,0.,100.,'leading electron p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
-##leading electron eta
-#newPlot('ele1_eta','ele1_eta',MARC_PRESELECTION,35,-3.5,3.5,'leading electron #eta; #eta','',STD_WEIGHTS,True)
-##second leading electron pT
-#newPlot('ele2_pt','ele2_pt',MARC_PRESELECTION,20,0.,100.,'second leading electron p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
-##second leading electron eta
-#newPlot('ele2_eta','ele2_eta',MARC_PRESELECTION,35,-3.5,3.5,'second leading electron #eta; #eta','',STD_WEIGHTS,True)
-#leptonic W pT
+###leading electron eta
+##newPlot('ele1_eta','ele1_eta',MARC_PRESELECTION,35,-3.5,3.5,'leading electron #eta; #eta','',STD_WEIGHTS,True)
+###second leading electron pT
+##newPlot('ele2_pt','ele2_pt',MARC_PRESELECTION,20,0.,100.,'second leading electron p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
+###second leading electron eta
+##newPlot('ele2_eta','ele2_eta',MARC_PRESELECTION,35,-3.5,3.5,'second leading electron #eta; #eta','',STD_WEIGHTS,True)
+##leptonic W pT
 #newPlot('lepW_pt','lepW_pt',MARC_PRESELECTION,20,0.,200.,'leptonic W candidate p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
-#leptonic b mass
+##leptonic b mass
 #newPlot('lepb_M','lepb_M',MARC_PRESELECTION,20,0.,100.,'leptonic b candidate mass; M (GeV)','',STD_WEIGHTS,True)
-#leptonic t mass
+##leptonic t mass
 #newPlot('lept_M','lept_M',MARC_PRESELECTION,35,0.,350.,'leptonic top candidate mass; M (GeV)','',STD_WEIGHTS,True)
-##hadronic t pT
-#newPlot('hadt_pt','hadt_pt',ele_hadronic_pretag,50,250.,750.,'hadronic top candidate p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
-##hadronic t mass
+###hadronic t pT
+##newPlot('hadt_pt','hadt_pt',ele_hadronic_pretag,50,250.,750.,'hadronic top candidate p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
+###hadronic t mass
 #newPlot('hadt_M','hadt_M',ele_hadronic_pretag,35,0.,350.,'hadronic top candidate mass; M (GeV)','',STD_WEIGHTS,True)
-##hadronic t tau32
+###hadronic t tau32
 #newPlot('hadt_tau32','hadt_tau32',ele_hadronic_pretag,20,0.,1.,'hadronic top candidate #tau_{32}; #tau_{32}','',STD_WEIGHTS,True)
-##hadronic t tau21
-#newPlot('hadt_tau21','hadt_tau21',MARC_PRESELECTION,20,0.,1.,'hadronic top candidate #tau_{21}; #tau_{21}','',STD_WEIGHTS,True)
+###hadronic t tau21
+##newPlot('hadt_tau21','hadt_tau21',MARC_PRESELECTION,20,0.,1.,'hadronic top candidate #tau_{21}; #tau_{21}','',STD_WEIGHTS,True)
 
 ##############################################################################################################
 ############################						  PLOTS 					  ############################
