@@ -8,6 +8,8 @@ from math import *
 #Global variables
 #Alpha value for adjustment due to longitudinal gluon polarization
 ALPHA = -0.129 #This is the value for the 8TeV Powheg sample as far as we can tell. . .
+#epsilon value for gg cross section correction
+EPSILON = 0.820 #Value from fit
 #Default Lorentz Rotation
 S = ROOT.TLorentzRotation()
 #Beam energy
@@ -102,20 +104,29 @@ def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec) :
 	#find the CS angle
 	cos_theta_cs=cos(top.Angle(bisector))
 	#calculate the reweighting factors
-	one_m_b2 = 1.0-beta*beta;
+	b2 = beta*beta;
 	b2c2 = beta*beta*cos_theta_cs*cos_theta_cs;
-	otb2 = (1.0/3.0)*beta*beta;
-	denom = 1.0+b2c2+one_m_b2+ALPHA*(1.0-b2c2);
-	w_a = 2.0 * ((1.0+otb2+one_m_b2+ALPHA*(1.0-otb2))/denom) * cos_theta_cs; 
-	w_s_xi = one_m_b2/denom;
-	w_a_xi = 2.0*(one_m_b2/denom)*cos_theta_cs;
-	w_s_delta = (1.0-b2c2)/denom;
-	w_a_delta = 2.0*((1.0-otb2)/denom)*cos_theta_cs;
-	w_a_opp = 2.0 * ((1.0+otb2+one_m_b2+ALPHA*(1.0-otb2))/denom) * (-1.0*cos_theta_cs); 
-	w_s_xi_opp = one_m_b2/denom;
-	w_a_xi_opp = 2.0*(one_m_b2/denom)*(-1.0*cos_theta_cs);
-	w_s_delta_opp = (1.0-b2c2)/denom;
-	w_a_delta_opp = 2.0*((1.0-otb2)/denom)*(-1.0*cos_theta_cs);
-	return (cos_theta_cs,x_f,ttbar_mass,w_a,w_s_xi,w_a_xi,w_s_delta,w_a_delta,
-		w_a_opp,w_s_xi_opp,w_a_xi_opp,w_s_delta_opp,w_a_delta_opp)
+	denom = 1.+b2c2+(1.-b2)+ALPHA*(1.-b2c2)
+	Afunc = (7.+9.*b2c2)/(1.-b2c2)
+	Bfunc = (1.-b2c2*b2c2+2.*b2*(1.-b2)*(1.-cos_theta_cs*cos_theta_cs))/(2.*(1.-b2c2))
+	wg1 = 1./(Bfunc*(1.+EPSILON*b2c2))
+	wg2 = 56./((1.-b2)*Afunc*Bfunc*(1.+EPSILON*b2c2))
+	wg3 = 4./((1.-b2c2)*Afunc*Bfunc*(1.+EPSILON*b2c2))
+	wg4 = (8./(Afunc*Bfunc*(1.+EPSILON*b2c2)))*(1./(1.-b2c2) + 1./(1.-b2) + ((4.*(1.-b2c2))/((1.-b2)*(1.-b2))))
+	wqs1 = (4./denom)
+	wqs2 = (4./denom)*(1.-b2c2)/(1.-b2)
+	wqa0 = (2.*(2.+ALPHA)*(1.-b2/3.)*cos_theta_cs)/denom
+	wqa1 = (8.*cos_theta_cs)/denom
+	wqa2 = ((8.*cos_theta_cs)/denom)*((1.-b2/3.)/(1.-b2))
+	wg1_opp = 1./(Bfunc*(1.+EPSILON*b2c2))
+	wg2_opp = 56./((1.-b2)*Afunc*Bfunc*(1.+EPSILON*b2c2))
+	wg3_opp = 4./((1.-b2c2)*Afunc*Bfunc*(1.+EPSILON*b2c2))
+	wg4_opp = (8./(Afunc*Bfunc*(1.+EPSILON*b2c2)))*(1./(1.-b2c2) + 1./(1.-b2) + ((4.*(1.-b2c2))/((1.-b2)*(1.-b2))))
+	wqs1_opp = (4./denom)
+	wqs2_opp = (4./denom)*(1.-b2c2)/(1.-b2)
+	wqa0_opp = (2.*(2.+ALPHA)*(1.-b2/3.)*(-1.*cos_theta_cs))/denom
+	wqa1_opp = (-1.*8.*cos_theta_cs)/denom
+	wqa2_opp = ((-1.*8.*cos_theta_cs)/denom)*((1.-b2/3.)/(1.-b2))
+	return (cos_theta_cs,x_f,ttbar_mass,wg1,wg2,wg3,wg4,wqs1,wqs2,wqa0,wqa1,wqa2,
+		wg1_opp,wg2_opp,wg3_opp,wg4_opp,wqs1_opp,wqs2_opp,wqa0_opp,wqa1_opp,wqa2_opp)
 	#return (0.0,0.2,450.,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0) #DEBUG RETURN

@@ -37,46 +37,59 @@ class template_file :
 		#final distributions
 		self.all_histo_names = []; self.all_histos = []
 		if self.sum_charge :
-			self.__addDistribution__('fqqs',	  'Symmetric q#bar{q} distribution')
-			self.__addDistribution__('fqqs_xi',	  'Symmetric q#bar{q} distribution, xi reweighted')
-			self.__addDistribution__('fqqs_delta','Symmetric q#bar{q} distribution, delta reweighted')
-			self.__addDistribution__('fqqa',	  'Antisymmetric q#bar{q} distribution')
-			self.__addDistribution__('fqqa_xi',	  'Antisymmetric q#bar{q} distribution, xi reweighted')
-			self.__addDistribution__('fqqa_delta','Antisymmetric q#bar{q} distribution, delta reweighted')
-			self.__addDistribution__('fgg',	  	  'gg (qg,q_{i}q_{j},etc.) distribution')
-			self.__addDistribution__('fbck',	  'background distribution')
+			self.__addDistribution__('fg0',	  '0th gg (qg,q_{i}q_{j},etc.) distribution')
+			self.__addDistribution__('fg1',	  '1st gg (qg,q_{i}q_{j},etc.) distribution')
+			self.__addDistribution__('fg2',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution')
+			self.__addDistribution__('fg3',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution')
+			self.__addDistribution__('fg4',	  '4th gg (qg,q_{i}q_{j},etc.) distribution')
+			self.__addDistribution__('fqs0',  '0th Symmetric q#bar{q} distribution')
+			self.__addDistribution__('fqs1',  '1st Symmetric q#bar{q} distribution')
+			self.__addDistribution__('fqs2',  '2nd Symmetric q#bar{q} distribution')
+			self.__addDistribution__('fqa0',  '0th Antisymmetric q#bar{q} distribution')
+			self.__addDistribution__('fqa1',  '1st Antisymmetric q#bar{q} distribution')
+			self.__addDistribution__('fqa2',  '2nd Antisymmetric q#bar{q} distribution')
+			self.__addDistribution__('fbck',  'background distribution')
 			self.__addDistribution__('fntmj',	  'NTMJ background distribution')
 			self.__addNTMJDistribution__('fntmj_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut')
 			self.__addNTMJDistribution__('fntmj_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut')
 			self.__addNTMJDistribution__('fntmj_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut')
 			self.__addNTMJDistribution__('fntmj_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut')
 		else :
-			self.__addDistribution__('fqqs_plus',	   'Symmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__('fqqs_xi_plus',   'Symmetric q#bar{q} distribution, xi reweighted, Q_{l}>0')
-			self.__addDistribution__('fqqs_delta_plus','Symmetric q#bar{q} distribution, delta reweighted, Q_{l}>0')
-			self.__addDistribution__('fqqa_plus',	   'Antisymmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__('fqqa_xi_plus',   'Antisymmetric q#bar{q} distribution, xi reweighted, Q_{l}>0')
-			self.__addDistribution__('fqqa_delta_plus','Antisymmetric q#bar{q} distribution, delta reweighted, Q_{l}>0')
-			self.__addDistribution__('fgg_plus',	   'gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-			self.__addDistribution__('fbck_plus',	   'background distribution, Q_{l}>0')
-			self.__addDistribution__('fntmj_plus',	   'NTMJ background distribution, Q_{l}>0')
-			self.__addNTMJDistribution__('fntmj_plus_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__('fntmj_plus_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__('fntmj_plus_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__('fntmj_plus_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}>0')
-			self.__addDistribution__('fqqs_minus',	    'Symmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__('fqqs_xi_minus',   'Symmetric q#bar{q} distribution, xi reweighted, Q_{l}<0')
-			self.__addDistribution__('fqqs_delta_minus','Symmetric q#bar{q} distribution, delta reweighted, Q_{l}<0')
-			self.__addDistribution__('fqqa_minus',	    'Antisymmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__('fqqa_xi_minus',   'Antisymmetric q#bar{q} distribution, xi reweighted, Q_{l}<0')
-			self.__addDistribution__('fqqa_delta_minus','Antisymmetric q#bar{q} distribution, delta reweighted, Q_{l}<0')
-			self.__addDistribution__('fgg_minus',	    'gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-			self.__addDistribution__('fbck_minus',	    'background distribution, Q_{l}<0')
-			self.__addDistribution__('fntmj_minus',	    'NTMJ background distribution, Q_{l}<0')
-			self.__addNTMJDistribution__('fntmj_minus_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__('fntmj_minus_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__('fntmj_minus_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__('fntmj_minus_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}<0')
+			self.__addDistribution__('fg0_plus',	  '0th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+			self.__addDistribution__('fg1_plus',	  '1st gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+			self.__addDistribution__('fg2_plus',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+			self.__addDistribution__('fg3_plus',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+			self.__addDistribution__('fg4_plus',	  '4th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+			self.__addDistribution__('fqs0_plus',  '0th Symmetric q#bar{q} distribution, Q_{l}>0')
+			self.__addDistribution__('fqs1_plus',  '1st Symmetric q#bar{q} distribution, Q_{l}>0')
+			self.__addDistribution__('fqs2_plus',  '2nd Symmetric q#bar{q} distribution, Q_{l}>0')
+			self.__addDistribution__('fqa0_plus',  '0th Antisymmetric q#bar{q} distribution, Q_{l}>0')
+			self.__addDistribution__('fqa1_plus',  '1st Antisymmetric q#bar{q} distribution, Q_{l}>0')
+			self.__addDistribution__('fqa2_plus',  '2nd Antisymmetric q#bar{q} distribution, Q_{l}>0')
+			self.__addDistribution__('fbck_plus',  'background distribution, Q_{l}>0')
+			self.__addDistribution__('fntmj_plus',	  'NTMJ background distribution, Q_{l}>0')
+			self.__addNTMJDistribution__('fntmj_low_pass_plus',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}>0')
+			self.__addNTMJDistribution__('fntmj_low_fail_plus',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}>0')
+			self.__addNTMJDistribution__('fntmj_hi_pass_plus',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}>0')
+			self.__addNTMJDistribution__('fntmj_hi_fail_plus',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}>0')
+			self.__addDistribution__('fg0_minus',	  '0th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+			self.__addDistribution__('fg1_minus',	  '1st gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+			self.__addDistribution__('fg2_minus',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+			self.__addDistribution__('fg3_minus',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+			self.__addDistribution__('fg4_minus',	  '4th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+			self.__addDistribution__('fqs0_minus',  '0th Symmetric q#bar{q} distribution, Q_{l}<0')
+			self.__addDistribution__('fqs1_minus',  '1st Symmetric q#bar{q} distribution, Q_{l}<0')
+			self.__addDistribution__('fqs2_minus',  '2nd Symmetric q#bar{q} distribution, Q_{l}<0')
+			self.__addDistribution__('fqa0_minus',  '0th Antisymmetric q#bar{q} distribution, Q_{l}<0')
+			self.__addDistribution__('fqa1_minus',  '1st Antisymmetric q#bar{q} distribution, Q_{l}<0')
+			self.__addDistribution__('fqa2_minus',  '2nd Antisymmetric q#bar{q} distribution, Q_{l}<0')
+			self.__addDistribution__('fbck_minus',  'background distribution, Q_{l}<0')
+			self.__addDistribution__('fntmj_minus',	  'NTMJ background distribution, Q_{l}<0')
+			self.__addNTMJDistribution__('fntmj_low_pass_minus',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}<0')
+			self.__addNTMJDistribution__('fntmj_low_fail_minus',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}<0')
+			self.__addNTMJDistribution__('fntmj_hi_pass_minus',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}<0')
+			self.__addNTMJDistribution__('fntmj_hi_fail_minus',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}<0')
+			
 		self.NTMJ_tree = TTree('NTMJ_tree','NTMJ_tree')
 		self.NTMJ_tree.SetDirectory(0)
 		self.NTMJ_w = array('d',[1.0]); self.NTMJ_tree.Branch('NTMJ_weight',self.NTMJ_w,'NTMJ_weight/D')
@@ -186,66 +199,40 @@ class template_file :
 				#if it had a symmetric initial state, half the event weight and add it twice
 				if self.addTwice[0] == 1 :
 					eventweight = eventweight/2.
-				#The background and gg cases are relatively simple
-				if ( ((template_ifd == 'background' or template_ifd == 'bck' or template_ifd=='bkg' or template_ifd=='bg') and 'fbck' in dist_name)
-					 or (template_ifd == 'gg' and 'fgg' in dist_name) ) :
+				#The background case is relatively simple
+				if ( ((template_ifd == 'background' or template_ifd == 'bck' or template_ifd=='bkg' or template_ifd=='bg') and 'fbck' in dist_name) :
 					if self.sum_charge :
 						self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight)
-						if self.addTwice[0] == 1 :
-							self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight)
 					else :
 						if (self.Q_l[0]>0 and 'plus' in dist_name) or (self.Q_l[0]<0 and 'minus' in dist_name) :
 							self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight)
-						if self.addTwice[0] == 1 and ((self.Q_l[0]>0 and 'minus' in dist_name) or (self.Q_l[0]<0 and 'plus' in dist_name)) :
-							self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight)
 				#The qqbar templates are reweighted in a bunch of different ways (and also automatically entered twice)
-				elif template_ifd == 'qq' or template_ifd == 'qqbar' :
-					if self.sum_charge :
-						if 'fqqs' in dist_name and not ('xi' in dist_name or 'delta' in dist_name) :
-							self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight)
-							self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight)
-						elif 'fqqs_xi' in dist_name :
-							self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_s_xi[0])
-							self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_s_xi_opp[0])
-						elif 'fqqs_delta' in dist_name :
-							self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_s_delta[0])
-							self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_s_delta_opp[0])
-						elif 'fqqa' in dist_name and not ('xi' in dist_name or 'delta' in dist_name) :
-							self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a[0])
-							self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_opp[0])
-						elif 'fqqa_xi' in dist_name :
-							self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_xi[0])
-							self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_xi_opp[0])
-						elif 'fqqa_delta' in dist_name :
-							self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_delta[0])
-							self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_delta_opp[0])
-					else :
-						if (self.Q_l[0]>0 and 'plus' in dist_name) or (self.Q_l[0]<0 and 'minus' in dist_name) :
-							if 'fqqs' in dist_name and not ('xi' in dist_name or 'delta' in dist_name) :
-								self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight)
-							elif 'fqqs_xi' in dist_name :
-								self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_s_xi[0])
-							elif 'fqqs_delta' in dist_name :
-								self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_s_delta[0])
-							elif 'fqqa' in dist_name and not ('xi' in dist_name or 'delta' in dist_name) :
-								self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a[0])
-							elif 'fqqa_xi' in dist_name :
-								self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_xi[0])
-							elif 'fqqa_delta' in dist_name :
-								self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_delta[0])
-						if (self.Q_l[0]>0 and 'minus' in dist_name) or (self.Q_l[0]<0 and 'plus' in dist_name) :
-							if 'fqqs' in dist_name and not ('xi' in dist_name or 'delta' in dist_name) :
-								self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight)
-							elif 'fqqs_xi' in dist_name :
-								self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_s_xi_opp[0])
-							elif 'fqqs_delta' in dist_name :
-								self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_s_delta_opp[0])
-							elif 'fqqa' in dist_name and not ('xi' in dist_name or 'delta' in dist_name) :
-								self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_opp[0])
-							elif 'fqqa_xi' in dist_name :
-								self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_xi_opp[0])
-							elif 'fqqa_delta' in dist_name :
-								self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight*self.w_a_delta_opp[0])
+				elif template_ifd == 'qq' or template_ifd == 'qqbar' or template_ifd == 'gg' :
+					thisweight = eventweight
+					thisweight_opp = eventweight
+					if 'fg1' in dist_name :
+						thisweight*=self.wg1; thisweight_opp*=self.wg1_opp
+					elif 'fg2' in dist_name :
+						thisweight*=self.wg2; thisweight_opp*=self.wg2_opp
+					elif 'fg3' in dist_name :
+						thisweight*=self.wg3; thisweight_opp*=self.wg3_opp
+					elif 'fg4' in dist_name :
+						thisweight*=self.wg4; thisweight_opp*=self.wg4_opp
+					elif 'fqs1' in dist_name :
+						thisweight*=self.wqs1; thisweight_opp*=self.wqs1_opp
+					elif 'fqs2' in dist_name :
+						thisweight*=self.wqs2; thisweight_opp*=self.wqs2_opp
+					elif 'fqa0' in dist_name :
+						thisweight*=self.wqa0; thisweight_opp*=self.wqa0_opp
+					elif 'fqa1' in dist_name :
+						thisweight*=self.wqa1; thisweight_opp*=self.wqa1_opp
+					elif 'fqa2' in dist_name :
+						thisweight*=self.wqa2; thisweight_opp*=self.wqa2_opp
+					if self.sum_charge or (self.Q_l[0]>0 and 'plus' in dist_name) or (self.Q_l[0]<0 and 'minus' in dist_name) :
+						self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],thisweight)
+					if self.addTwice[0] == 1 and (self.sum_charge or (self.Q_l[0]>0 and 'minus' in dist_name) or (self.Q_l[0]<0 and 'plus' in dist_name)) :
+						self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],thisweight_opp)
+					
 		#write each of the new histograms to the total template file
 		self.f.cd(); new_3D_histo.Write(); new_histo_x.Write(); new_histo_y.Write(); new_histo_z.Write()
 
@@ -256,9 +243,9 @@ class template_file :
 		#for each distribution, add its integral to the appropriate factor
 		for i in range(len(self.all_histos)/4) :
 			dist_name = self.all_histo_names[4*i]
-			if 'fqqs' in dist_name and not 'xi' in dist_name and not 'delta' in dist_name :
+			if 'fqs0' in dist_name :
 				qq_int+=self.all_histos[4*i].Integral()
-			elif 'fgg' in dist_name :
+			elif 'fg0' in dist_name :
 				gg_int+=self.all_histos[4*i].Integral()
 			elif 'fbck' in dist_name :
 				bck_int+=self.all_histos[4*i].Integral()
@@ -266,9 +253,9 @@ class template_file :
 		for i in range(len(self.all_histos)/4) :
 			dist_name = self.all_histo_names[4*i]
 			factor = 1.
-			if 'fqqs' in dist_name or 'fqqa' in dist_name :
+			if 'fqs' in dist_name or 'fqa' in dist_name :
 				factor = 1.0/qq_int
-			elif 'fgg' in dist_name :
+			elif 'fg' in dist_name :
 				factor = 1.0/gg_int
 			elif 'fbck' in dist_name :
 				factor = 1.0/bck_int
@@ -394,16 +381,24 @@ class template_file :
 		self.hadt_tau32 = array('d',[-1.0]); tree.SetBranchAddress('hadt_tau32',self.hadt_tau32)
 		#weights (renormalization, scale factors, analysis)
 		self.weight    = array('d',[1.0]); tree.SetBranchAddress('weight',self.weight)
-		self.w_a 	   	   = array('d',[1.0]); tree.SetBranchAddress('w_a',		  self.w_a)
-		self.w_s_xi    	   = array('d',[1.0]); tree.SetBranchAddress('w_s_xi',	      self.w_s_xi)
-		self.w_a_xi    	   = array('d',[1.0]); tree.SetBranchAddress('w_a_xi',	      self.w_a_xi)
-		self.w_s_delta 	   = array('d',[1.0]); tree.SetBranchAddress('w_s_delta',    self.w_s_delta)
-		self.w_a_delta 	   = array('d',[1.0]); tree.SetBranchAddress('w_a_delta',    self.w_a_delta)
-		self.w_a_opp 	   = array('d',[1.0]); tree.SetBranchAddress('w_a_opp',	  self.w_a_opp)
-		self.w_s_xi_opp    = array('d',[1.0]); tree.SetBranchAddress('w_s_xi_opp',	  self.w_s_xi_opp)
-		self.w_a_xi_opp    = array('d',[1.0]); tree.SetBranchAddress('w_a_xi_opp',	  self.w_a_xi_opp)
-		self.w_s_delta_opp = array('d',[1.0]); tree.SetBranchAddress('w_s_delta_opp',self.w_s_delta_opp)
-		self.w_a_delta_opp = array('d',[1.0]); tree.SetBranchAddress('w_a_delta_opp',self.w_a_delta_opp)
+		self.wg1 	   	   = array('d',[1.0]); tree.SetBranchAddress('wg1',		  self.wg1)
+		self.wg2 	   	   = array('d',[1.0]); tree.SetBranchAddress('wg2',		  self.wg2)
+		self.wg3 	   	   = array('d',[1.0]); tree.SetBranchAddress('wg3',		  self.wg3)
+		self.wg4 	   	   = array('d',[1.0]); tree.SetBranchAddress('wg4',		  self.wg4)
+		self.wqs1 	   	   = array('d',[1.0]); tree.SetBranchAddress('wqs1', 	  self.wqs1)
+		self.wqs2 	   	   = array('d',[1.0]); tree.SetBranchAddress('wqs2', 	  self.wqs2)
+		self.wqa0 	   	   = array('d',[1.0]); tree.SetBranchAddress('wqa0', 	  self.wqa0)
+		self.wqa1 	   	   = array('d',[1.0]); tree.SetBranchAddress('wqa1', 	  self.wqa1)
+		self.wqa2 	   	   = array('d',[1.0]); tree.SetBranchAddress('wqa2', 	  self.wqa2)
+		self.wg1_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wg1_opp',   self.wg1_opp)
+		self.wg2_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wg2_opp',   self.wg2_opp)
+		self.wg3_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wg3_opp',   self.wg3_opp)
+		self.wg4_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wg4_opp',   self.wg4_opp)
+		self.wqs1_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wqs1_opp',  self.wqs1_opp)
+		self.wqs2_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wqs2_opp',  self.wqs2_opp)
+		self.wqa0_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wqa0_opp',  self.wqa0_opp)
+		self.wqa1_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wqa1_opp',  self.wqa1_opp)
+		self.wqa2_opp 	   = array('d',[1.0]); tree.SetBranchAddress('wqa2_opp',  self.wqa2_opp)
 		self.sf_pileup 	   = array('d',[1.0]); tree.SetBranchAddress('sf_pileup', self.sf_pileup)
 		self.sf_top_pT 	   = array('d',[1.0]); tree.SetBranchAddress('sf_top_pT', self.sf_top_pT)
 		#lepton charge

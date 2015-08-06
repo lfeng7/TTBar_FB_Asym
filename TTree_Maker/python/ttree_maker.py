@@ -245,10 +245,11 @@ class treemaker :
 		if self.is_data==0 :
 			if self.event_type!=4 :
 				( self.cstar_MC[0],self.x_F_MC[0],self.M_MC[0],
-					self.w_a[0],self.w_s_xi[0],self.w_a_xi[0],
-					self.w_s_delta[0],self.w_a_delta[0],
-					self.w_a_opp[0],self.w_s_xi_opp[0],self.w_a_xi_opp[0],
-					self.w_s_delta_opp[0],self.w_a_delta_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
+					self.wg1[0],self.wg2[0],self.wg3[0],self.wg4[0],
+					self.wqs1[0],self.wqs2[0],self.wqa0[0],self.wqa1[0],self.wqa2[0],
+					self.wg1_opp[0],self.wg2_opp[0],self.wg3_opp[0],self.wg4_opp[0],
+					self.wqs1_opp[0],self.wqs2_opp[0],
+					self.wqa0_opp[0],self.wqa1_opp[0],self.wqa2_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
 			#scale factor and reweighting calculations
 			if self.lep_type==0 :
 				meas_lep_pt=muons[0].vec.Pt(); meas_lep_eta=muons[0].vec.Eta()
@@ -332,16 +333,24 @@ class treemaker :
 		#Add branches to TTree
 		#weights (renormalization, scale factors, analysis)
 		self.weight    = array('d',[self.w]); self.addBranch('weight',self.weight,'D',self.w)
-		self.w_a 	   	   = array('d',[1.0]); self.addBranch('w_a',		  self.w_a,	   	   	 'D',1.0)
-		self.w_s_xi    	   = array('d',[1.0]); self.addBranch('w_s_xi',	      self.w_s_xi,   	 'D',1.0)
-		self.w_a_xi    	   = array('d',[1.0]); self.addBranch('w_a_xi',	      self.w_a_xi,   	 'D',1.0)
-		self.w_s_delta 	   = array('d',[1.0]); self.addBranch('w_s_delta',    self.w_s_delta,	 'D',1.0)
-		self.w_a_delta 	   = array('d',[1.0]); self.addBranch('w_a_delta',    self.w_a_delta,	 'D',1.0)
-		self.w_a_opp 	   = array('d',[1.0]); self.addBranch('w_a_opp',	  self.w_a_opp,	 	 'D',1.0)
-		self.w_s_xi_opp    = array('d',[1.0]); self.addBranch('w_s_xi_opp',	  self.w_s_xi_opp,   'D',1.0)
-		self.w_a_xi_opp    = array('d',[1.0]); self.addBranch('w_a_xi_opp',	  self.w_a_xi_opp,   'D',1.0)
-		self.w_s_delta_opp = array('d',[1.0]); self.addBranch('w_s_delta_opp',self.w_s_delta_opp,'D',1.0)
-		self.w_a_delta_opp = array('d',[1.0]); self.addBranch('w_a_delta_opp',self.w_a_delta_opp,'D',1.0)
+		self.wg1 	   	   = array('d',[1.0]); self.addBranch('wg1',		  self.wg1,	   	   	 'D',1.0)
+		self.wg2 	   	   = array('d',[1.0]); self.addBranch('wg2',		  self.wg2,	   	   	 'D',1.0)
+		self.wg3 	   	   = array('d',[1.0]); self.addBranch('wg3',		  self.wg3,	   	   	 'D',1.0)
+		self.wg4 	   	   = array('d',[1.0]); self.addBranch('wg4',		  self.wg4,	   	   	 'D',1.0)
+		self.wqs1 	   	   = array('d',[1.0]); self.addBranch('wqs1',		  self.wqs1,	   	 'D',1.0)
+		self.wqs2 	   	   = array('d',[1.0]); self.addBranch('wqs2',		  self.wqs2,	   	 'D',1.0)
+		self.wqa0 	   	   = array('d',[1.0]); self.addBranch('wqa0',		  self.wqa0,	   	 'D',1.0)
+		self.wqa1 	   	   = array('d',[1.0]); self.addBranch('wqa1',		  self.wqa1,	   	 'D',1.0)
+		self.wqa2 	   	   = array('d',[1.0]); self.addBranch('wqa2',		  self.wqa2,	   	 'D',1.0)
+		self.wg1_opp 	   = array('d',[1.0]); self.addBranch('wg1_opp',	  self.wg1_opp,	   	 'D',1.0)
+		self.wg2_opp 	   = array('d',[1.0]); self.addBranch('wg2_opp',	  self.wg2_opp,	   	 'D',1.0)
+		self.wg3_opp 	   = array('d',[1.0]); self.addBranch('wg3_opp',	  self.wg3_opp,	   	 'D',1.0)
+		self.wg4_opp 	   = array('d',[1.0]); self.addBranch('wg4_opp',	  self.wg4_opp,	   	 'D',1.0)
+		self.wqs1_opp 	   = array('d',[1.0]); self.addBranch('wqs1_opp',	  self.wqs1_opp,	 'D',1.0)
+		self.wqs2_opp 	   = array('d',[1.0]); self.addBranch('wqs2_opp',	  self.wqs2_opp,	 'D',1.0)
+		self.wqa0_opp 	   = array('d',[1.0]); self.addBranch('wqa0_opp',	  self.wqa0_opp,	 'D',1.0)
+		self.wqa1_opp 	   = array('d',[1.0]); self.addBranch('wqa1_opp',	  self.wqa1_opp,	 'D',1.0)
+		self.wqa2_opp 	   = array('d',[1.0]); self.addBranch('wqa2_opp',	  self.wqa2_opp,	 'D',1.0)
 		self.sf_top_pT 		 = array('d',[1.0]); self.addBranch('sf_top_pT', 	   self.sf_top_pT, 		 'D',1.0)
 		self.sf_btag_eff 	 = array('d',[1.0]); self.addBranch('sf_btag_eff', 	   self.sf_btag_eff, 	 'D',1.0)
 		self.sf_btag_eff_low = array('d',[1.0]); self.addBranch('sf_btag_eff_low', self.sf_btag_eff_low, 'D',1.0)
