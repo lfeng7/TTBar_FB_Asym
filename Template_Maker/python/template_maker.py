@@ -200,37 +200,38 @@ class template_file :
 				if self.addTwice[0] == 1 :
 					eventweight = eventweight/2.
 				#The background case is relatively simple
-				if ( ((template_ifd == 'background' or template_ifd == 'bck' or template_ifd=='bkg' or template_ifd=='bg') and 'fbck' in dist_name) :
+				if ((template_ifd == 'background' or template_ifd == 'bck' or template_ifd=='bkg' or template_ifd=='bg') and 'fbck' in dist_name) :
 					if self.sum_charge :
 						self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight)
 					else :
 						if (self.Q_l[0]>0 and 'plus' in dist_name) or (self.Q_l[0]<0 and 'minus' in dist_name) :
 							self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight)
-				#The qqbar templates are reweighted in a bunch of different ways (and also automatically entered twice)
-				elif template_ifd == 'qq' or template_ifd == 'qqbar' or template_ifd == 'gg' :
+				#The qqbar and gg templates are reweighted in a bunch of different ways (and also automatically entered twice)
+				elif ((template_ifd == 'qq' or template_ifd == 'qqbar') and 'fq' in dist_name) or (template_ifd == 'gg' and 'fg' in dist_name) :
 					thisweight = eventweight
 					thisweight_opp = eventweight
 					if 'fg1' in dist_name :
-						thisweight*=self.wg1; thisweight_opp*=self.wg1_opp
+						thisweight*=self.wg1[0]; thisweight_opp*=self.wg1_opp[0]
 					elif 'fg2' in dist_name :
-						thisweight*=self.wg2; thisweight_opp*=self.wg2_opp
+						thisweight*=self.wg2[0]; thisweight_opp*=self.wg2_opp[0]
 					elif 'fg3' in dist_name :
-						thisweight*=self.wg3; thisweight_opp*=self.wg3_opp
+						thisweight*=self.wg3[0]; thisweight_opp*=self.wg3_opp[0]
 					elif 'fg4' in dist_name :
-						thisweight*=self.wg4; thisweight_opp*=self.wg4_opp
+						thisweight*=self.wg4[0]; thisweight_opp*=self.wg4_opp[0]
 					elif 'fqs1' in dist_name :
-						thisweight*=self.wqs1; thisweight_opp*=self.wqs1_opp
+						thisweight*=self.wqs1[0]; thisweight_opp*=self.wqs1_opp[0]
 					elif 'fqs2' in dist_name :
-						thisweight*=self.wqs2; thisweight_opp*=self.wqs2_opp
+						thisweight*=self.wqs2[0]; thisweight_opp*=self.wqs2_opp[0]
 					elif 'fqa0' in dist_name :
-						thisweight*=self.wqa0; thisweight_opp*=self.wqa0_opp
+						thisweight*=self.wqa0[0]; thisweight_opp*=self.wqa0_opp[0]
 					elif 'fqa1' in dist_name :
-						thisweight*=self.wqa1; thisweight_opp*=self.wqa1_opp
+						thisweight*=self.wqa1[0]; thisweight_opp*=self.wqa1_opp[0]
 					elif 'fqa2' in dist_name :
-						thisweight*=self.wqa2; thisweight_opp*=self.wqa2_opp
+						thisweight*=self.wqa2[0]; thisweight_opp*=self.wqa2_opp[0]
 					if self.sum_charge or (self.Q_l[0]>0 and 'plus' in dist_name) or (self.Q_l[0]<0 and 'minus' in dist_name) :
 						self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],thisweight)
 					if self.addTwice[0] == 1 and (self.sum_charge or (self.Q_l[0]>0 and 'minus' in dist_name) or (self.Q_l[0]<0 and 'plus' in dist_name)) :
+						#print 'adding an event twice to template %s with weight %f. Template is for distribution %s.'%(dist_name,thisweight_opp,template_ifd)
 						self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],thisweight_opp)
 					
 		#write each of the new histograms to the total template file
