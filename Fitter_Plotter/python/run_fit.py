@@ -13,19 +13,19 @@ from ROOT import *
 parser = OptionParser()
 parser.add_option('--run_name', 	  type='string',action='store',default='new_run',   dest='run_name', 	   help='Distinguishing name for this run')
 parser.add_option('--templates_file', type='string',action='store',default='templates', dest='templates_file', help='Path to input file holding MC templates to fit to data')
-parser.add_option('--on_grid',		  type='string',action='store',default='no',		dest='on_grid',		   help='Changes everything to relative paths if running on the grid, default is "no"')
-parser.add_option('--out_name',		  type='string',action='store',default='fit_plots', dest='out_name',	   help='Name of output file that will have all the plots and stuff in it')
+parser.add_option('--analysis_file',  type='string',action='store',default='analysis',  dest='analysis_file',  help='Path to theta analysis script')
+parser.add_option('--out_name',		  type='string',action='store',default='result', 	dest='out_name',	   help='Name of output file that will have all the plots and stuff in it')
 (options, args) = parser.parse_args()
 
 #set up the input and output files and run name
-input_file_path = ''
-if options.on_grid=='yes' :
-	input_file_path+='tardir/'
-else :
-	input_file_path+='./'
+input_file_path = './'
 templates_filename = input_file_path+options.templates_file
 if not templates_filename.endswith('.root') :
 	templates_filename+='.root'
+analysis_file_path = './'
+analysis_filename = analysis_file_path+options.analysis_file
+if not analysis_filename.endswith('.py') :
+	analysis_filename+='.py'
 output_name = options.out_name
 if not output_name.endswith('.root') :
 	output_name += '.root'
@@ -34,11 +34,13 @@ if runname == 'new_run' :
 	runname+='_'+strftime('%Y-%m-%d_%X')
 #make a new fitter
 fit_obj = fitter(runname,options.on_grid,templates_filename,output_name)
-#fit the MC templates to the data
-fit_obj.fit()
+#build the template file
+fit_obj.makeTemplateFile(output_name)
+#fit the thing
+fit_obj.fit(analysis_filename)
 #make plots
 save_pdfs = True
 fit_obj.makeComparisonPlots(save_pdfs)
-	#more plots go here or whatever
+#more plots go here or whatever
 #clean up after yourself
 del fit_obj

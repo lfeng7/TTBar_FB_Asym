@@ -13,8 +13,8 @@ from array import array
 #global variables
 #histogram limits
 XBINS = 20;		XMIN = -1.0;	XMAX = 1.0
-YBINS = 20;		YMIN = 0.0;		YMAX = 0.6
-ZBINS = 20;		ZMIN = 500.;	ZMAX = 2500.
+YBINS = 6;		YMIN = 0.0;		YMAX = 0.6
+ZBINS = 10;		ZMIN = 500.;	ZMAX = 2500.
 #luminosity
 LUMINOSITY = 19748.
 
@@ -30,66 +30,16 @@ class template_file :
 		self.f = TFile(filename,'recreate')
 		self.sum_charge = sumCharges == 'yes'
 		self.leptype = 'none'
+		lepprefix = ''
 		if 'mu' in leptons :
 			self.leptype = 'muons'
+			lepprefix = 'mu'
 		if 'el' in leptons :
 			self.leptype = 'electrons'
+			lepprefix = 'ele'
 		#final distributions
-		self.all_histo_names = []; self.all_histos = []
-		if self.sum_charge :
-			self.__addDistribution__('fg0',	  '0th gg (qg,q_{i}q_{j},etc.) distribution')
-			self.__addDistribution__('fg1',	  '1st gg (qg,q_{i}q_{j},etc.) distribution')
-			self.__addDistribution__('fg2',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution')
-			self.__addDistribution__('fg3',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution')
-			self.__addDistribution__('fg4',	  '4th gg (qg,q_{i}q_{j},etc.) distribution')
-			self.__addDistribution__('fqs0',  '0th Symmetric q#bar{q} distribution')
-			self.__addDistribution__('fqs1',  '1st Symmetric q#bar{q} distribution')
-			self.__addDistribution__('fqs2',  '2nd Symmetric q#bar{q} distribution')
-			self.__addDistribution__('fqa0',  '0th Antisymmetric q#bar{q} distribution')
-			self.__addDistribution__('fqa1',  '1st Antisymmetric q#bar{q} distribution')
-			self.__addDistribution__('fqa2',  '2nd Antisymmetric q#bar{q} distribution')
-			self.__addDistribution__('fbck',  'background distribution')
-			self.__addDistribution__('fntmj',	  'NTMJ background distribution')
-			self.__addNTMJDistribution__('fntmj_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut')
-			self.__addNTMJDistribution__('fntmj_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut')
-			self.__addNTMJDistribution__('fntmj_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut')
-			self.__addNTMJDistribution__('fntmj_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut')
-		else :
-			self.__addDistribution__('fg0_plus',	  '0th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-			self.__addDistribution__('fg1_plus',	  '1st gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-			self.__addDistribution__('fg2_plus',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-			self.__addDistribution__('fg3_plus',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-			self.__addDistribution__('fg4_plus',	  '4th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-			self.__addDistribution__('fqs0_plus',  '0th Symmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__('fqs1_plus',  '1st Symmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__('fqs2_plus',  '2nd Symmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__('fqa0_plus',  '0th Antisymmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__('fqa1_plus',  '1st Antisymmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__('fqa2_plus',  '2nd Antisymmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__('fbck_plus',  'background distribution, Q_{l}>0')
-			self.__addDistribution__('fntmj_plus',	  'NTMJ background distribution, Q_{l}>0')
-			self.__addNTMJDistribution__('fntmj_low_pass_plus',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__('fntmj_low_fail_plus',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__('fntmj_hi_pass_plus',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__('fntmj_hi_fail_plus',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}>0')
-			self.__addDistribution__('fg0_minus',	  '0th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-			self.__addDistribution__('fg1_minus',	  '1st gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-			self.__addDistribution__('fg2_minus',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-			self.__addDistribution__('fg3_minus',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-			self.__addDistribution__('fg4_minus',	  '4th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-			self.__addDistribution__('fqs0_minus',  '0th Symmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__('fqs1_minus',  '1st Symmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__('fqs2_minus',  '2nd Symmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__('fqa0_minus',  '0th Antisymmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__('fqa1_minus',  '1st Antisymmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__('fqa2_minus',  '2nd Antisymmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__('fbck_minus',  'background distribution, Q_{l}<0')
-			self.__addDistribution__('fntmj_minus',	  'NTMJ background distribution, Q_{l}<0')
-			self.__addNTMJDistribution__('fntmj_low_pass_minus',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__('fntmj_low_fail_minus',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__('fntmj_hi_pass_minus',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__('fntmj_hi_fail_minus',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}<0')
-			
+		self.__addAllDistributions__()
+		#Set up the output trees
 		self.NTMJ_tree = TTree('NTMJ_tree','NTMJ_tree')
 		self.NTMJ_tree.SetDirectory(0)
 		self.NTMJ_w = array('d',[1.0]); self.NTMJ_tree.Branch('NTMJ_weight',self.NTMJ_w,'NTMJ_weight/D')
@@ -233,37 +183,10 @@ class template_file :
 					if self.addTwice[0] == 1 and (self.sum_charge or (self.Q_l[0]>0 and 'minus' in dist_name) or (self.Q_l[0]<0 and 'plus' in dist_name)) :
 						#print 'adding an event twice to template %s with weight %f. Template is for distribution %s.'%(dist_name,thisweight_opp,template_ifd)
 						self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],thisweight_opp)
-					
 		#write each of the new histograms to the total template file
 		self.f.cd(); new_3D_histo.Write(); new_histo_x.Write(); new_histo_y.Write(); new_histo_z.Write()
 
-	#normalizeDistributions function used to renormalize the final distributions in preparation for fitting
-	def normalizeDistributions(self) :
-		#three separate normalizations factors for the simpler distributions
-		qq_int  = 0.;	gg_int  = 0.;	bck_int = 0.
-		#for each distribution, add its integral to the appropriate factor
-		for i in range(len(self.all_histos)/4) :
-			dist_name = self.all_histo_names[4*i]
-			if 'fqs0' in dist_name :
-				qq_int+=self.all_histos[4*i].Integral()
-			elif 'fg0' in dist_name :
-				gg_int+=self.all_histos[4*i].Integral()
-			elif 'fbck' in dist_name :
-				bck_int+=self.all_histos[4*i].Integral()
-		#renormalize all the distributions, including their projections, accordingly
-		for i in range(len(self.all_histos)/4) :
-			dist_name = self.all_histo_names[4*i]
-			factor = 1.
-			if 'fqs' in dist_name or 'fqa' in dist_name :
-				factor = 1.0/qq_int
-			elif 'fg' in dist_name :
-				factor = 1.0/gg_int
-			elif 'fbck' in dist_name :
-				factor = 1.0/bck_int
-			self.all_histos[4*i+0].Scale(factor)
-			self.all_histos[4*i+1].Scale(factor)
-			self.all_histos[4*i+2].Scale(factor)
-			self.all_histos[4*i+3].Scale(factor)
+	def build_NTMJ_template(self) :
 		#conversion factors for both mass sidebands and linear function
 		function_plus = TF1('function_plus','[0]*x+[1]',100.,500.)
 		function_minus = TF1('function_minus','[0]*x+[1]',100.,500.)
@@ -350,7 +273,95 @@ class template_file :
 			print 'linear function (negative leptons): y = %f*x+%f'%(slope_minus,intercept_minus)
 			function_plus.SetParameter(0,slope_plus); function_plus.SetParameter(1,intercept_plus)
 			function_minus.SetParameter(0,slope_minus); function_minus.SetParameter(1,intercept_minus)
-		self.__build_NTMJ_template__(function_plus,function_minus)
+		#find the distributions to fill
+		plus_index = 0; minus_index = 0;
+		for i in range(len(self.all_histos)/4) :
+			dist_name = self.all_histo_names[4*i]
+			if 'fntmj' in dist_name and ('plus' in dist_name or self.sum_charge) and not 'pass' in dist_name and not 'fail' in dist_name :
+				plus_index = i
+			if 'fntmj' in dist_name and ('minus' in dist_name or self.sum_charge) and not 'pass' in dist_name and not 'fail' in dist_name :
+				minus_index = i
+		#initialize the branches to read from
+		w = array('d',[1.0]); self.NTMJ_tree.SetBranchAddress('NTMJ_weight',w)
+		c = array('d',[100.]); self.NTMJ_tree.SetBranchAddress('NTMJ_cstar',c)
+		x = array('d',[100.]); self.NTMJ_tree.SetBranchAddress('NTMJ_x_F',x)
+		M = array('d',[-1.0]); self.NTMJ_tree.SetBranchAddress('NTMJ_M',M)
+		t_M = array('d',[-1.0]); self.NTMJ_tree.SetBranchAddress('NTMJ_hadt_M',t_M)
+		Q = array('i',[0]); self.NTMJ_tree.SetBranchAddress('NTMJ_Q_l',Q)
+		#read all the entries
+		nEntries = self.NTMJ_tree.GetEntriesFast()
+		print '	# of entries in NTMJ tree: '+str(nEntries)
+		for entry in range(nEntries) :
+			percent_done = 100.*entry/nEntries
+			if percent_done%10 < 100./nEntries :
+				print '	'+str((int)(percent_done))+'%'
+			self.NTMJ_tree.GetEntry(entry)
+			#recalculate weights and fill histograms
+			if Q[0]>0 :
+				#new_weight = w[0]
+				new_weight = function_plus.Eval(t_M[0])*w[0]
+				self.__Fill__(plus_index,c[0],x[0],M[0],new_weight)
+			elif Q[0]<0 :
+				#new_weight = w[0]
+				new_weight = function_minus.Eval(t_M[0])*w[0]
+				self.__Fill__(minus_index,c[0],x[0],M[0],new_weight)
+
+	#__addAllDistributions__ sets up all of the final distributions depending on whether we want the charges summed
+	def __addAllDistributions(self) :
+		self.all_histo_names = []; self.all_histos = []
+		if self.sum_charge :
+			self.__addDistribution__(lepprefix+'__fg0',	  '0th gg (qg,q_{i}q_{j},etc.) distribution')
+#			self.__addDistribution__(lepprefix+'__fg1',	  '1st gg (qg,q_{i}q_{j},etc.) distribution')
+#			self.__addDistribution__(lepprefix+'__fg2',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution')
+#			self.__addDistribution__(lepprefix+'__fg3',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution')
+#			self.__addDistribution__(lepprefix+'__fg4',	  '4th gg (qg,q_{i}q_{j},etc.) distribution')
+			self.__addDistribution__(lepprefix+'__fqs0',  '0th Symmetric q#bar{q} distribution')
+#			self.__addDistribution__(lepprefix+'__fqs1',  '1st Symmetric q#bar{q} distribution')
+#			self.__addDistribution__(lepprefix+'__fqs2',  '2nd Symmetric q#bar{q} distribution')
+			self.__addDistribution__(lepprefix+'__fqa0',  '0th Antisymmetric q#bar{q} distribution')
+#			self.__addDistribution__(lepprefix+'__fqa1',  '1st Antisymmetric q#bar{q} distribution')
+#			self.__addDistribution__(lepprefix+'__fqa2',  '2nd Antisymmetric q#bar{q} distribution')
+			self.__addDistribution__(lepprefix+'__fbck',  'background distribution')
+			self.__addDistribution__(lepprefix+'__fntmj',	  'NTMJ background distribution')
+			self.__addNTMJDistribution__(lepprefix+'__fntmj_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut')
+			self.__addNTMJDistribution__(lepprefix+'__fntmj_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut')
+			self.__addNTMJDistribution__(lepprefix+'__fntmj_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut')
+			self.__addNTMJDistribution__(lepprefix+'__fntmj_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut')
+		else :
+			self.__addDistribution__(lepprefix+'plus__fg0',	  '0th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+#			self.__addDistribution__(lepprefix+'plus__fg1',	  '1st gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+#			self.__addDistribution__(lepprefix+'plus__fg2',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+#			self.__addDistribution__(lepprefix+'plus__fg3',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+#			self.__addDistribution__(lepprefix+'plus__fg4',	  '4th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
+			self.__addDistribution__(lepprefix+'plus__fqs0',  '0th Symmetric q#bar{q} distribution, Q_{l}>0')
+#			self.__addDistribution__(lepprefix+'plus__fqs1',  '1st Symmetric q#bar{q} distribution, Q_{l}>0')
+#			self.__addDistribution__(lepprefix+'plus__fqs2',  '2nd Symmetric q#bar{q} distribution, Q_{l}>0')
+			self.__addDistribution__(lepprefix+'plus__fqa0',  '0th Antisymmetric q#bar{q} distribution, Q_{l}>0')
+#			self.__addDistribution__(lepprefix+'plus__fqa1',  '1st Antisymmetric q#bar{q} distribution, Q_{l}>0')
+#			self.__addDistribution__(lepprefix+'plus__fqa2',  '2nd Antisymmetric q#bar{q} distribution, Q_{l}>0')
+			self.__addDistribution__(lepprefix+'plus__fbck',  'background distribution, Q_{l}>0')
+			self.__addDistribution__(lepprefix+'plus__fntmj',	  'NTMJ background distribution, Q_{l}>0')
+			self.__addNTMJDistribution__(lepprefix+'plus__fntmj_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}>0')
+			self.__addNTMJDistribution__(lepprefix+'plus__fntmj_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}>0')
+			self.__addNTMJDistribution__(lepprefix+'plus__fntmj_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}>0')
+			self.__addNTMJDistribution__(lepprefix+'plus__fntmj_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}>0')
+			self.__addDistribution__(lepprefix+'minus__fg0',	  '0th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+#			self.__addDistribution__(lepprefix+'minus__fg1',	  '1st gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+#			self.__addDistribution__(lepprefix+'minus__fg2',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+#			self.__addDistribution__(lepprefix+'minus__fg3',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+#			self.__addDistribution__(lepprefix+'minus__fg4',	  '4th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
+			self.__addDistribution__(lepprefix+'minus__fqs0',  '0th Symmetric q#bar{q} distribution, Q_{l}<0')
+#			self.__addDistribution__(lepprefix+'minus__fqs1',  '1st Symmetric q#bar{q} distribution, Q_{l}<0')
+#			self.__addDistribution__(lepprefix+'minus__fqs2',  '2nd Symmetric q#bar{q} distribution, Q_{l}<0')
+			self.__addDistribution__(lepprefix+'minus__fqa0',  '0th Antisymmetric q#bar{q} distribution, Q_{l}<0')
+#			self.__addDistribution__(lepprefix+'minus__fqa1',  '1st Antisymmetric q#bar{q} distribution, Q_{l}<0')
+#			self.__addDistribution__(lepprefix+'minus__fqa2',  '2nd Antisymmetric q#bar{q} distribution, Q_{l}<0')
+			self.__addDistribution__(lepprefix+'minus__fbck',  'background distribution, Q_{l}<0')
+			self.__addDistribution__(lepprefix+'minus__fntmj',	  'NTMJ background distribution, Q_{l}<0')
+			self.__addNTMJDistribution__(lepprefix+'minus__fntmj_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}<0')
+			self.__addNTMJDistribution__(lepprefix+'minus__fntmj_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}<0')
+			self.__addNTMJDistribution__(lepprefix+'minus__fntmj_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}<0')
+			self.__addNTMJDistribution__(lepprefix+'minus__fntmj_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}<0')
 
 	#__addDistribution__ function adds a 3D histogram and 1D projections to the file and to the lists
 	def __addDistribution__(self,name,formatted_name) :
@@ -429,52 +440,6 @@ class template_file :
 		self.all_histos[4*i+1].Fill(c,w)
 		self.all_histos[4*i+2].Fill(x,w)
 		self.all_histos[4*i+3].Fill(tm,w)
-
-	def __build_NTMJ_template__(self,plus_func,minus_func) :
-		#find the distributions to fill
-		plus_index = 0; minus_index = 0;
-		for i in range(len(self.all_histos)/4) :
-			dist_name = self.all_histo_names[4*i]
-			if 'fntmj' in dist_name and ('plus' in dist_name or self.sum_charge) and not 'pass' in dist_name and not 'fail' in dist_name :
-				plus_index = i
-			if 'fntmj' in dist_name and ('minus' in dist_name or self.sum_charge) and not 'pass' in dist_name and not 'fail' in dist_name :
-				minus_index = i
-		#initialize the branches to read from
-		w = array('d',[1.0]); self.NTMJ_tree.SetBranchAddress('NTMJ_weight',w)
-		c = array('d',[100.]); self.NTMJ_tree.SetBranchAddress('NTMJ_cstar',c)
-		x = array('d',[100.]); self.NTMJ_tree.SetBranchAddress('NTMJ_x_F',x)
-		M = array('d',[-1.0]); self.NTMJ_tree.SetBranchAddress('NTMJ_M',M)
-		t_M = array('d',[-1.0]); self.NTMJ_tree.SetBranchAddress('NTMJ_hadt_M',t_M)
-		Q = array('i',[0]); self.NTMJ_tree.SetBranchAddress('NTMJ_Q_l',Q)
-		#read all the entries
-		nEntries = self.NTMJ_tree.GetEntriesFast()
-		print '	# of entries in NTMJ tree: '+str(nEntries)
-		for entry in range(nEntries) :
-			percent_done = 100.*entry/nEntries
-			if percent_done%10 < 100./nEntries :
-				print '	'+str((int)(percent_done))+'%'
-			self.NTMJ_tree.GetEntry(entry)
-			#recalculate weights and fill histograms
-			if Q[0]>0 :
-				#new_weight = w[0]
-				new_weight = plus_func.Eval(t_M[0])*w[0]
-				self.__Fill__(plus_index,c[0],x[0],M[0],new_weight)
-			elif Q[0]<0 :
-				#new_weight = w[0]
-				new_weight = minus_func.Eval(t_M[0])*w[0]
-				self.__Fill__(minus_index,c[0],x[0],M[0],new_weight)
-		plus_integral  = self.all_histos[4*plus_index].Integral()
-		minus_integral = self.all_histos[4*minus_index].Integral()
-		self.all_histos[4*plus_index+0].Scale(1.0/plus_integral)
-		self.all_histos[4*plus_index+1].Scale(1.0/plus_integral)
-		self.all_histos[4*plus_index+2].Scale(1.0/plus_integral)
-		self.all_histos[4*plus_index+3].Scale(1.0/plus_integral)
-		if plus_index!=minus_index :
-			self.all_histos[4*minus_index+0].Scale(1.0/minus_integral)
-			self.all_histos[4*minus_index+1].Scale(1.0/minus_integral)
-			self.all_histos[4*minus_index+2].Scale(1.0/minus_integral)
-			self.all_histos[4*minus_index+3].Scale(1.0/minus_integral)
-
 
 	#__del__ function
 	def __del__(self) :
