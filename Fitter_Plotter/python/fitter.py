@@ -17,10 +17,12 @@ class fitter :
 	"""Fitter class, fits MC templates to data TTrees, makes plots"""
 
 	#__init__ function
-	def __init__(self,runName,onGrid,templates_filename,output_name) :
+	def __init__(self,runName,templates_filename,output_name) :
 		self.run_name = runName
 		self.template_file = TFile(templates_filename)
-		self.on_grid = onGrid.lower()
+		self.data_tree = self.template_file.Get('data_tree')
+		self.template_list = []
+		self.final_templates = []
 		self.histo_list = []
 		self.canv_list = []
 
@@ -33,7 +35,6 @@ class fitter :
 	#makes the file with all of the theta-formatted templates
 	def makeTemplateFile(self,filename) :
 		#Set some variables
-		self.template_list = []
 		if self.template_file.GetListOfKeys().Contains('mu__fg0') :
 			self.chargeSummed = True; self.lepprefix = 'mu'
 		elif self.template_file.GetListOfKeys().Contains('mu__fg0') :
@@ -42,12 +43,8 @@ class fitter :
 			self.chargeSummed = False; self.lepprefix = 'mu'
 		elif self.template_file.GetListOfKeys().Contains('eleplus__fg0') and self.template_file.GetListOfKeys().Contains('eleminus__fg0') :
 			self.chargeSummed = False; self.lepprefix = 'ele'
-		#build the data template(s)
-		#open the total data ttree
-		self.data_tree = self.template_file.Get('data_tree')
 		#make all of the MC templates by permuting the parameters and stuff
 		self.__organize_templates__()
-		self.final_templates = []
 		for i in range(len(self.final_dists)) :
 			new3DTemplate = self.final_dists[i].Clone(self.names[i])
 			new3DTemplate.Scale(self.factors[i])

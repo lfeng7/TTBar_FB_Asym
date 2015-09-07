@@ -1,11 +1,3 @@
-#template_maker workhorse code used in making templates from ttrees with a bunch of options
-#contains three classes, one for background templates and one for signal templates, and one 
-#for the total template file
-#signal templates produce many histograms at once because they have antisymmetric, xi, and
-#delta reweighting factors to keep track of
-#NICK EMINIZER JOHNS HOPKINS UNIVERSITY JANUARY 2015 nick.eminizer@gmail.com
-#This code available on github at https://github.com/eminizer/TTBar_FB_Asym
-
 from ROOT import *
 import glob
 from array import array
@@ -22,47 +14,31 @@ LUMINOSITY = 19748.
 
 class template_file :
 	#docstring
-	"""template_file class; holds all the details of the final template file with the summed distributions"""
+	"""template_file class; holds all the details of the final template file for use with theta and the auxilliary file for checking"""
 	
 	#__init__function
 	def __init__(self,filename,sumCharges,leptons) :
 		#set the input variables
 		self.f = TFile(filename,'recreate')
+		self.f_aux = TFile(filename.rstrip('.root')+'_aux.root')
 		self.sum_charge = sumCharges == 'yes'
 		self.leptype = 'none'
 		lepprefix = ''
 		if 'mu' in leptons :
 			self.leptype = 'muons'
-			lepprefix = 'mu'
 		if 'el' in leptons :
 			self.leptype = 'electrons'
-			lepprefix = 'ele'
 		#final distributions
-		self.__addAllDistributions__(lepprefix)
-		#Set up the output trees
-		self.NTMJ_tree = TTree('NTMJ_tree','NTMJ_tree')
-		self.NTMJ_tree.SetDirectory(0)
-		self.NTMJ_w = array('d',[1.0]); self.NTMJ_tree.Branch('NTMJ_weight',self.NTMJ_w,'NTMJ_weight/D')
-		self.NTMJ_cstar  = array('d',[100.]); self.NTMJ_tree.Branch('NTMJ_cstar',self.NTMJ_cstar,'NTMJ_cstar/D')
-		self.NTMJ_x_F  = array('d',[100.]); self.NTMJ_tree.Branch('NTMJ_x_F',self.NTMJ_x_F,'NTMJ_x_F/D')
-		self.NTMJ_M  = array('d',[-1.0]); self.NTMJ_tree.Branch('NTMJ_M',self.NTMJ_M,'NTMJ_M/D')
-		self.NTMJ_hadt_M  = array('d',[-1.0]); self.NTMJ_tree.Branch('NTMJ_hadt_M',self.NTMJ_hadt_M,'NTMJ_hadt_M/D')
-		self.NTMJ_Q_l  = array('i',[0]); self.NTMJ_tree.Branch('NTMJ_Q_l',self.NTMJ_Q_l,'NTMJ_Q_l/I')
-		self.data_tree = TTree('data_tree','data_tree')
-		self.data_chi2  = array('d',[-100.]); self.data_tree.Branch('chi2',self.data_chi2,'chi2/D')
-		self.data_cstar  = array('d',[100.]); self.data_tree.Branch('cstar',self.data_cstar,'cstar/D')
-		self.data_x_F  = array('d',[100.]); self.data_tree.Branch('x_F',self.data_x_F,'x_F/D')
-		self.data_M  = array('d',[-1.0]); self.data_tree.Branch('M',self.data_M,'M/D')
-		self.data_Q_l  = array('i',[0]); self.data_tree.Branch('Q_l',self.data_Q_l,'Q_l/I')
-		self.data_tree.SetDirectory(0)
+		self.dists = []
+		self.__addAllDistributions__()
 
 	#addTemplate function adds a new set of histograms for the given file, and sums the new template into the appropriate distribution
-	def addToTemplate(self,ttree_dir_path,template_name,template_ifd) :
+	def addToTemplate(self,ttree_dir_path,file_type,file_ifd) :
 		#make a new 3D histogram and projections for this sample file
-		new_3D_histo = TH3D(template_name,template_name+' distribution; c*; x_{F}; M (GeV)',XBINS,XMIN,XMAX,YBINS,YMIN,YMAX,ZBINS,ZMIN,ZMAX)
-		new_histo_x  = TH1D(template_name+'_x',template_name+' distribution X Projection; c*',	  XBINS,XMIN,XMAX)
-		new_histo_y  = TH1D(template_name+'_y',template_name+' distribution Y Projection; x_{F}',			  YBINS,YMIN,YMAX)
-		new_histo_z  = TH1D(template_name+'_z',template_name+' distribution Z Projection; M (GeV)',		  ZBINS,ZMIN,ZMAX)
+		new_3D_histo = TH3D(file_type,file_type+' distribution; c*; x_{F}; M (GeV)', 	   XBINS,XMIN,XMAX,YBINS,YMIN,YMAX,ZBINS,ZMIN,ZMAX)
+		new_histo_x  = TH1D(file_type+'_x',file_type+' distribution X Projection; c*', 	   XBINS,XMIN,XMAX)
+		new_histo_y  = TH1D(file_type+'_y',file_type+' distribution Y Projection; x_{F}',  YBINS,YMIN,YMAX)
+		new_histo_z  = TH1D(file_type+'_z',file_type+' distribution Z Projection; M (GeV)',ZBINS,ZMIN,ZMAX)
 		#chain up the ttree files
 		chain = TChain('tree')
 		filenamelist = glob.glob(ttree_dir_path+'/*_skim_tree.root')
@@ -87,13 +63,12 @@ class template_file :
 		cuts = ''
 		if self.leptype=='muons' :
 			cuts+=muon_hadronic_pretag
-			#cuts+='(('+muon_hadronic_pretag+') || ('+ele_hadronic_pretag+'))'
 		if self.leptype=='electrons' :
 			cuts+=ele_hadronic_pretag
 		tree = chain.CopyTree(cuts)
 		tree.SetDirectory(0)
 		#define where to put all the branch variables we need
-		self.__initializeBranchesToRead__(tree)
+		self.__initializeBranchesToRead__(te)
 		#loop over all events in the tree
 		nEntries = tree.GetEntriesFast()
 		print '	# of entries: '+str(nEntries)
@@ -307,61 +282,22 @@ class template_file :
 				self.__Fill__(minus_index,c[0],x[0],M[0],new_weight)
 
 	#__addAllDistributions__ sets up all of the final distributions depending on whether we want the charges summed
-	def __addAllDistributions__(self,lepprefix) :
-		self.all_histo_names = []; self.all_histos = []
+	def __addAllDistributions__(self) :
+		lepprefix = 'none'
+		if self.leptype == 'muons' :
+			lepprefix = 'mu'
+		elif self.leptype == 'electrons' :
+			lepprefix = 'el'
+		std_reweights = ['weight','sf_top_pT','sf_pileup']
+		std_systematics = ['sf_lep_id']
 		if self.sum_charge :
-			self.__addDistribution__(lepprefix+'__fg0',	  '0th gg (qg,q_{i}q_{j},etc.) distribution')
-#			self.__addDistribution__(lepprefix+'__fg1',	  '1st gg (qg,q_{i}q_{j},etc.) distribution')
-#			self.__addDistribution__(lepprefix+'__fg2',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution')
-#			self.__addDistribution__(lepprefix+'__fg3',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution')
-#			self.__addDistribution__(lepprefix+'__fg4',	  '4th gg (qg,q_{i}q_{j},etc.) distribution')
-			self.__addDistribution__(lepprefix+'__fqs0',  '0th Symmetric q#bar{q} distribution')
-#			self.__addDistribution__(lepprefix+'__fqs1',  '1st Symmetric q#bar{q} distribution')
-#			self.__addDistribution__(lepprefix+'__fqs2',  '2nd Symmetric q#bar{q} distribution')
-			self.__addDistribution__(lepprefix+'__fqa0',  '0th Antisymmetric q#bar{q} distribution')
-#			self.__addDistribution__(lepprefix+'__fqa1',  '1st Antisymmetric q#bar{q} distribution')
-#			self.__addDistribution__(lepprefix+'__fqa2',  '2nd Antisymmetric q#bar{q} distribution')
-			self.__addDistribution__(lepprefix+'__fbck',  'background distribution')
-			self.__addDistribution__(lepprefix+'__fntmj',	  'NTMJ background distribution')
-			self.__addNTMJDistribution__(lepprefix+'__fntmj_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut')
-			self.__addNTMJDistribution__(lepprefix+'__fntmj_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut')
-			self.__addNTMJDistribution__(lepprefix+'__fntmj_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut')
-			self.__addNTMJDistribution__(lepprefix+'__fntmj_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut')
+			(self,name,formatted_name,sample_reweight,reweights,systematics,function)
+			self.dists.append(distribution(lepprefix+'__fg0','0th gg (qg,q_{i}q_{j},etc.) distribution',None,std_reweights,std_systematics,'(3.-#Rbck#-#Rntmj#)*(2.-#Rqqbar#)'))
+			self.dists.append(distribution(lepprefix+'__fqs0','0th Symmetric q#bar{q distribution',None,std_reweights,std_systematics,'(3.-#Rbck#-#Rntmj#)*#Rqqbar#'))
+			self.dists.append(distribution(lepprefix+'__fqa0','0th Antisymmetric q#bar{q distribution','wqa0',std_reweights,std_systematics,'(3.-#Rbck#-#Rntmj#)*#Rqqbar#*#Afb#'))
+			self.dists.append(distribution(lepprefix+'__fbck','background distribution',None,std_reweights,std_systematics,'#Rbck#'))
 		else :
-			self.__addDistribution__(lepprefix+'plus__fg0',	  '0th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-#			self.__addDistribution__(lepprefix+'plus__fg1',	  '1st gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-#			self.__addDistribution__(lepprefix+'plus__fg2',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-#			self.__addDistribution__(lepprefix+'plus__fg3',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-#			self.__addDistribution__(lepprefix+'plus__fg4',	  '4th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}>0')
-			self.__addDistribution__(lepprefix+'plus__fqs0',  '0th Symmetric q#bar{q} distribution, Q_{l}>0')
-#			self.__addDistribution__(lepprefix+'plus__fqs1',  '1st Symmetric q#bar{q} distribution, Q_{l}>0')
-#			self.__addDistribution__(lepprefix+'plus__fqs2',  '2nd Symmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__(lepprefix+'plus__fqa0',  '0th Antisymmetric q#bar{q} distribution, Q_{l}>0')
-#			self.__addDistribution__(lepprefix+'plus__fqa1',  '1st Antisymmetric q#bar{q} distribution, Q_{l}>0')
-#			self.__addDistribution__(lepprefix+'plus__fqa2',  '2nd Antisymmetric q#bar{q} distribution, Q_{l}>0')
-			self.__addDistribution__(lepprefix+'plus__fbck',  'background distribution, Q_{l}>0')
-			self.__addDistribution__(lepprefix+'plus__fntmj',	  'NTMJ background distribution, Q_{l}>0')
-			self.__addNTMJDistribution__(lepprefix+'plus__fntmj_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__(lepprefix+'plus__fntmj_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__(lepprefix+'plus__fntmj_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}>0')
-			self.__addNTMJDistribution__(lepprefix+'plus__fntmj_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}>0')
-			self.__addDistribution__(lepprefix+'minus__fg0',	  '0th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-#			self.__addDistribution__(lepprefix+'minus__fg1',	  '1st gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-#			self.__addDistribution__(lepprefix+'minus__fg2',	  '2nd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-#			self.__addDistribution__(lepprefix+'minus__fg3',	  '3rd gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-#			self.__addDistribution__(lepprefix+'minus__fg4',	  '4th gg (qg,q_{i}q_{j},etc.) distribution, Q_{l}<0')
-			self.__addDistribution__(lepprefix+'minus__fqs0',  '0th Symmetric q#bar{q} distribution, Q_{l}<0')
-#			self.__addDistribution__(lepprefix+'minus__fqs1',  '1st Symmetric q#bar{q} distribution, Q_{l}<0')
-#			self.__addDistribution__(lepprefix+'minus__fqs2',  '2nd Symmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__(lepprefix+'minus__fqa0',  '0th Antisymmetric q#bar{q} distribution, Q_{l}<0')
-#			self.__addDistribution__(lepprefix+'minus__fqa1',  '1st Antisymmetric q#bar{q} distribution, Q_{l}<0')
-#			self.__addDistribution__(lepprefix+'minus__fqa2',  '2nd Antisymmetric q#bar{q} distribution, Q_{l}<0')
-			self.__addDistribution__(lepprefix+'minus__fbck',  'background distribution, Q_{l}<0')
-			self.__addDistribution__(lepprefix+'minus__fntmj',	  'NTMJ background distribution, Q_{l}<0')
-			self.__addNTMJDistribution__(lepprefix+'minus__fntmj_low_pass',	  'NTMJ background distribution, low mass, passing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__(lepprefix+'minus__fntmj_low_fail',	  'NTMJ background distribution, low mass, failing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__(lepprefix+'minus__fntmj_hi_pass',	  'NTMJ background distribution, high mass, passing #tau_{32} cut, Q_{l}<0')
-			self.__addNTMJDistribution__(lepprefix+'minus__fntmj_hi_fail',	  'NTMJ background distribution, high mass, failing #tau_{32} cut, Q_{l}<0')
+			print "You're SOL because I haven't written this yet"
 
 	#__addDistribution__ function adds a 3D histogram and 1D projections to the file and to the lists
 	def __addDistribution__(self,name,formatted_name) :
@@ -451,9 +387,45 @@ class template_file :
 		self.f.Write()
 		self.f.Close()
 
-class template :
+class distribution :
 	#docstring
-	"""template_file class; holds all the details of the final template file with the summed distributions"""
+	"""distribution class"""
 	
 	#__init__function
-	def __init__(self,filename,sumCharges,leptons) :
+	def __init__(self,name,formatted_name,sample_reweight,reweights,systematics,function) :
+		self.name = name
+		self.formatted_name = formatted_name
+		self.function = function
+		self.tree = TTree(self.name+'_tree',self.name+'_tree')
+		self.tree.SetDirectory(0)
+		self.all_branches = []
+		self.cstar 			  = array('d',[100.]); self.tree.Branch('cstar',self.cstar,'cstar/D'); 								 self.all_branches.append(('cstar_scaled',self.cstar))
+		self.x_F 			  = array('d',[100.]); self.tree.Branch('x_F',self.x_F,'x_F/D'); 									 self.all_branches.append(('x_F_scaled',self.x_F))
+		self.M  			  = array('d',[-1.0]); self.tree.Branch('M',self.M,'M/D'); 											 self.all_branches.append(('M_scaled',self.M))
+		self.hadt_M  		  = array('d',[-1.0]); self.tree.Branch('hadt_M',self.hadt_M,'hadt_M/D'); 							 self.all_branches.append(('scaled_hadt_M',self.hadt_M))
+		self.hadt_tau32  	  = array('d',[-1.0]); self.tree.Branch('hadt_tau32',self.hadt_tau32,'hadt_tau32/D'); 				 self.all_branches.append(('hadt_tau32',self.hadt_tau32))
+		self.Q_l  			  = array('i',[0]);    self.tree.Branch('Q_l',self.Q_l,'Q_l/I'); 									 self.all_branches.append(('Q_l',self.Q_l))
+		self.addTwice 		  = array('I',[2]);    self.tree.Branch('addTwice',self.addTwice,'addTwice/i'); 					 self.all_branches.append(('addTwice',self.addTwice))
+		self.sample_reweight  = array('d',[1.0]);  self.tree.Branch('sample_reweight',self.sample_reweight,'sample_reweight/D'); self.all_branches((sample_reweight,self.sample_reweight))
+		self.reweights_arrays = []
+		for i in range(len(reweights)) :
+			self.reweights_arrays.append(array('d',[1.0]))
+			self.tree.Branch(reweights[i],self.reweights_arrays[i],reweights[i]+'/D')
+			self.all_branches.append((reweights[i],self.reweights_arrays[i]))
+		self.systematics_arrays 	 = []
+		self.systematics_arrays_up   = []
+		self.systematics_arrays_down = []
+		for i in range(len(systematics)) :
+			self.systematics_arrays.append(array('d',[1.0]))
+			self.tree.Branch(systematics[i],self.systematics_arrays[len(self.systematics_arrays)-1],systematics[i]+'/D')
+			self.all_branches.append((systematics[i],self.systematics_arrays[len(self.systematics_arrays)-1]))
+			self.systematics_arrays_up.append(array('d',[1.0]))
+			self.tree.Branch(systematics[i]+'_up',self.systematics_arrays[len(self.systematics_arrays)-1],systematics[i]+'_up/D')
+			self.all_branches.append((systematics[i]+'_up',self.systematics_arrays[len(self.systematics_arrays)-1]))
+			self.systematics_arrays_down.append(array('d',[1.0]))
+			self.tree.Branch(systematics[i]+'_down',self.systematics_arrays[len(self.systematics_arrays)-1],systematics[i]+'_down/D')
+			self.all_branches.append((systematics[i]+'_down',self.systematics_arrays[len(self.systematics_arrays)-1]))
+
+	#__del__ function
+	def __del__(self) :
+		print 'lol'

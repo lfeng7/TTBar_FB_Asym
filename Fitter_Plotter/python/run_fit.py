@@ -33,7 +33,7 @@ runname = options.run_name
 if runname == 'new_run' :
 	runname+='_'+strftime('%Y-%m-%d_%X')
 #make a new fitter
-fit_obj = fitter(runname,options.on_grid,templates_filename,output_name)
+fit_obj = fitter(runname,templates_filename,output_name)
 #build the template file
 fit_obj.makeTemplateFile(output_name)
 #fit the thing
