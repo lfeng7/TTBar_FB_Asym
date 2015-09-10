@@ -38,9 +38,10 @@ for line in input_file :
 		continue
 	[ttree_dir_path,name,ifd] = line.rstrip().split()
 	ifd = ifd.lower()
-	print 'adding to templates from file '+name+' '
-	output_file.addToTemplate(ttree_dir_path,name,ifd)
+	output_file.addToDistributions(ttree_dir_path,name,ifd)
+#Build the templates
+output_file.build_templates()
 #Build the NTMJ template
-output_file.build_NTMJ_template()
+output_file.build_NTMJ_templates()
 #clean up after yourself
 del output_file
