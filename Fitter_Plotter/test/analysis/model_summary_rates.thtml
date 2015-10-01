@@ -1,0 +1,12 @@
+<p>Rates for all observables and processes as given by the 'nominal' templates. If errors are given, they are MC stat. uncertainties.</p>
+<table cellpadding="2" border="1">
+<tr><th>process / observable</th><th>mu</th></tr>
+<tr><td>fbck</td><td>53.907 +/- 7.3389</td></tr>
+<tr><td>fg0</td><td>482.24 +/- 21.953</td></tr>
+<tr><td>fntmj</td><td>8.8126 +/- 3861.9</td></tr>
+<tr><td>fqa0</td><td>0</td></tr>
+<tr><td>fqs0</td><td>57.987 +/- 7.612</td></tr>
+<tr><td><b>total background</b></td><td>602.95 +/- 3862</td></tr>
+<tr><td><b>DATA</b></td><td>475</td></tr>
+</table>
+

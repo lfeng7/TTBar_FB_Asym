@@ -1,0 +1,22 @@
+<p>Observables (xmin, xmax, nbins):</p>
+<ul>
+<li>mu (0, 1199, 1200)</li>
+</ul>
+<p>Background processes:</p>
+<ul>
+<li>fbck</li>
+<li>fg0</li>
+<li>fntmj</li>
+<li>fqa0</li>
+<li>fqs0</li>
+</ul>
+<p>Signal processes:</p><ul>
+</ul>
+<p>Nuisance parameters (includes only those which apply to the background-only model):</p>
+<ul>
+<li>Afb (morph only)</li>
+<li>Rbck (morph only)</li>
+<li>Rntmj (morph only)</li>
+<li>Rqqbar (morph only)</li>
+<li>sf_lep_ID (morph only)</li>
+</ul>

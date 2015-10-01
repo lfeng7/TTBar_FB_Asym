@@ -1,0 +1,10 @@
+<h2>Stackplots</h2>
+<p>Everything normalized to expectation, i.e., to the normalization in the template input file, possibly scaled via the python script file.</p>
+<p>Color Code:</p><ul>
+<li><span style="background: #edd400;">&nbsp;&nbsp;&nbsp;</span> fbck</li>
+<li><span style="background: #f57900;">&nbsp;&nbsp;&nbsp;</span> fg0</li>
+<li><span style="background: #c17d11;">&nbsp;&nbsp;&nbsp;</span> fntmj</li>
+<li><span style="background: #73d216;">&nbsp;&nbsp;&nbsp;</span> fqa0</li>
+<li><span style="background: #3465a4;">&nbsp;&nbsp;&nbsp;</span> fqs0</li>
+</ul>
+<p>Observable 'mu':<br /><img src="plots/mu_stack.png" /></p>

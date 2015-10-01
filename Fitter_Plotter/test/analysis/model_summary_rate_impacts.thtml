@@ -1,0 +1,18 @@
+<p>The table below summarises the impact of an nuisance parameter on the rate prediction of a process.</p>
+    <p>For a nuisance parameter, (gauss) indicates that this nuisance parameter has a gaussian prior, (gamma) that it has a gamma prior.</p>
+    <p>For the individual cells, (r) indicates the 'rate only' part of the uncertainty, (s) indicates the effect on the rate of an uncertainty
+    treated via template morphing (i.e., the <em>rate</em> effect of an uncertainty treated as part of the
+    template morphing; even if this is zero, the shape effect is still taken into account). Note that both effects are applied seperatly, so
+    the total rate change is about the linear sum of these two.<br/>
+    The rate change in 'plus' direction of the uncertainty is written as superscript,
+    the 'minus' direction as subscript.<br/>All numbers are in percent.</p>
+<h2>Observable 'mu'</h2>
+<table cellpadding="2" border="1">
+<tr><th>process / nuisance parameter</th><th>Afb (gauss)</th><th>Rbck (gauss)</th><th>Rntmj (gauss)</th><th>Rqqbar (gauss)</th><th>sf_lep_ID (gauss)</th></tr>
+<tr><td>fbck</td><td>---</td><td><sup>+20.00</sup><sub>-20.00</sub> (s) </td><td>---</td><td>---</td><td><sup>+0.53</sup><sub>-0.53</sub> (s) </td></tr>
+<tr><td>fg0</td><td>---</td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>+0.95</sup><sub>-0.96</sub> (s) </td></tr>
+<tr><td>fntmj</td><td>---</td><td>---</td><td><sup>+20.00</sup><sub>-20.00</sub> (s) </td><td>---</td><td><sup>+0.00</sup><sub>+0.00</sub> (s) </td></tr>
+<tr><td>fqa0</td><td><sup>+nan</sup><sub>+nan</sub> (s) </td><td><sup>+nan</sup><sub>+nan</sub> (s) </td><td><sup>+nan</sup><sub>+nan</sub> (s) </td><td><sup>+nan</sup><sub>+nan</sub> (s) </td><td><sup>+nan</sup><sub>+nan</sub> (s) </td></tr>
+<tr><td>fqs0</td><td>---</td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>+20.00</sup><sub>-20.00</sub> (s) </td><td><sup>+1.20</sup><sub>-1.22</sub> (s) </td></tr>
+</table>
+

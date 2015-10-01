@@ -1,0 +1,113 @@
+<?xml version="1.0" ?>
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+    <head><title>theta-auto Report</title>
+    <script type="text/javascript" src="js/prototype.js"></script>
+    <script type="text/javascript" src="js/scriptaculous.js?load=effects,builder"></script>
+    <script type="text/javascript" src="js/lightbox.js"></script>
+    <link rel="stylesheet" href="css/lightbox.css" type="text/css" media="screen" />
+    <style type="text/css">
+    body {margin: 30px; font-family: Verdana, Arial, sans-serif; font-size: 12px; background:#eee;}
+    h1, h2, h3 { padding: 0.2ex; padding-left:.8ex;}
+    h1 {font-size: 150%%; background: #d44;}
+    h2 {font-size: 110%%; background: #f88; padding-left:1.3ex;}
+    h3 {font-size: 100%%; background: #aaa; padding-left:1.3ex;}
+    .inner {padding-left: 3ex;}
+    a img{ border: none;}
+    p {margin:0 0 0 0; margin-top: 1.3ex;}
+    ul {margin:0 0 0 0;}
+    </style>
+    </head><body>
+    <p>Hint: click on top-level headers to toggle visibility of that section.</p>
+    <h1 onclick=$('div1').toggle()>1. General Model Info</h1><div class="inner" id="div1">
+<p>Observables (xmin, xmax, nbins):</p>
+<ul>
+<li>mu (0, 1199, 1200)</li>
+</ul>
+<p>Background processes:</p>
+<ul>
+<li>fbck</li>
+<li>fg0</li>
+<li>fntmj</li>
+<li>fqa0</li>
+<li>fqs0</li>
+</ul>
+<p>Signal processes:</p><ul>
+</ul>
+<p>Nuisance parameters (includes only those which apply to the background-only model):</p>
+<ul>
+<li>Afb (morph only)</li>
+<li>Rbck (morph only)</li>
+<li>Rntmj (morph only)</li>
+<li>Rqqbar (morph only)</li>
+<li>sf_lep_ID (morph only)</li>
+</ul>
+
+</div>
+<h1 onclick=$('div2').toggle()>2. Rate Summary</h1><div class="inner" id="div2">
+<p>Rates for all observables and processes as given by the 'nominal' templates. If errors are given, they are MC stat. uncertainties.</p>
+<table cellpadding="2" border="1">
+<tr><th>process / observable</th><th>mu</th></tr>
+<tr><td>fbck</td><td>53.907 +/- 7.3389</td></tr>
+<tr><td>fg0</td><td>482.24 +/- 21.953</td></tr>
+<tr><td>fntmj</td><td>8.8126 +/- 3861.9</td></tr>
+<tr><td>fqa0</td><td>0</td></tr>
+<tr><td>fqs0</td><td>57.987 +/- 7.612</td></tr>
+<tr><td><b>total background</b></td><td>602.95 +/- 3862</td></tr>
+<tr><td><b>DATA</b></td><td>475</td></tr>
+</table>
+
+
+</div>
+<h1 onclick=$('div3').toggle()>3. Rate Impact of Systematic Uncertainties</h1><div class="inner" id="div3">
+<p>The table below summarises the impact of an nuisance parameter on the rate prediction of a process.</p>
+    <p>For a nuisance parameter, (gauss) indicates that this nuisance parameter has a gaussian prior, (gamma) that it has a gamma prior.</p>
+    <p>For the individual cells, (r) indicates the 'rate only' part of the uncertainty, (s) indicates the effect on the rate of an uncertainty
+    treated via template morphing (i.e., the <em>rate</em> effect of an uncertainty treated as part of the
+    template morphing; even if this is zero, the shape effect is still taken into account). Note that both effects are applied seperatly, so
+    the total rate change is about the linear sum of these two.<br/>
+    The rate change in 'plus' direction of the uncertainty is written as superscript,
+    the 'minus' direction as subscript.<br/>All numbers are in percent.</p>
+<h2>Observable 'mu'</h2>
+<table cellpadding="2" border="1">
+<tr><th>process / nuisance parameter</th><th>Afb (gauss)</th><th>Rbck (gauss)</th><th>Rntmj (gauss)</th><th>Rqqbar (gauss)</th><th>sf_lep_ID (gauss)</th></tr>
+<tr><td>fbck</td><td>---</td><td><sup>+20.00</sup><sub>-20.00</sub> (s) </td><td>---</td><td>---</td><td><sup>+0.53</sup><sub>-0.53</sub> (s) </td></tr>
+<tr><td>fg0</td><td>---</td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>+0.95</sup><sub>-0.96</sub> (s) </td></tr>
+<tr><td>fntmj</td><td>---</td><td>---</td><td><sup>+20.00</sup><sub>-20.00</sub> (s) </td><td>---</td><td><sup>+0.00</sup><sub>+0.00</sub> (s) </td></tr>
+<tr><td>fqa0</td><td><sup>+nan</sup><sub>+nan</sub> (s) </td><td><sup>+nan</sup><sub>+nan</sub> (s) </td><td><sup>+nan</sup><sub>+nan</sub> (s) </td><td><sup>+nan</sup><sub>+nan</sub> (s) </td><td><sup>+nan</sup><sub>+nan</sub> (s) </td></tr>
+<tr><td>fqs0</td><td>---</td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>-20.00</sup><sub>+20.00</sub> (s) </td><td><sup>+20.00</sup><sub>-20.00</sub> (s) </td><td><sup>+1.20</sup><sub>-1.22</sub> (s) </td></tr>
+</table>
+
+
+</div>
+<h1 onclick=$('div4').toggle()>4. Nuisance Parameter Priors</h1><div class="inner" id="div4">
+
+    <p>The priors for the nuisance parameters are either Gaussian or gamma distributions. As limit cases, these can have with=0 or width=inf
+    which makes them delta or flat distributions, respectively.</p>
+    <div class="inner"><h3>Prior Parameters</h3>
+<table cellpadding="2" border="1">
+<tr><th>parameter</th><th>distribution type</th><th>distribution parameters</th></tr>
+<tr><td>sf_lep_ID</td><td>gauss</td><td>width = 1.0; range = [-5.0, 5.0]; mean = 0.0</td></tr>
+<tr><td>Rntmj</td><td>gauss</td><td>width = 1.0; range = [-5.0, 5.0]; mean = 0.0</td></tr>
+<tr><td>Rqqbar</td><td>gauss</td><td>width = 1.0; range = [-5.0, 5.0]; mean = 0.0</td></tr>
+<tr><td>Afb</td><td>gauss</td><td>width = 1.0; range = [-5.0, 5.0]; mean = 0.0</td></tr>
+<tr><td>Rbck</td><td>gauss</td><td>width = 1.0; range = [-5.0, 5.0]; mean = 0.0</td></tr>
+</table>
+
+</div>
+    </div>
+</div>
+<h1 onclick=$('div5').toggle()>5. Basic Model Plots</h1><div class="inner" id="div5">
+<h2>Stackplots</h2>
+<p>Everything normalized to expectation, i.e., to the normalization in the template input file, possibly scaled via the python script file.</p>
+<p>Color Code:</p><ul>
+<li><span style="background: #edd400;">&nbsp;&nbsp;&nbsp;</span> fbck</li>
+<li><span style="background: #f57900;">&nbsp;&nbsp;&nbsp;</span> fg0</li>
+<li><span style="background: #c17d11;">&nbsp;&nbsp;&nbsp;</span> fntmj</li>
+<li><span style="background: #73d216;">&nbsp;&nbsp;&nbsp;</span> fqa0</li>
+<li><span style="background: #3465a4;">&nbsp;&nbsp;&nbsp;</span> fqs0</li>
+</ul>
+<p>Observable 'mu':<br /><img src="plots/mu_stack.png" /></p>
+
+</div>
+<hr /><p>This page was generated at 2015-09-10 16:08:08.414213 for workdir '/uscms_data/d3/eminizer/ttbar_run2/CMSSW_7_2_0/src/Analysis/Fitter_Plotter/test/analysis'.</p></body></html>

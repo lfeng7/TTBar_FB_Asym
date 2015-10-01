@@ -10,9 +10,11 @@ from template_maker import template_file
 
 parser = OptionParser()
 parser.add_option('--input', 	  type='string', action='store', default='input',	 dest='input',		help='Path to input file holding list of files to run on')
+parser.add_option('--parameters', type='string', action='store', default='initial_parameters',	 		dest='parameters',		help='Path to input file holding list of fitting parameters and their initial values')
 parser.add_option('--out_name',	  type='string', action='store', default='templates',dest='out_name',   help='Name of output file that will have all the templates in it')
 parser.add_option('--sum_charges',type='string', action='store', default='no',		 dest='sum_charges',help='Whether or not to integrate over the lepton charge in building templates')
 parser.add_option('--leptons', 	  type='string', action='store', default='mu',		 dest='leptons', 	help='Lepton type, "mu" (default) or "ele"')
+parser.add_option('--plots', 	  type='string', action='store', default='no',		 dest='plots', 		help='Whether or not to make comparison plots to data')
 (options, args) = parser.parse_args()
 
 #Start up the output file
@@ -23,9 +25,11 @@ if 'ele' in options.leptons.lower() :
 	output_name+= '_electrons'
 if options.sum_charges.lower() == 'yes' :
 	output_name+= '_charge_summed'
-if '.root' not in output_name :
-	output_name += '.root'
-output_file = template_file(output_name,options.sum_charges.lower(),options.leptons.lower())
+output_name += '.root'
+parfilename = options.parameters
+if '.txt' not in parfilename :
+	parfilename+='.txt'
+output_file = template_file(output_name,parfilename,options.sum_charges.lower(),options.leptons.lower())
 #Open the input file
 input_file_path ='./'
 input_file_path+=options.input
@@ -43,5 +47,8 @@ for line in input_file :
 output_file.build_templates()
 #Build the NTMJ template
 output_file.build_NTMJ_templates()
+#Make and save comparison plots if necessary
+if options.plots.lower() == 'yes' :
+	output_file.make_plots()
 #clean up after yourself
 del output_file
