@@ -20,18 +20,12 @@ class template_file :
 	"""template_file class"""
 	
 	#__init__function
-	def __init__(self,filename,parfilename,sumCharges,leptons) :
+	def __init__(self,filename,parfilename,sumCharges) :
 		#set the input variables
 		self.f = TFile(filename,'recreate')
 		self.f_aux = TFile(filename.rstrip('.root')+'_aux.root','recreate')
 		self.parfile = parfilename
 		self.sum_charge = sumCharges == 'yes'
-		self.leptype = 'none'
-		lepprefix = ''
-		if 'mu' in leptons :
-			self.leptype = 'muons'
-		if 'el' in leptons :
-			self.leptype = 'electrons'
 		#final distributions
 		self.dists = []
 		self.__addAllDistributions__()
@@ -62,15 +56,22 @@ class template_file :
 		signal_mass = 'hadt_M>140. && hadt_M<250.'
 		signal_tau32 = 'hadt_tau32<0.55' 
 		cuts = ''
-		if self.leptype=='muons' :
-			cuts+=muon_hadronic_pretag
-		if self.leptype=='electrons' :
-			cuts+=ele_hadronic_pretag
-		tree = chain.CopyTree(cuts)
-		tree.SetDirectory(0)
 		#find the distributions this tree will contribute to
 		for i in range(len(self.dists)) :
+			#make appropriate lepton cuts
 			distname = self.dists[i].name
+			if distname.startswith('mu') :
+				cuts = '('+muon_hadronic_pretag+')'
+			elif distname.startswith('el') :
+				cuts = '('+ele_hadronic_pretag+')'
+			elif distname.startswith('allchannels') :
+				cuts = '(('+muon_hadronic_pretag+') || ('+ele_hadronic_pretag+'))'
+			if distname.find('plus')!=-1 :
+				cuts += ' && (Q_l>0 || addTwice==1)'
+			if distname.find('minus')!=-1 :
+				cuts += ' && (Q_l<0 || addTwice==1)'
+			tree = chain.CopyTree(cuts)
+			tree.SetDirectory(0)
 			#if this tree should be added to this distribution
 			contribution = self.__contributesToDist__(file_ifd,i)
 			if contribution != 0. :
@@ -89,7 +90,7 @@ class template_file :
 	#build_templates builds the template histograms from the distributions
 	def build_templates(self) :
 		for dist in self.dists :
-			if not 'fntmj' in dist.name :
+			if dist.name.find('fntmj')==-1 :
 				print 'Building templates for distribution '+dist.name+'. . .'
 				self.histos+=dist.build_templates(self.f_aux,self.sum_charge,self.parfile)
 				print 'Done'
@@ -99,7 +100,7 @@ class template_file :
 	def build_NTMJ_templates(self) :
 		ntmjdists = []
 		for dist in self.dists :
-			if 'ntmj' in dist.name :
+			if dist.name.find('ntmj')!=-1 :
 				ntmjdists.append(dist)
 		for ntmjdist in ntmjdists :
 			#first make room for all of the templates we'll eventually have
@@ -137,9 +138,9 @@ class template_file :
 						#apply all the necessary systematic factors
 						if ntmjdist.systematics != None :
 							for k in range(len(ntmjdist.systematics)) :
-								if ntmjdist.systematics[k]+'__down' in template_name :
+								if template_name.find(ntmjdist.systematics[k]+'__down')!=-1 :
 									eventweight*=ntmjdist.systematics_arrays_down[k][0]; eventweight_opp*=ntmjdist.systematics_arrays_down[k][0]
-								elif ntmjdist.systematics[k]+'__up' in template_name : 
+								elif template_name.find(ntmjdist.systematics[k]+'__up')!=-1 : 
 									eventweight*=ntmjdist.systematics_arrays_up[k][0]; eventweight_opp*=ntmjdist.systematics_arrays_up[k][0]
 								else :
 									eventweight*=ntmjdist.systematics_arrays[k][0]; eventweight_opp*=ntmjdist.systematics_arrays[k][0]
@@ -149,9 +150,9 @@ class template_file :
 						if ntmjdist.addTwice[0]==1 :
 							eventweight*=0.5; eventweight_opp*=0.5
 						#add to the running total
-						if self.sum_charge or ntmjdist.name.startswith('allchannels') or (ntmjdist.Q_l[0]>0 and 'plus' in template_name) or (ntmjdist.Q_l[0]<0 and 'minus' in template_name) :
+						if self.sum_charge or ntmjdist.name.startswith('allchannels') or (ntmjdist.Q_l[0]>0 and template_name.find('plus')!=-1) or (ntmjdist.Q_l[0]<0 and template_name.find('minus')!=-1) :
 							sideband_counts[i][j]+=eventweight; sideband_xs[i][j]+=eventweight*ntmjdist.hadt_M[0]
-						if ntmjdist.addTwice[0]==1 and (self.sum_charge or ntmjdist.name.startswith('allchannels') or (ntmjdist.Q_l[0]<0 and 'plus' in template_name) or (ntmjdist.Q_l[0]>0 and 'minus' in template_name)) :
+						if ntmjdist.addTwice[0]==1 and (self.sum_charge or ntmjdist.name.startswith('allchannels') or (ntmjdist.Q_l[0]<0 and template_name.find('plus')!=-1) or (ntmjdist.Q_l[0]>0 and template_name.find('minus')!=-1)) :
 							sideband_counts[i][j]+=eventweight_opp; sideband_xs[i][j]+=eventweight_opp*ntmjdist.hadt_M[0]
 			#Calculate the conversion factor functions for each template
 			conversion_functions = []
@@ -181,9 +182,9 @@ class template_file :
 					#apply all the necessary systematic factors
 					if ntmjdist.systematics != None :
 						for k in range(len(ntmjdist.systematics)) :
-							if ntmjdist.systematics[k]+'__down' in template_name :
+							if template_name.find(ntmjdist.systematics[k]+'__down')!=-1 :
 								eventweight*=ntmjdist.systematics_arrays_down[k][0]; eventweight_opp*=ntmjdist.systematics_arrays_down[k][0]
-							elif ntmjdist.systematics[k]+'__up' in template_name : 
+							elif template_name.find(ntmjdist.systematics[k]+'__up')!=-1 : 
 								eventweight*=ntmjdist.systematics_arrays_up[k][0]; eventweight_opp*=ntmjdist.systematics_arrays_up[k][0]
 							else :
 								eventweight*=ntmjdist.systematics_arrays[k][0]; eventweight_opp*=ntmjdist.systematics_arrays[k][0]
@@ -195,9 +196,9 @@ class template_file :
 					if ntmjdist.addTwice[0]==1 :
 						eventweight*=0.5; eventweight_opp*=0.5
 					#add to the running total
-					if self.sum_charge or ntmjdist.name.startswith('allchannels') or (ntmjdist.Q_l[0]>0 and 'plus' in template_name) or (ntmjdist.Q_l[0]<0 and 'minus' in template_name) :
+					if self.sum_charge or ntmjdist.name.startswith('allchannels') or (ntmjdist.Q_l[0]>0 and template_name.find('plus')!=-1) or (ntmjdist.Q_l[0]<0 and template_name.find('minus')!=-1) :
 						ntmjdist.__Fill__(j,ntmjdist.cstar[0],ntmjdist.x_F[0],ntmjdist.M[0],eventweight)
-					if ntmjdist.addTwice[0]==1 and (self.sum_charge or ntmjdist.name.startswith('allchannels') or (ntmjdist.Q_l[0]<0 and 'plus' in template_name) or (ntmjdist.Q_l[0]>0 and 'minus' in template_name)) :
+					if ntmjdist.addTwice[0]==1 and (self.sum_charge or ntmjdist.name.startswith('allchannels') or (ntmjdist.Q_l[0]<0 and template_name.find('plus')!=-1) or (ntmjdist.Q_l[0]>0 and template_name.find('minus')!=-1)) :
 						ntmjdist.__Fill__(j,-1.0*ntmjdist.cstar[0],ntmjdist.x_F[0],ntmjdist.M[0],eventweight_opp)
 			if not ntmjdist.name.startswith('allchannels') :
 				#Save the templates to the auxiliary file
@@ -214,7 +215,7 @@ class template_file :
 		#First make a list of all the channels in the file
 		channel_names = []
 		for dist in self.dists :
-			if 'DATA' in dist.name :
+			if dist.name.endswith('DATA') :
 				a = dist.name.split('__')
 				channel_names.append(a[0])
 		#Make lists of histogram stacks, residual plots, canvases, and pads
@@ -243,7 +244,7 @@ class template_file :
 		for i in range(len(channel_names)) :
 			channame = channel_names[i]
 			for dist in self.dists :
-				if channame in dist.name.split('__') and 'DATA' not in dist.name.split('__') :
+				if dist.name.startswith(channame) and not dist.name.endswith('DATA') :
 					for j in range(len(dist.all_histo_names)) :
 						endofname = dist.all_histo_names[j].split('__')[len(dist.all_histo_names[j].split('__'))-1].split('_')
 						if 'up' not in endofname and 'down' not in endofname :
@@ -265,7 +266,7 @@ class template_file :
 			channame = channel_names[i]
 			maxxdeviations.append(0.0); maxydeviations.append(0.0); maxzdeviations.append(0.0)
 			for dist in self.dists :
-				if channame in dist.name.split('__') and 'DATA' in dist.name.split('__') :
+				if dist.name.startswith(channame) and dist.name.endswith('DATA') :
 					for j in range(1,XBINS+1) :
 						if x_stacks[i].GetStack().Last().GetBinContent(j) != 0 :
 							content = dist.all_histos[1].GetBinContent(j)/x_stacks[i].GetStack().Last().GetBinContent(j)
@@ -273,10 +274,7 @@ class template_file :
 							if dist.all_histos[1].GetBinContent(j) != 0 :
 								error = content*sqrt(1./dist.all_histos[1].GetBinContent(j) + 1./x_stacks[i].GetStack().Last().GetBinContent(j))
 								x_resids[i].SetBinError(j,error)
-								if abs(x_resids[i].GetBinContent(j)+x_resids[i].GetBinError(j)-1.0) > maxxdeviations[i] :
-									maxxdeviations[i] = abs(x_resids[i].GetBinContent(j)+x_resids[i].GetBinError(j)-1.0)
-								if abs(x_resids[i].GetBinContent(j)-x_resids[i].GetBinError(j)-1.0) > maxxdeviations[i] :
-									maxxdeviations[i] = abs(x_resids[i].GetBinContent(j)-x_resids[i].GetBinError(j)-1.0)
+								maxxdeviations[i] = max(maxxdeviations[i],max(abs(content+error-1.0),abs(content-error-1.0)))
 					for j in range(1,YBINS+1) :
 						if y_stacks[i].GetStack().Last().GetBinContent(j) != 0 :
 							content = dist.all_histos[2].GetBinContent(j)/y_stacks[i].GetStack().Last().GetBinContent(j)
@@ -284,10 +282,7 @@ class template_file :
 							if dist.all_histos[2].GetBinContent(j) != 0 :
 								error = content*sqrt(1./dist.all_histos[2].GetBinContent(j) + 1./y_stacks[i].GetStack().Last().GetBinContent(j))
 								y_resids[i].SetBinError(j,error)
-								if abs(y_resids[i].GetBinContent(j)+y_resids[i].GetBinError(j)-1.0) > maxydeviations[i] :
-									maxydeviations[i] = abs(y_resids[i].GetBinContent(j)+y_resids[i].GetBinError(j)-1.0)
-								if abs(y_resids[i].GetBinContent(j)-y_resids[i].GetBinError(j)-1.0) > maxydeviations[i] :
-									maxydeviations[i] = abs(y_resids[i].GetBinContent(j)-y_resids[i].GetBinError(j)-1.0)
+								maxydeviations[i] = max(maxydeviations[i],max(abs(content+error-1.0),abs(content-error-1.0)))
 					for j in range(1,ZBINS+1) :
 						if z_stacks[i].GetStack().Last().GetBinContent(j) != 0 :
 							content = dist.all_histos[3].GetBinContent(j)/z_stacks[i].GetStack().Last().GetBinContent(j)
@@ -295,14 +290,11 @@ class template_file :
 							if dist.all_histos[3].GetBinContent(j) != 0 :
 								error = content*sqrt(1./dist.all_histos[3].GetBinContent(j) + 1./z_stacks[i].GetStack().Last().GetBinContent(j))
 								z_resids[i].SetBinError(j,error)
-								if abs(z_resids[i].GetBinContent(j)+z_resids[i].GetBinError(j)-1.0) > maxzdeviations[i] :
-									maxzdeviations[i] = abs(z_resids[i].GetBinContent(j)+z_resids[i].GetBinError(j)-1.0)
-								if abs(z_resids[i].GetBinContent(j)-z_resids[i].GetBinError(j)-1.0) > maxzdeviations[i] :
-									maxzdeviations[i] = abs(z_resids[i].GetBinContent(j)-z_resids[i].GetBinError(j)-1.0)
+								maxzdeviations[i] = max(maxzdeviations[i],max(abs(content+error-1.0),abs(content-error-1.0)))
 		#reset stack maxima
 		for i in range(len(channel_names)) :
 			for dist in self.dists :
-				if channel_names[i] in dist.name.split('__') and 'DATA' in dist.name.split('__') :
+				if dist.name.startswith(channel_names[i]) and dist.name.endswith('DATA') :
 					xmaxdata = dist.all_histos[1].GetMaximum() 
 					ymaxdata = dist.all_histos[2].GetMaximum() 
 					zmaxdata = dist.all_histos[3].GetMaximum()
@@ -341,9 +333,9 @@ class template_file :
 		#Build a legend
 		leg = TLegend(0.62,0.67,0.9,0.9)
 		for dist in self.dists :
-			if channel_names[0] in dist.name.split('__') and 'DATA' not in dist.name.split('__') :
+			if dist.name.startswith(channel_names[0]) and not dist.name.endswith('DATA') :
 				leg.AddEntry(dist.all_histos[1],dist.name.lstrip(channel_names[0]+'__'),'F')
-			elif channel_names[0] in dist.name.split('__') and 'DATA' in dist.name.split('__') :
+			elif dist.name.startswith(channel_names[0]) and dist.name.endswith('DATA') :
 				leg.AddEntry(dist.all_histos[1],dist.name.lstrip(channel_names[0]+'__'),'PE')
 		#Build the lines that go at 1 on the residuals plots
 		xline = TLine(XMIN,1.0,XMAX,1.0); xline.SetLineWidth(2); xline.SetLineStyle(2)
@@ -353,7 +345,7 @@ class template_file :
 		for i in range(len(channel_names)) :
 			channame = channel_names[i]
 			for dist in self.dists :
-				if channame in dist.name.split('__') and 'DATA' in dist.name.split('__') :
+				if dist.name.startswith(channame) and dist.name.endswith('DATA') :
 					x_canvs[i].cd() 
 					x_histo_pad=TPad(channame+'_x_histo_pad',channame+'_x_histo_pad',0,0.25,1,1)
 					x_resid_pad=TPad(channame+'_x_residuals_pad',channame+'_x_residuals_pad',0,0,1.,0.25)
@@ -416,53 +408,33 @@ class template_file :
 
 	#__addAllDistributions__ sets up all of the final distributions depending on whether we want the charges summed
 	def __addAllDistributions__(self) :
-		lepprefix = 'none'
-		if self.leptype == 'muons' :
-			lepprefix = 'mu'
-		elif self.leptype == 'electrons' :
-			lepprefix = 'el'
+		lepprefixes = ['allchannels','mu','el']
 		std_reweights = ['weight','sf_top_pT','sf_pileup']
 		std_systematics = ['sf_lep_ID']
-		if self.sum_charge :
-			self.dists.append(distribution(lepprefix+'__DATA',kBlack,'data distribution',None,None,None,None))
-			self.dists.append(distribution(lepprefix+'__fg0',kBlue,'0th gg (qg,q_{i}q_{j},etc.) distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*(2.-#Rqqbar#)'))
-			self.dists.append(distribution(lepprefix+'__fqs0',kRed,'0th Symmetric q#bar{q} distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#'))
-			self.dists.append(distribution(lepprefix+'__fqa0',kRed,'0th Antisymmetric q#bar{q} distribution','wqa0',std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#*#Afb#'))
-			self.dists.append(distribution(lepprefix+'__fbck',kYellow,'background distribution',None,std_reweights,std_systematics,'#scale#*#Rbck#'))
-			self.dists.append(distribution(lepprefix+'__fntmj',kGreen,'NTMJ background distribution',None,std_reweights,std_systematics,'#scale#*#Rntmj#'))
-		else :
-			self.dists.append(distribution(lepprefix+'plus__DATA',kBlack,'data distribution',None,None,None,None))
-			self.dists.append(distribution(lepprefix+'plus__fg0',kBlue,'0th gg (qg,q_{i}q_{j},etc.) distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*(2.-#Rqqbar#)'))
-			self.dists.append(distribution(lepprefix+'plus__fqs0',kRed,'0th Symmetric q#bar{q} distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#'))
-			self.dists.append(distribution(lepprefix+'plus__fqa0',kRed,'0th Antisymmetric q#bar{q} distribution','wqa0',std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#*#Afb#'))
-			self.dists.append(distribution(lepprefix+'plus__fbck',kYellow,'background distribution',None,std_reweights,std_systematics,'#scale#*#Rbck#'))
-			self.dists.append(distribution(lepprefix+'plus__fntmj',kGreen,'NTMJ background distribution',None,std_reweights,std_systematics,'#scale#*#Rntmj#'))
-			self.dists.append(distribution(lepprefix+'minus__DATA',kBlack,'data distribution',None,None,None,None))
-			self.dists.append(distribution(lepprefix+'minus__fg0',kBlue,'0th gg (qg,q_{i}q_{j},etc.) distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*(2.-#Rqqbar#)'))
-			self.dists.append(distribution(lepprefix+'minus__fqs0',kRed,'0th Symmetric q#bar{q} distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#'))
-			self.dists.append(distribution(lepprefix+'minus__fqa0',kRed,'0th Antisymmetric q#bar{q} distribution','wqa0',std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#*#Afb#'))
-			self.dists.append(distribution(lepprefix+'minus__fbck',kYellow,'background distribution',None,std_reweights,std_systematics,'#scale#*#Rbck#'))
-			self.dists.append(distribution(lepprefix+'minus__fntmj',kGreen,'NTMJ background distribution',None,std_reweights,std_systematics,'#scale#*#Rntmj#'))
-		self.dists.append(distribution('allchannels__DATA',kBlack,'data distribution',None,None,None,None))
-		self.dists.append(distribution('allchannels__fg0',kBlue,'0th gg (qg,q_{i}q_{j},etc.) distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*(2.-#Rqqbar#)'))
-		self.dists.append(distribution('allchannels__fqs0',kRed,'0th Symmetric q#bar{q} distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#'))
-		self.dists.append(distribution('allchannels__fqa0',kRed,'0th Antisymmetric q#bar{q} distribution','wqa0',std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#*#Afb#'))
-		self.dists.append(distribution('allchannels__fbck',kYellow,'background distribution',None,std_reweights,std_systematics,'#scale#*#Rbck#'))
-		self.dists.append(distribution('allchannels__fntmj',kGreen,'NTMJ background distribution',None,std_reweights,std_systematics,'#scale#*#Rntmj#'))
+		for lepprefix in lepprefixes :
+			chargeseps = ['']
+			if not self.sum_charge and lepprefix != 'allchannels' :
+				chargeseps = ['plus','minus']
+			for chargesep in chargeseps :
+				self.dists.append(distribution(lepprefix+chargesep+'__DATA',kBlack,'data distribution',None,None,None,None))
+				self.dists.append(distribution(lepprefix+chargesep+'__fg0',kBlue,'0th gg (qg,q_{i}q_{j},etc.) distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*(2.-#Rqqbar#)'))
+				self.dists.append(distribution(lepprefix+chargesep+'__fqs0',kRed,'0th Symmetric q#bar{q} distribution',None,std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#'))
+				self.dists.append(distribution(lepprefix+chargesep+'__fqa0',kRed,'0th Antisymmetric q#bar{q} distribution','wqa0',std_reweights,std_systematics,'#scale#*(3.-#Rbck#-#Rntmj#)*#Rqqbar#*#Afb#'))
+				self.dists.append(distribution(lepprefix+chargesep+'__fbck',kYellow,'background distribution',None,std_reweights,std_systematics,'#scale#*#Rbck#'))
+				self.dists.append(distribution(lepprefix+chargesep+'__fntmj',kGreen,'NTMJ background distribution',None,std_reweights,std_systematics,'#scale#*#Rntmj#'))
+
 	#__contributesToDist__ finds out whether the tree coming in should be added to the ith distribution
 	def __contributesToDist__(self,ifd,i) :
 		distname = self.dists[i].name
-		if (self.leptype=='muons' and ifd=='mudata' and ('DATA' in distname or 'fntmj' in distname)) :
+		if ((distname.startswith('mu') or distname.startswith('allchannels')) and ifd=='mudata' and (distname.endswith('DATA') or distname.endswith('fntmj'))) :
 			return 1.0
-		elif (self.leptype=='electrons' and ifd=='eledata' and ('DATA' in distname or 'fntmj' in distname)) :
+		elif ((distname.startswith('el') or distname.startswith('allchannels')) and ifd=='eledata' and (distname.endswith('DATA') or distname.endswith('fntmj'))) :
 			return 1.0
-		elif (ifd == 'qq' and ('fqs' in distname or 'fqa' in distname)) :
+		elif (ifd == 'qq' and (distname.find('fqs')!=-1 or distname.find('fqa')!=-1)) :
 			return LUMINOSITY
-		elif (ifd == 'gg' and 'fg' in distname) :
+		elif (ifd == 'gg' and distname.find('fg')!=-1) or (ifd == 'bck' and distname.find('fbck')!=-1) :
 			return LUMINOSITY
-		elif (ifd == 'bck' and 'fbck' in distname) :
-			return LUMINOSITY
-		elif (ifd == 'qq' or ifd == 'gg' or ifd == 'bck') and 'fntmj' in distname :
+		elif (ifd == 'qq' or ifd == 'gg' or ifd == 'bck') and distname.find('fntmj')!=-1 :
 			return -1.0*LUMINOSITY
 		else :
 			return 0.0
@@ -554,9 +526,9 @@ class distribution :
 				#apply all the necessary systematic factors
 				if self.systematics != None :
 					for j in range(len(self.systematics)) :
-						if self.systematics[j]+'__down' in template_name :
+						if template_name.find(self.systematics[j]+'__down')!=-1 :
 							eventweight*=self.systematics_arrays_down[j][0]; eventweight_opp*=self.systematics_arrays_down[j][0]
-						elif self.systematics[j]+'__up' in template_name : 
+						elif template_name.find(self.systematics[j]+'__up')!=-1 : 
 							eventweight*=self.systematics_arrays_up[j][0]; eventweight_opp*=self.systematics_arrays_up[j][0]
 						else :
 							eventweight*=self.systematics_arrays[j][0]; eventweight_opp*=self.systematics_arrays[j][0]
@@ -566,9 +538,9 @@ class distribution :
 				if self.addTwice[0]==1 :
 					eventweight*=0.5; eventweight_opp*=0.5
 				#add to the template
-				if sumcharge or self.name.startswith('allchannels') or (self.Q_l[0]>0 and 'plus' in template_name) or (self.Q_l[0]<0 and 'minus' in template_name) :
+				if sumcharge or self.name.startswith('allchannels') or (self.Q_l[0]>0 and template_name.find('plus')!=-1) or (self.Q_l[0]<0 and template_name.find('minus')!=-1) :
 					self.__Fill__(i,self.cstar[0],self.x_F[0],self.M[0],eventweight)
-				if self.addTwice[0]==1 and (sumcharge or self.name.startswith('allchannels') or (self.Q_l[0]<0 and 'plus' in template_name) or (self.Q_l[0]>0 and 'minus' in template_name)) :
+				if self.addTwice[0]==1 and (sumcharge or self.name.startswith('allchannels') or (self.Q_l[0]<0 and template_name.find('plus')!=-1) or (self.Q_l[0]>0 and template_name.find('minus')!=-1)) :
 					self.__Fill__(i,-1.0*self.cstar[0],self.x_F[0],self.M[0],eventweight_opp)
 		
 		#Save the templates to the auxiliary file
@@ -602,13 +574,13 @@ class distribution :
 		self.factors = []; args = []; argispar = []
 		if self.function != None :
 			args = self.function.split('#')
-		for j in range(len(args)) :
-			argispar.append(False)
 		for j in range(len(args)) : #replace the parameters within the arguments
+			argispar.append(False)
 			for par in pars :
 				if par[0] == args[j] :
 					args[j] = par
 					argispar[j] = True
+					break
 		#nominal distribution
 		factorstring = ''
 		for j in range(len(args)) :
@@ -655,7 +627,7 @@ class distribution :
 			print 'adding template with name '+self.name+'__'+sys+'__down'
 			print 'adding template with name '+self.name+'__'+sys+'__up'
 
-	#__addDistribution__ function adds a 3D histogram and 1D projections to the file and to the lists
+	#__addTemplate__ function adds a 3D histogram and 1D projections to the file and to the lists
 	def __addTemplate__(self,name,formatted_name) :
 		histo_3D = TH3D(name,	   formatted_name+'; c*; |x_{F}|; M (GeV)',XBINS,XMIN,XMAX,YBINS,YMIN,YMAX,ZBINS,ZMIN,ZMAX)
 		histo_x  = TH1D(name+'_x',formatted_name+' X Projection; c*',	  XBINS,XMIN,XMAX)

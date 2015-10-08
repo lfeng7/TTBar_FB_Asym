@@ -5,7 +5,6 @@ import os
 #All the input options
 TEMPLATE_FILE_NAME = 'templates'
 SUM_CHARGES = 'no'
-LEPTONS = 'mu'
 INITIAL_PARAMETERS_FILE = 'initial_parameters.txt'
 REFINED_PARAMETERS_FILE = 'refined_parameters.txt'
 FINAL_PARAMETERS_FILE   = 'final_parameters.txt'
@@ -91,7 +90,7 @@ def make_comparison_plots() :
 	#build the command and run the final template plot file
 	#Build the command, run the initial templates, and figure out the name of the file they're in
 	cmd  = 'python ../../Template_Maker/python/run_templates.py --parameters '+FINAL_PARAMETERS_FILE +' '
-	cmd += '--out_name '+TEMPLATE_FILE_NAME+'_plots --sum_charges '+SUM_CHARGES+' --leptons '+LEPTONS+' --plots yes'
+	cmd += '--out_name '+TEMPLATE_FILE_NAME+'_plots --sum_charges '+SUM_CHARGES+' --plots yes'
 	os.system(cmd)
 
 #Build the initial parameters file
@@ -99,14 +98,10 @@ print 'Building initial parameters file. . .'
 build_parameter_file(INITIAL_PARAMETERS_FILE)
 #Build the command, run the initial templates, and figure out the name of the file they're in
 cmd  = 'python ../../Template_Maker/python/run_templates.py --parameters '+INITIAL_PARAMETERS_FILE +' '
-cmd += '--out_name '+TEMPLATE_FILE_NAME+'_initial --sum_charges '+SUM_CHARGES+' --leptons '+LEPTONS+''
+cmd += '--out_name '+TEMPLATE_FILE_NAME+'_initial --sum_charges '+SUM_CHARGES+''
 os.system(cmd)
 initial_templates_filename = TEMPLATE_FILE_NAME+'_initial'
 refined_templates_filename = TEMPLATE_FILE_NAME+'_refined'
-if 'mu' in LEPTONS.lower() :
-	initial_templates_filename+='_muons'
-elif 'el' in LEPTONS.lower() :
-	initial_templates_filename+='_electrons'
 if SUM_CHARGES == 'yes' :
 	initial_templates_filename+= '_charge_summed'
 initial_templates_filename += '.root'
@@ -116,13 +111,9 @@ run_fit(initial_templates_filename)
 build_parameter_file(REFINED_PARAMETERS_FILE)
 #Build new templates
 cmd  = 'python ../../Template_Maker/python/run_templates.py --parameters '+REFINED_PARAMETERS_FILE +' '
-cmd += '--out_name '+TEMPLATE_FILE_NAME+'_refined --sum_charges '+SUM_CHARGES+' --leptons '+LEPTONS+''
+cmd += '--out_name '+TEMPLATE_FILE_NAME+'_refined --sum_charges '+SUM_CHARGES+''
 os.system(cmd)
 refined_templates_filename = TEMPLATE_FILE_NAME+'_refined'
-if 'mu' in LEPTONS.lower() :
-	refined_templates_filename+='_muons'
-elif 'el' in LEPTONS.lower() :
-	refined_templates_filename+='_electrons'
 if SUM_CHARGES == 'yes' :
 	refined_templates_filename+= '_charge_summed'
 refined_templates_filename += '.root'

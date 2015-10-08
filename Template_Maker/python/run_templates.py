@@ -13,23 +13,18 @@ parser.add_option('--input', 	  type='string', action='store', default='input',	
 parser.add_option('--parameters', type='string', action='store', default='initial_parameters',	 		dest='parameters',		help='Path to input file holding list of fitting parameters and their initial values')
 parser.add_option('--out_name',	  type='string', action='store', default='templates',dest='out_name',   help='Name of output file that will have all the templates in it')
 parser.add_option('--sum_charges',type='string', action='store', default='no',		 dest='sum_charges',help='Whether or not to integrate over the lepton charge in building templates')
-parser.add_option('--leptons', 	  type='string', action='store', default='mu',		 dest='leptons', 	help='Lepton type, "mu" (default) or "ele"')
 parser.add_option('--plots', 	  type='string', action='store', default='no',		 dest='plots', 		help='Whether or not to make comparison plots to data')
 (options, args) = parser.parse_args()
 
 #Start up the output file
 output_name = options.out_name
-if 'mu' in options.leptons.lower() :
-	output_name+= '_muons'
-if 'ele' in options.leptons.lower() :
-	output_name+= '_electrons'
 if options.sum_charges.lower() == 'yes' :
 	output_name+= '_charge_summed'
 output_name += '.root'
 parfilename = options.parameters
 if '.txt' not in parfilename :
 	parfilename+='.txt'
-output_file = template_file(output_name,parfilename,options.sum_charges.lower(),options.leptons.lower())
+output_file = template_file(output_name,parfilename,options.sum_charges.lower())
 #Open the input file
 input_file_path ='./'
 input_file_path+=options.input
