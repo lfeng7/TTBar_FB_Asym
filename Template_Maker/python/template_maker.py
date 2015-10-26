@@ -39,53 +39,69 @@ class template_file :
 		filenamelist = glob.glob(ttree_dir_path+'/*_skim_tree.root')
 		for filename in filenamelist :
 			chain.Add(filename)
-		#copy the chain into a tree after making selection cuts
-		muon_preselection = 'muon1_pt>ele1_pt && lepW_pt>50. && hadt_pt>300. && hadt_M>100.'
-		muon_kinematics = 'muon1_pt>40. && abs(muon1_eta)<2.4'
-		muon_ID = 'muon1_isLoose==1'
-		muon_2D = '(muon1_relPt>25. || muon1_dR>0.5)'
-		ele_preselection = 'ele1_pt>muon1_pt && lepW_pt>50. && hadt_pt>300. && hadt_M>100.'
-		ele_kinematics = 'ele1_pt>40. && abs(ele1_eta)<2.4'
-		ele_ID = 'ele1_isLoose==1'
-		ele_2D = '(ele1_relPt>25. || ele1_dR>0.5)'
-		lep_top_mass = 'lept_M>140. && lept_M<250.'
-		muon_full_leptonic = muon_preselection+' && '+muon_kinematics+' && '+muon_ID+' && '+muon_2D+' && '+lep_top_mass
-		muon_hadronic_pretag = muon_full_leptonic+' && hadt_tau21>0.1'
-		ele_full_leptonic = ele_preselection+' && '+ele_kinematics+' && '+ele_ID+' && '+ele_2D+' && '+lep_top_mass
-		ele_hadronic_pretag = ele_full_leptonic+' && hadt_tau21>0.1'
-		signal_mass = 'hadt_M>140. && hadt_M<250.'
-		signal_tau32 = 'hadt_tau32<0.55' 
-		cuts = ''
+		muon1_pt 	  = array('d',[-1.0]);  chain.SetBranchAddress('muon1_pt',muon1_pt)
+		ele1_pt 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele1_pt',ele1_pt)
+		lepW_pt 	  = array('d',[-1.0]);  chain.SetBranchAddress('scaled_lepW_pt',lepW_pt)
+		hadt_pt 	  = array('d',[-1.0]);  chain.SetBranchAddress('scaled_hadt_pt',hadt_pt)
+		muon1_eta 	  = array('d',[100.0]); chain.SetBranchAddress('muon1_eta',muon1_eta)
+		muon1_isLoose = array('I',[2]);  chain.SetBranchAddress('muon1_isLoose',muon1_isLoose)
+		muon1_relPt   = array('d',[-1.0]);  chain.SetBranchAddress('muon1_relPt',muon1_relPt)
+		muon1_dR 	  = array('d',[-1.0]);  chain.SetBranchAddress('muon1_dR',muon1_dR)
+		ele1_eta 	  = array('d',[100.0]); chain.SetBranchAddress('ele1_eta',ele1_eta)
+		ele1_isLoose  = array('I',[2]);  chain.SetBranchAddress('ele1_isLoose',ele1_isLoose)
+		ele1_relPt 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele1_relPt',ele1_relPt)
+		ele1_dR 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele1_dR',ele1_dR)
+		lept_M 		  = array('d',[-1.0]);  chain.SetBranchAddress('scaled_lept_M',lept_M)
+		hadt_tau21 	  = array('d',[-1.0]);  chain.SetBranchAddress('hadt_tau21',hadt_tau21)
 		#find the distributions this tree will contribute to
 		for i in range(len(self.dists)) :
-			#make appropriate lepton cuts
 			distname = self.dists[i].name
-			if distname.startswith('mu') :
-				cuts = '('+muon_hadronic_pretag+')'
-			elif distname.startswith('el') :
-				cuts = '('+ele_hadronic_pretag+')'
-			elif distname.startswith('allchannels') :
-				cuts = '(('+muon_hadronic_pretag+') || ('+ele_hadronic_pretag+'))'
-			if distname.find('plus')!=-1 :
-				cuts += ' && (Q_l>0 || addTwice==1)'
-			if distname.find('minus')!=-1 :
-				cuts += ' && (Q_l<0 || addTwice==1)'
-			tree = chain.CopyTree(cuts)
-			tree.SetDirectory(0)
-			#if this tree should be added to this distribution
+			#if events in this chain should be added to this distribution
 			contribution = self.__contributesToDist__(file_ifd,i)
 			if contribution != 0. :
 				#set all of the branch addresses
 				for branch in self.dists[i].all_branches :
-					tree.SetBranchAddress(branch[0],branch[2])
+					chain.SetBranchAddress(branch[0],branch[2])
 				#copy over the relevant parts of the tree
-				nEntries = tree.GetEntriesFast()
+				nEntries = chain.GetEntries()
 				print 'Adding trees from '+ttree_dir_path+' to distribution '+distname+' ('+str(nEntries)+' entries)'
+				added = 0
 				for entry in range(nEntries) :
-					tree.GetEntry(entry)
+					chain.GetEntry(entry)
+					keep = True
+					muon_preselection = muon1_pt[0]>ele1_pt[0] and lepW_pt[0]>50. and hadt_pt[0]>300. and self.dists[i].hadt_M[0]>100.
+					muon_kinematics   = muon1_pt[0]>40. and abs(muon1_eta[0])<2.4
+					muon_ID = muon1_isLoose[0]==1
+					muon_2D = muon1_relPt[0]>25. or muon1_dR[0]>0.5
+					ele_preselection = ele1_pt[0]>muon1_pt[0] and lepW_pt[0]>50. and hadt_pt[0]>300. and self.dists[i].hadt_M[0]>100.
+					ele_kinematics = ele1_pt[0]>40. and abs(ele1_eta[0])<2.4
+					ele_ID = ele1_isLoose[0]==1
+					ele_2D = ele1_relPt[0]>25. or ele1_dR[0]>0.5
+					lep_top_mass = lept_M[0]>140. and lept_M[0]<250.
+					muon_full_leptonic = muon_preselection and muon_kinematics and muon_ID and muon_2D and lep_top_mass
+					muon_hadronic_pretag = muon_full_leptonic and hadt_tau21[0]>0.1
+					ele_full_leptonic = ele_preselection and ele_kinematics and ele_ID and ele_2D and lep_top_mass
+					ele_hadronic_pretag = ele_full_leptonic and hadt_tau21[0]>0.1
+					signal_mass = self.dists[i].hadt_M[0]>140. and self.dists[i].hadt_M[0]<250.
+					signal_tau32 = self.dists[i].hadt_tau32[0]<0.55 
+					#make appropriate lepton cuts
+					if distname.startswith('mu') :
+						keep = muon_hadronic_pretag
+					elif distname.startswith('el') :
+						keep = ele_hadronic_pretag
+					elif distname.startswith('allchannels') :
+						keep = muon_hadronic_pretag or ele_hadronic_pretag
+					if distname.find('plus')!=-1 :
+						keep = keep and (self.dists[i].Q_l[0]>0 or self.dists[i].addTwice[0]==1)
+					if distname.find('minus')!=-1 :
+						keep = keep and (self.dists[i].Q_l[0]<0 or self.dists[i].addTwice[0]==1)
+					if not keep :
+						continue
+					added+=1
 					#change the event weight to add or subtract as appropriate
 					self.dists[i].contrib_weight[0]=contribution
 					self.dists[i].tree.Fill()
+				print '	Added %d events'%(added)
 
 	#build_templates builds the template histograms from the distributions
 	def build_templates(self) :
@@ -466,16 +482,16 @@ class distribution :
 		self.tree = TTree(self.name+'_tree',self.name+'_tree')
 		self.tree.SetDirectory(0)
 		self.all_branches = []
-		self.cstar 			  = array('d',[100.]); self.tree.Branch('cstar',self.cstar,'cstar/D'); 								 self.all_branches.append(('cstar_scaled','cstar',self.cstar))
-		self.x_F 			  = array('d',[100.]); self.tree.Branch('x_F',self.x_F,'x_F/D'); 									 self.all_branches.append(('x_F_scaled','x_F',self.x_F))
-		self.M  			  = array('d',[-1.0]); self.tree.Branch('M',self.M,'M/D'); 											 self.all_branches.append(('M_scaled','M',self.M))
-		self.hadt_M  		  = array('d',[-1.0]); self.tree.Branch('hadt_M',self.hadt_M,'hadt_M/D'); 							 self.all_branches.append(('scaled_hadt_M','hadt_M',self.hadt_M))
-		self.hadt_tau32  	  = array('d',[-1.0]); self.tree.Branch('hadt_tau32',self.hadt_tau32,'hadt_tau32/D'); 				 self.all_branches.append(('hadt_tau32','hadt_tau32',self.hadt_tau32))
-		self.Q_l  			  = array('i',[0]);    self.tree.Branch('Q_l',self.Q_l,'Q_l/I'); 									 self.all_branches.append(('Q_l','Q_l',self.Q_l))
-		self.addTwice 		  = array('I',[2]);    self.tree.Branch('addTwice',self.addTwice,'addTwice/i'); 					 self.all_branches.append(('addTwice','addTwice',self.addTwice))
-		self.contrib_weight   = array('d',[1.0]);  self.tree.Branch('contrib_weight',self.contrib_weight,'contrib_weight/D');
-		self.sample_reweight  = array('d',[1.0]);  self.tree.Branch('sample_reweight',self.sample_reweight,'sample_reweight/D');
-		self.sample_reweight_opp  = array('d',[1.0]);  self.tree.Branch('sample_reweight_opp',self.sample_reweight_opp,'sample_reweight_opp/D'); 
+		self.cstar 				  = array('d',[100.]);  self.tree.Branch('cstar',self.cstar,'cstar/D'); 						self.all_branches.append(('cstar_scaled','cstar',self.cstar))
+		self.x_F 				  = array('d',[100.]);  self.tree.Branch('x_F',self.x_F,'x_F/D'); 								self.all_branches.append(('x_F_scaled','x_F',self.x_F))
+		self.M 					  = array('d',[-1.0]);  self.tree.Branch('M',self.M,'M/D'); 									self.all_branches.append(('M_scaled','M',self.M))
+		self.hadt_M 			  = array('d',[-1.0]);  self.tree.Branch('hadt_M',self.hadt_M,'hadt_M/D'); 						self.all_branches.append(('scaled_hadt_M','hadt_M',self.hadt_M))
+		self.hadt_tau32 		  = array('d',[-1.0]);  self.tree.Branch('hadt_tau32',self.hadt_tau32,'hadt_tau32/D'); 			self.all_branches.append(('hadt_tau32','hadt_tau32',self.hadt_tau32))
+		self.Q_l 				  = array('i',[0]);     self.tree.Branch('Q_l',self.Q_l,'Q_l/I'); 								self.all_branches.append(('Q_l','Q_l',self.Q_l))
+		self.addTwice 			  = array('I',[2]);     self.tree.Branch('addTwice',self.addTwice,'addTwice/i'); 				self.all_branches.append(('addTwice','addTwice',self.addTwice))
+		self.contrib_weight 	  = array('d',[1.0]);   self.tree.Branch('contrib_weight',self.contrib_weight,'contrib_weight/D');
+		self.sample_reweight 	  = array('d',[1.0]);   self.tree.Branch('sample_reweight',self.sample_reweight,'sample_reweight/D');
+		self.sample_reweight_opp  = array('d',[1.0]);   self.tree.Branch('sample_reweight_opp',self.sample_reweight_opp,'sample_reweight_opp/D'); 
 		if sample_reweight != None :
 			self.all_branches.append((sample_reweight,'sample_reweight',self.sample_reweight))
 			self.all_branches.append((sample_reweight+'_opp','sample_reweight_opp',self.sample_reweight_opp))
