@@ -107,19 +107,19 @@ if SUM_CHARGES == 'yes' :
 initial_templates_filename += '.root'
 #Run the fit the first time with the initial parameter guesses
 run_fit(initial_templates_filename)
-#Build another input parameter file with the new parameter values
-build_parameter_file(REFINED_PARAMETERS_FILE)
-#Build new templates
-cmd  = 'python ../../Template_Maker/python/run_templates.py --parameters '+REFINED_PARAMETERS_FILE +' '
-cmd += '--out_name '+TEMPLATE_FILE_NAME+'_refined --sum_charges '+SUM_CHARGES+''
-os.system(cmd)
-refined_templates_filename = TEMPLATE_FILE_NAME+'_refined'
-if SUM_CHARGES == 'yes' :
-	refined_templates_filename+= '_charge_summed'
-refined_templates_filename += '.root'
-#Run the fit again
-run_fit(refined_templates_filename)
-#Calculate the final parameter values and put them in a file
-build_parameter_file(FINAL_PARAMETERS_FILE)
-#Make comparison plots
-make_comparison_plots()
+##Build another input parameter file with the new parameter values
+#build_parameter_file(REFINED_PARAMETERS_FILE)
+##Build new templates
+#cmd  = 'python ../../Template_Maker/python/run_templates.py --parameters '+REFINED_PARAMETERS_FILE +' '
+#cmd += '--out_name '+TEMPLATE_FILE_NAME+'_refined --sum_charges '+SUM_CHARGES+''
+#os.system(cmd)
+#refined_templates_filename = TEMPLATE_FILE_NAME+'_refined'
+#if SUM_CHARGES == 'yes' :
+#	refined_templates_filename+= '_charge_summed'
+#refined_templates_filename += '.root'
+##Run the fit again
+#run_fit(refined_templates_filename)
+##Calculate the final parameter values and put them in a file
+#build_parameter_file(FINAL_PARAMETERS_FILE)
+##Make comparison plots
+#make_comparison_plots()

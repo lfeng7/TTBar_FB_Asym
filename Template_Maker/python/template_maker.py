@@ -9,6 +9,7 @@ YBINS = 6;		YMIN = 0.0;		YMAX = 0.6
 ZBINS = 10;		ZMIN = 500.;	ZMAX = 2500.
 #luminosity
 LUMINOSITY = 19748.
+LUMI_MIN_BIAS = 0.026
 
 #TDR Style
 gROOT.Macro('rootlogon.C')
@@ -425,8 +426,8 @@ class template_file :
 	#__addAllDistributions__ sets up all of the final distributions depending on whether we want the charges summed
 	def __addAllDistributions__(self) :
 		lepprefixes = ['allchannels','mu','el']
-		std_reweights = ['weight','sf_top_pT','sf_pileup']
-		std_systematics = ['sf_lep_ID']
+		std_reweights = ['weight','sf_top_pT']
+		std_systematics = ['luminosity','sf_pileup','sf_lep_ID']
 		for lepprefix in lepprefixes :
 			chargeseps = ['']
 			if not self.sum_charge and lepprefix != 'allchannels' :
@@ -507,14 +508,19 @@ class distribution :
 		if systematics != None :
 			for i in range(len(systematics)) :
 				self.systematics_arrays.append(array('d',[1.0]))
-				self.tree.Branch(systematics[i],self.systematics_arrays[len(self.systematics_arrays)-1],systematics[i]+'/D')
-				self.all_branches.append((systematics[i],systematics[i],self.systematics_arrays[len(self.systematics_arrays)-1]))
 				self.systematics_arrays_up.append(array('d',[1.0]))
-				self.tree.Branch(systematics[i]+'_hi',self.systematics_arrays_up[len(self.systematics_arrays_up)-1],systematics[i]+'_hi/D')
-				self.all_branches.append((systematics[i]+'_hi',systematics[i]+'_hi',self.systematics_arrays_up[len(self.systematics_arrays_up)-1]))
 				self.systematics_arrays_down.append(array('d',[1.0]))
-				self.tree.Branch(systematics[i]+'_low',self.systematics_arrays_down[len(self.systematics_arrays_down)-1],systematics[i]+'_low/D')
-				self.all_branches.append((systematics[i]+'_low',systematics[i]+'_low',self.systematics_arrays_down[len(self.systematics_arrays_down)-1]))
+				if systematics[i] == 'luminosity' :
+					self.systematics_arrays[i][0] = 1.0
+					self.systematics_arrays_up[i][0] = 1.0+LUMI_MIN_BIAS
+					self.systematics_arrays_down[i][0] = 1.0-LUMI_MIN_BIAS
+				else :
+					self.tree.Branch(systematics[i],self.systematics_arrays[len(self.systematics_arrays)-1],systematics[i]+'/D')
+					self.all_branches.append((systematics[i],systematics[i],self.systematics_arrays[len(self.systematics_arrays)-1]))
+					self.tree.Branch(systematics[i]+'_hi',self.systematics_arrays_up[len(self.systematics_arrays_up)-1],systematics[i]+'_hi/D')
+					self.all_branches.append((systematics[i]+'_hi',systematics[i]+'_hi',self.systematics_arrays_up[len(self.systematics_arrays_up)-1]))
+					self.tree.Branch(systematics[i]+'_low',self.systematics_arrays_down[len(self.systematics_arrays_down)-1],systematics[i]+'_low/D')
+					self.all_branches.append((systematics[i]+'_low',systematics[i]+'_low',self.systematics_arrays_down[len(self.systematics_arrays_down)-1]))
 		self.all_histo_names = []; self.all_histos = []; self.all_templates = []
 
 	#build_templates builds the 3D templates for a distribution, and returns a list of 1D templates

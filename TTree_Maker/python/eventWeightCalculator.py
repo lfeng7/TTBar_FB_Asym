@@ -12,7 +12,9 @@ MUON_ID_EFF_PKL_FILENAME   = 'MuonEfficiencies_Run2012ReReco_53X.pkl'
 ELECTRON_ID_EFF_HISTO_FILENAME = 'electrons_scale_factors.root'
 ELECTRON_ID_EFF_HISTO_NAME = 'electronsDATAMCratio_FO_ID'
 MUON_TRIG_EFF_PKL_FILENAME = 'SingleMuonTriggerEfficiencies_eta2p1_Run2012ABCD_v5trees.pkl' 
-DATA_PU_FILENAME = 'data_pileup_distribution.root'
+DATA_PU_FILENAME_NOMINAL = 'data_pileup_nominal_69400.root'
+DATA_PU_FILENAME_UP 	 = 'data_pileup_up_73564.root'
+DATA_PU_FILENAME_DOWN 	 = 'data_pileup_down_65236.root'
 MC_PU_FILENAME = 'dumped_Powheg_TT.root'
 
 ##########							   MC_corrector Class 								##########
@@ -36,17 +38,29 @@ class MC_corrector :
 		else :
 			prepend+='../other_input_files/'
 		#note that these files should definitely be recalculated once I decide on a trigger, etc.
-		data_pu_file = ROOT.TFile(prepend+DATA_PU_FILENAME)
+		data_pu_file_nominal = ROOT.TFile(prepend+DATA_PU_FILENAME_NOMINAL)
+		data_pu_file_up 	 = ROOT.TFile(prepend+DATA_PU_FILENAME_UP)
+		data_pu_file_down 	 = ROOT.TFile(prepend+DATA_PU_FILENAME_DOWN)
 		MC_pu_file = ROOT.TFile(prepend+MC_PU_FILENAME)
-		self.data_pu_dist = ROOT.TH1D()
+		self.data_pu_dist_nominal = ROOT.TH1D()
+		self.data_pu_dist_up 	  = ROOT.TH1D()
+		self.data_pu_dist_down 	  = ROOT.TH1D()
 		self.MC_pu_dist   = ROOT.TH1D()
-		data_dist = data_pu_file.Get('pileup')
+		data_dist_nominal = data_pu_file_nominal.Get('pileup')
+		data_dist_up 	  = data_pu_file_up.Get('pileup')
+		data_dist_down 	  = data_pu_file_down.Get('pileup')
 		MC_dist = MC_pu_file.Get('pileup')
-		self.data_pu_dist = data_dist.Clone()
+		self.data_pu_dist_nominal = data_dist_nominal.Clone()
+		self.data_pu_dist_up 	  = data_dist_up.Clone()
+		self.data_pu_dist_down 	  = data_dist_down.Clone()
 		self.MC_pu_dist = MC_dist.Clone()
-		self.data_pu_dist.SetDirectory(0)
+		self.data_pu_dist_nominal.SetDirectory(0)
+		self.data_pu_dist_up.SetDirectory(0)
+		self.data_pu_dist_down.SetDirectory(0)
 		self.MC_pu_dist.SetDirectory(0)
-		self.data_pu_dist.Scale(1.0/self.data_pu_dist.Integral())
+		self.data_pu_dist_nominal.Scale(1.0/self.data_pu_dist_nominal.Integral())
+		self.data_pu_dist_up.Scale(1.0/self.data_pu_dist_up.Integral())
+		self.data_pu_dist_down.Scale(1.0/self.data_pu_dist_down.Integral())
 		self.MC_pu_dist.Scale(1.0/self.MC_pu_dist.Integral())
 
 	def __open_lep_eff_files__(self) :
@@ -90,9 +104,14 @@ class MC_corrector :
 	#takes in the generated and reconstructed number of interactions
 	#returns the scalefactor
 	def getpileup_reweight(self,MCpileup) :
-		data_pu = self.data_pu_dist.GetBinContent(self.data_pu_dist.FindFixBin(1.0*MCpileup))
+		data_pu_nominal = self.data_pu_dist_nominal.GetBinContent(self.data_pu_dist_nominal.FindFixBin(1.0*MCpileup))
+		data_pu_up = self.data_pu_dist_up.GetBinContent(self.data_pu_dist_up.FindFixBin(1.0*MCpileup))
+		data_pu_down = self.data_pu_dist_down.GetBinContent(self.data_pu_dist_down.FindFixBin(1.0*MCpileup))
 		mc_pu 	= self.MC_pu_dist.GetBinContent(self.MC_pu_dist.FindFixBin(1.0*MCpileup))
-		return data_pu/mc_pu
+		sf = data_pu_nominal/mc_pu
+		sf_low = data_pu_down/mc_pu
+		sf_hi  = data_pu_up/mc_pu
+		return sf,sf_low,sf_hi
 		#return 1.0 #DEBUG RETURN
 	
 	#lepton ID efficiency scale factor
@@ -147,6 +166,7 @@ class MC_corrector :
 	#returns a three-tuple of (scalefactor, err_low, err_hi)
 	def gettrig_eff(self,pileup,meas_lep_pt,meas_lep_eta,lep_type) :
 		#muons
+		#corrections from https://twiki.cern.ch/twiki/bin/viewauth/CMS/MuonReferenceEffs
 		if lep_type == 0 :
 			vtxsubdict = self.muon_trig_dict['Mu40']['TightID']['VTX']
 			nextvtxkey = getNextKey(vtxsubdict.keys(),pileup) 

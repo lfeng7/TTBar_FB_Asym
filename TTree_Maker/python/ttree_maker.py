@@ -12,6 +12,9 @@ ERR_INVALID_HANDLE = 2 #	2 = invalid Handle for event
 #Beam energy
 SQRT_S=8000.0
 BEAM_ENERGY=SQRT_S/2.0
+#Trigger paths
+MU_TRIG_PATH = 'HLT_Mu40_eta2p1_v'
+EL_TRIG_PATH = 'HLT_Ele30_CaloIdVT_TrkIdT_PFNoPUJet100_PFNoPUJet25_v'
 
 ##########								   Imports  								##########
 
@@ -41,6 +44,8 @@ class treemaker :
 	#MC GenEvent info
 	genHandle = Handle('vector<reco::GenParticle>'); genLabel  = ('prunedGenParticles','')
 	vector_of_4vecs = 'vector<ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > >'
+	#Trigger Bit Information
+	trigHandle = Handle('edm::TriggerResults'); trigLabel = ('TriggerResults','','HLT')
 	#muons
 	muHandles = []; muLabels = []
 	muLabels.append(('jhuMuonPFlowLoose','muonLoose')); 	   muHandles.append(Handle(vector_of_4vecs))
@@ -107,6 +112,32 @@ class treemaker :
 					self.addTwice[0] = 1
 		if not keepEvent :
 			return self.ERR_CODE
+
+		#Trigger information
+		if self.is_data == 1 :
+			event.getByLabel(self.trigLabel,self.trigHandle)
+			if not self.trigHandle.isValid() :
+				self.ERR_CODE = ERR_INVALID_HANDLE
+				return self.ERR_CODE
+			trigResults = self.trigHandle.product()
+			trigNames = event.object().triggerNames(trigResults)
+			for i in range(trigResults.size()) :
+				s = str(trigNames.triggerName(i))
+				if s.startswith(MU_TRIG_PATH) :
+					if trigResults.accept(i) :
+						self.mu_trigger[0] = 1
+					else :
+						self.mu_trigger[0] = 0
+					if self.el_trigger[0] != 2 :
+						break
+				elif s.startswith(EL_TRIG_PATH) :
+					if trigResults.accept(i) :
+						self.el_trigger[0] = 1
+					else :
+						self.el_trigger[0] = 0
+					if self.mu_trigger[0] != 2 :
+						break
+
 		#Mother particle and MC truth top assignment
 		if self.is_data == 0 : #MC truth values only relevant for semileptonic qqbar->ttbar
 			q_vec 	 = findInitialQuark(self.MC_generator,GenParticles,genPartVars) #function in eventTypeHelper.py
@@ -257,7 +288,7 @@ class treemaker :
 				meas_lep_pt=electrons[0].vec.Pt(); meas_lep_eta=electrons[0].vec.Eta()
 			#8TeV numbers
 			self.sf_top_pT[0] = self.corrector.getToppT_reweight(MCt_vec,MCtbar_vec)
-			self.sf_pileup[0] = self.corrector.getpileup_reweight(MCpileup)
+			self.sf_pileup[0], self.sf_pileup_low[0], self.sf_pileup_hi[0] = self.corrector.getpileup_reweight(MCpileup)
 			( self.sf_lep_ID[0], self.sf_lep_ID_low[0], 
 				self.sf_lep_ID_hi[0] ) = self.corrector.getID_eff(pileup,meas_lep_pt,meas_lep_eta,self.lep_type)
 			( self.sf_trig_eff[0], self.sf_trig_eff_low[0], 
@@ -356,6 +387,8 @@ class treemaker :
 		self.sf_btag_eff_low = array('d',[1.0]); self.addBranch('sf_btag_eff_low', self.sf_btag_eff_low, 'D',1.0)
 		self.sf_btag_eff_hi  = array('d',[1.0]); self.addBranch('sf_btag_eff_hi',  self.sf_btag_eff_hi,  'D',1.0)
 		self.sf_pileup 		 = array('d',[1.0]); self.addBranch('sf_pileup', 	   self.sf_pileup, 		 'D',1.0)
+		self.sf_pileup_low 	 = array('d',[1.0]); self.addBranch('sf_pileup_low',   self.sf_pileup_low, 	 'D',1.0)
+		self.sf_pileup_hi 	 = array('d',[1.0]); self.addBranch('sf_pileup_hi',    self.sf_pileup_hi, 	 'D',1.0)
 		self.sf_lep_ID 		 = array('d',[1.0]); self.addBranch('sf_lep_ID', 	   self.sf_lep_ID, 		 'D',1.0)
 		self.sf_lep_ID_low 	 = array('d',[1.0]); self.addBranch('sf_lep_ID_low',   self.sf_lep_ID_low, 	 'D',1.0)
 		self.sf_lep_ID_hi 	 = array('d',[1.0]); self.addBranch('sf_lep_ID_hi',    self.sf_lep_ID_hi, 	 'D',1.0)
@@ -512,6 +545,9 @@ class treemaker :
 		#pileup
 		self.pileup = array('i',[0]); self.addBranch('pileup',self.pileup,'I',0)
 		self.MC_pileup = array('i',[0]); self.addBranch('MC_pileup',self.MC_pileup,'I',0)
+		#muon/electron channel trigger information
+		self.mu_trigger = array('i',[2]); self.addBranch('mu_trigger',self.mu_trigger,'i',2)
+		self.el_trigger = array('i',[2]); self.addBranch('el_trigger',self.el_trigger,'i',2)
 
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to zero to get ready for next event  ##########
