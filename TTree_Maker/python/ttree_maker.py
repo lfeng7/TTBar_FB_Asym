@@ -29,7 +29,7 @@ from jet import jet
 from eventTypeHelper import eventTypeCheck, findInitialQuark, findMCTops
 from lepHelper import muonCuts, electronCuts
 from metHelper import setupMET
-from jetHelper import selectJets
+from jetHelper import selectJets, adjustJEC
 from ttbarReconstructor import reconstruct
 from angleReconstructor import getObservables, getMCObservables
 from eventWeightCalculator import *
@@ -64,13 +64,27 @@ class treemaker :
 	metLabels.append(('jhuGen','metphi')); metHandles.append(Handle('double'))
 	#Jets
 	jetHandles = [];	jetLabels = []
-	jetLabels.append(('jhuCa8pp','PrunedCA8')); 			 jetHandles.append(Handle(vector_of_4vecs))
-	jetLabels.append(('jhuCa8','UnprunedCA8')); 			 jetHandles.append(Handle(vector_of_4vecs))
-	jetLabels.append(('jhuCa8','UnprunedCA8tau1')); 		 jetHandles.append(Handle('vector<double>'))
-	jetLabels.append(('jhuCa8','UnprunedCA8tau2')); 		 jetHandles.append(Handle('vector<double>'))
-	jetLabels.append(('jhuCa8','UnprunedCA8tau3')); 		 jetHandles.append(Handle('vector<double>'))
-	jetLabels.append(('jhuCa8pp','PrunedCA8csv')); 			 jetHandles.append(Handle('vector<double>'))
-	jetLabels.append(('jhuCa8pp','PrunedCA8PartonFlavour')); jetHandles.append(Handle('vector<int>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8CORR')); 			jetHandles.append(Handle(vector_of_4vecs))
+	jetLabels.append(('jhuCa8pp','PrunedCA8JECUncPos')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8JECUncNeg')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8JECcorr')); 			jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8JECptSmear')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8JECetaScale')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8JECphiScale')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8JECmatchedJetEta')); jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8CORR')); 			jetHandles.append(Handle(vector_of_4vecs))
+	jetLabels.append(('jhuCa8','UnprunedCA8JECUncPos')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8JECUncNeg')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8JECcorr')); 			jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8JECptSmear')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8JECetaScale')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8JECphiScale')); 		jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8JECmatchedJetEta')); jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8tau1')); 			jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8tau2')); 			jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8','UnprunedCA8tau3')); 			jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8csv')); 				jetHandles.append(Handle('vector<double>'))
+	jetLabels.append(('jhuCa8pp','PrunedCA8PartonFlavour')); 	jetHandles.append(Handle('vector<int>'))
 	#pythia8 nTuple GenParticles
 	genPartHandles = [];	genPartLabels = []
 	#genPartLabels.append(('genPart','genPartPt')); 	   genPartHandles.append(Handle('vector<float>'))
@@ -83,6 +97,10 @@ class treemaker :
 	#pileup
 	pileupLabel = ('jhuGen','npv'); 	  pileupHandle 	= Handle('unsigned int')
 	MCpileupLabel = ('jhuGen','npvTrue'); MCpileupHandle = Handle('unsigned int')
+	#PDF information for CT10, cteq66, and GJR08VFnloE
+	CT10Label = ('pdfWeights','CT10');  CT10Handle = Handle('vector<double>')
+	cteqLabel = ('pdfWeights','cteq66');  cteqHandle = Handle('vector<double>')
+	GJRLabel  = ('pdfWeights','GJR08VFnloE');  GJRHandle = Handle('vector<double>')
 
 	##################################  ANALYZE FUNCTION  ##################################
 	def analyze(self,event) :
@@ -114,29 +132,43 @@ class treemaker :
 			return self.ERR_CODE
 
 		#Trigger information
-		if self.is_data == 1 :
-			event.getByLabel(self.trigLabel,self.trigHandle)
-			if not self.trigHandle.isValid() :
-				self.ERR_CODE = ERR_INVALID_HANDLE
-				return self.ERR_CODE
-			trigResults = self.trigHandle.product()
-			trigNames = event.object().triggerNames(trigResults)
-			for i in range(trigResults.size()) :
-				s = str(trigNames.triggerName(i))
-				if s.startswith(MU_TRIG_PATH) :
-					if trigResults.accept(i) :
-						self.mu_trigger[0] = 1
-					else :
-						self.mu_trigger[0] = 0
-					if self.el_trigger[0] != 2 :
-						break
-				elif s.startswith(EL_TRIG_PATH) :
-					if trigResults.accept(i) :
-						self.el_trigger[0] = 1
-					else :
-						self.el_trigger[0] = 0
-					if self.mu_trigger[0] != 2 :
-						break
+		event.getByLabel(self.trigLabel,self.trigHandle)
+		if not self.trigHandle.isValid() :
+			self.ERR_CODE = ERR_INVALID_HANDLE
+			return self.ERR_CODE
+		trigResults = self.trigHandle.product()
+		trigNames = event.object().triggerNames(trigResults)
+		for i in range(trigResults.size()) :
+			s = str(trigNames.triggerName(i))
+			if s.startswith(MU_TRIG_PATH) :
+				if trigResults.accept(i) :
+					self.mu_trigger[0] = 1
+				else :
+					self.mu_trigger[0] = 0
+				if self.el_trigger[0] != 2 :
+					break
+			elif s.startswith(EL_TRIG_PATH) :
+				if trigResults.accept(i) :
+					self.el_trigger[0] = 1
+				else :
+					self.el_trigger[0] = 0
+				if self.mu_trigger[0] != 2 :
+					break
+
+		#PDF information
+		if self.is_data == 0 :
+			event.getByLabel(self.CT10Label,self.CT10Handle)
+			event.getByLabel(self.cteqLabel,self.cteqHandle)
+			event.getByLabel(self.GJRLabel,self.GJRHandle)
+			CT10ws = self.CT10Handle.product(); self.CT10_weights[0] = CT10ws[0]
+			cteqws = self.cteqHandle.product(); self.cteq_weights[0] = cteqws[0]
+			GJRws  = self.GJRHandle.product();  self.GJR_weights[0]  = GJRws[0]
+			for i in range(1,len(CT10ws)) :
+				self.CT10_weights[i] = CT10ws[i]/CT10ws[0]
+			for i in range(1,len(cteqws)) :
+				self.cteq_weights[i] = cteqws[i]/cteqws[0]
+			for i in range(1,len(GJRws)) :
+				self.GJR_weights[i] = GJRws[i]/CT10ws[0]
 
 		#Mother particle and MC truth top assignment
 		if self.is_data == 0 : #MC truth values only relevant for semileptonic qqbar->ttbar
@@ -169,11 +201,26 @@ class treemaker :
 				self.ERR_CODE = ERR_INVALID_HANDLE
 				return self.ERR_CODE
 			jetVars.append(self.jetHandles[i].product())
+		#adjust the jets as per the JEC
+		if self.JES != 'nominal' or self.JER != 'nominal' :
+			for i in range(len(jetVars[0])) :
+				newJet = adjustJEC(jetVars[0][i],jetVars[1][i],jetVars[2][i],jetVars[3][i],jetVars[4][i],jetVars[5][i],jetVars[6][i],jetVars[7][i],self.JES,self.JER)
+				jetVars[0][i].SetPt(newJet.Pt())
+				jetVars[0][i].SetEta(newJet.Eta())
+				jetVars[0][i].SetPhi(newJet.Phi())
+				jetVars[0][i].SetM(newJet.M())
+			for i in range(len(jetVars[8])) :
+				newJet = adjustJEC(jetVars[8][i],jetVars[9][i],jetVars[10][i],jetVars[11][i],jetVars[12][i],jetVars[13][i],jetVars[14][i],jetVars[15][i],self.JES,self.JER)
+				jetVars[8][i].SetPt(newJet.Pt())
+				jetVars[8][i].SetEta(newJet.Eta())
+				jetVars[8][i].SetPhi(newJet.Phi())
+				jetVars[8][i].SetM(newJet.M())
+		#build the list of analysis jets
 		for i in range(len(jetVars[0])) :
 			flavor = -1
-			if len(jetVars)>6 :
-				flavor = jetVars[6][i]
-			newJet = jet(jetVars[0][i],jetVars[1],jetVars[2],jetVars[3],jetVars[4],jetVars[5][i],flavor)
+			if len(jetVars)>20 :
+				flavor = jetVars[20][i]
+			newJet = jet(jetVars[0][i],jetVars[8],jetVars[16],jetVars[17],jetVars[18],jetVars[19][i],flavor)
 			jets.append(newJet); alljets.append(newJet)
 		#separate the jets into the top and b candidates
 		jets = selectJets(jets)
@@ -280,7 +327,7 @@ class treemaker :
 					self.wqs1[0],self.wqs2[0],self.wqa0[0],self.wqa1[0],self.wqa2[0],
 					self.wg1_opp[0],self.wg2_opp[0],self.wg3_opp[0],self.wg4_opp[0],
 					self.wqs1_opp[0],self.wqs2_opp[0],
-					self.wqa0_opp[0],self.wqa1_opp[0],self.wqa2_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec) 
+					self.wqa0_opp[0],self.wqa1_opp[0],self.wqa2_opp[0] ) = getMCObservables(q_vec,qbar_vec,MCt_vec,MCtbar_vec,self.event_type) 
 			#scale factor and reweighting calculations
 			if self.lep_type==0 :
 				meas_lep_pt=muons[0].vec.Pt(); meas_lep_eta=muons[0].vec.Eta()
@@ -296,10 +343,10 @@ class treemaker :
 		self.__closeout__() #yay! A successful event!
 
 	##################################  #__init__ function  ##################################
-	def __init__(self,fileName,isData,generator,eventType,reweight,onGrid) :
+	def __init__(self,fileName,isData,generator,eventType,reweight,jes,jer,onGrid) :
 		self.ERR_CODE = ERR_NONE
 		#handle input options
-		self.__handleInput__(fileName,isData,generator,eventType,reweight)
+		self.__handleInput__(fileName,isData,generator,eventType,reweight,jes,jer)
 		#book TTree
 		self.__book__()
 		#Set Monte Carlo reweighter
@@ -307,7 +354,7 @@ class treemaker :
 	
 	##################################   #__handleInput__   ##################################   
 	#############################   __init__ helper function   ###############################
-	def __handleInput__(self,fileName,isData,generator,eventType,reweight) :
+	def __handleInput__(self,fileName,isData,generator,eventType,reweight,jes,jer) :
 		self.ERR_CODE = ERR_NONE
 		#output file name
 		self.file_name = fileName
@@ -351,6 +398,9 @@ class treemaker :
 			self.ERR_CODE = ERR_INVALID_INIT
 		#event scaling?
 		self.w = reweight
+		#JEC systematics?
+		self.JES = jes
+		self.JER = jer
 
 	##################################   __book__ function  ##################################
 	#############################     (init helper function)   ###############################
@@ -395,6 +445,9 @@ class treemaker :
 		self.sf_trig_eff 	 = array('d',[1.0]); self.addBranch('sf_trig_eff', 	   self.sf_trig_eff, 	 'D',1.0)
 		self.sf_trig_eff_low = array('d',[1.0]); self.addBranch('sf_trig_eff_low', self.sf_trig_eff_low, 'D',1.0)
 		self.sf_trig_eff_hi  = array('d',[1.0]); self.addBranch('sf_trig_eff_hi',  self.sf_trig_eff_hi,  'D',1.0)
+		self.CT10_weights	 = array('d',53*[1.0]); self.addBranch('CT10_weights[53]', self.CT10_weights, 'D',1.0)
+		self.cteq_weights	 = array('d',45*[1.0]); self.addBranch('cteq_weights[45]', self.cteq_weights, 'D',1.0)
+		self.GJR_weights	 = array('d',27*[1.0]); self.addBranch('GJR_weights[27]',  self.GJR_weights,  'D',1.0)
 		#error codes
 		self.error_code = array('I',[self.ERR_CODE]); self.addBranch('error_code',self.error_code,'i',self.ERR_CODE)
 		#lepton charge
@@ -546,8 +599,8 @@ class treemaker :
 		self.pileup = array('i',[0]); self.addBranch('pileup',self.pileup,'I',0)
 		self.MC_pileup = array('i',[0]); self.addBranch('MC_pileup',self.MC_pileup,'I',0)
 		#muon/electron channel trigger information
-		self.mu_trigger = array('i',[2]); self.addBranch('mu_trigger',self.mu_trigger,'i',2)
-		self.el_trigger = array('i',[2]); self.addBranch('el_trigger',self.el_trigger,'i',2)
+		self.mu_trigger = array('I',[2]); self.addBranch('mu_trigger',self.mu_trigger,'i',2)
+		self.el_trigger = array('I',[2]); self.addBranch('el_trigger',self.el_trigger,'i',2)
 
 	##################################   reset function   ##################################
 	#########  sets all relevant values back to zero to get ready for next event  ##########

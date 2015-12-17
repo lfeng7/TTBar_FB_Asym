@@ -38,6 +38,10 @@ parser.add_option('--cross_section', type='float',  action='store', default=1.0,
 	help='Cross section of process')
 parser.add_option('--n_events', 	 type='float',  action='store', default=1.0,  	dest='n_events', 	    
 	help='Number of events generated')
+parser.add_option('--JES', type='string', action='store', default='nominal',  dest='JES',  
+	help='JEC systematics: shift JES up (0.03) or down (-0.03) (default is nominal, 0.00)')
+parser.add_option('--JER', type='string', action='store', default='nominal',  dest='JER',  
+	help='JEC systematics: shift JER up (0.20) or down (0.00) (default is nominal, 0.10)')
 (options, args) = parser.parse_args()
 
 ##########							Set Up Event Loop								##########
@@ -65,12 +69,17 @@ events = Events(files)
 ntotalevents = events.size()
 #Set filename for analyzer from sample name
 filename = options.name
+if options.JES.lower() != 'nominal' :
+	filename+='_JES_'+options.JES.lower()
+if options.JER.lower() != 'nominal' :
+	filename+='_JER_'+options.JER.lower()
 if options.n_jobs>1 :
 	filename+='_'+str(options.i_job)
 filename+='_tree.root'
 #Initialize analyzer
 analyzer = treemaker(filename, options.data, options.generator, options.event_type,
-						options.cross_section/options.n_events, options.on_grid)
+						options.cross_section/options.n_events, options.JES.lower(), 
+						options.JER.lower(), options.on_grid)
 
 #Counters
 real_count = 0

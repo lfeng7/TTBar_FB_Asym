@@ -9,6 +9,13 @@ from math import *
 #constants
 TOP_MASS = 172.5
 CSVL_WORKING_POINT = 0.244
+#JEC values
+JES_NOM  = 0.00
+JES_UP	 = 0.03
+JES_DOWN = -0.03
+JER_NOM  = 0.10
+JER_UP   = 0.20
+JER_DOWN = 0.00
 #cut values
 MAX_LEPB_MASS = 50. #GeV
 MIN_HAD_TOP_MASS = 100. #GeV
@@ -36,6 +43,67 @@ def selectJets(jetlist) :
 		newjets[0] = top_cands[0]
 		newjets[1] = b_cands[0]
 	return newjets
+
+#adjustJEC corrects the jets for scaling the JES or JER up or down
+#this is a fix so that I don't need to rerun all the nTuples five times
+def adjustJEC(jet,jecuncpos,jecuncneg,corr,ptsmear,etascale,phiscale,matchedJetEta,jes,jer) :
+	returnJet = ROOT.TLorentzVector(jet.X(),jet.Y(),jet.Z(),jet.T())
+	newCorr = corr; newPtSmear = ptsmear; newEtaScale = etascale; newPhiScale = phiscale
+	if jes == 'up' :
+		newCorr *= (1+sqrt(jecuncpos*jecuncpos+JES_UP*JES_UP))
+	elif jes == 'down' :
+		newCorr *= (1-sqrt(jecuncneg*jecuncneg+JES_DOWN*JES_DOWN))
+	elif jer == 'up' :
+		if etascale != 0. :
+			newEtaScale = max(0.0,1.+JER_UP*(etascale-1.))
+		if phiscale != 0. :
+			newPhiScale = max(0.0,1.+JER_UP*(phiscale-1.))
+		if ptsmear != 0. :
+			abseta = abs(matchedJetEta)
+			if abseta <= 0.5 :
+				newPtSmear = max(0.0,1.+(0.105/0.079)*(ptsmear-1.))
+			elif abseta <= 1.1 :
+				newPtSmear = max(0.0,1.+(0.127/0.099)*(ptsmear-1.))
+			elif abseta <= 1.7 :
+				newPtSmear = max(0.0,1.+(0.150/0.121)*(ptsmear-1.))
+			elif abseta <= 2.3 :
+				newPtSmear = max(0.0,1.+(0.254/0.208)*(ptsmear-1.))
+			elif abseta <= 2.8 :
+				newPtSmear = max(0.0,1.+(0.316/0.254)*(ptsmear-1.))
+			elif abseta <= 3.2 :
+				newPtSmear = max(0.0,1.+(0.458/0.395)*(ptsmear-1.))
+			elif abseta < 5.0 :
+				newPtSmear = max(0.0,1.+(0.247/0.056)*(ptsmear-1.))
+	elif jer == 'down' :
+		if etascale != 0. :
+			newEtaScale = max(0.0,1.+JER_DOWN*(etascale-1.))
+		if phiscale != 0. :
+			newPhiScale = max(0.0,1.+JER_DOWN*(phiscale-1.))
+		if ptsmear != 0. :
+			abseta = abs(matchedJetEta)
+			if abseta <= 0.5 :
+				newPtSmear = max(0.0,1.+(0.053/0.079)*(ptsmear-1.))
+			elif abseta <= 1.1 :
+				newPtSmear = max(0.0,1.+(0.071/0.099)*(ptsmear-1.))
+			elif abseta <= 1.7 :
+				newPtSmear = max(0.0,1.+(0.092/0.121)*(ptsmear-1.))
+			elif abseta <= 2.3 :
+				newPtSmear = max(0.0,1.+(0.162/0.208)*(ptsmear-1.))
+			elif abseta <= 2.8 :
+				newPtSmear = max(0.0,1.+(0.192/0.254)*(ptsmear-1.))
+			elif abseta <= 3.2 :
+				newPtSmear = max(0.0,1.+(0.332/0.395)*(ptsmear-1.))
+			elif abseta < 5.0 :
+				newPtSmear = max(0.0,1.+(-0.135/0.056)*(ptsmear-1.))
+	if phiscale != 0. :
+		returnJet.SetPhi(returnJet.Phi()/phiscale)
+	if etascale != 0. :
+		returnJet.SetPtEtaPhiM(returnJet.Pt(),returnJet.Eta()/etascale,returnJet.Phi(),returnJet.M())
+	if corr != 0. and ptsmear != 0. :
+		returnJet*=(newCorr*newPtSmear)/(corr*ptsmear)
+	returnJet.SetPtEtaPhiM(returnJet.Pt(),returnJet.Eta()*newEtaScale,returnJet.Phi(),returnJet.M())
+	returnJet.SetPhi(returnJet.Phi()*newPhiScale)
+	return returnJet
 
 #matchUnprunedVec matches a pruned jet to an unpruned jet and returns the index of said unpruned jet in the list
 def matchUnprunedVec(pruned_jet_vec,unpruned_fourvecs) :

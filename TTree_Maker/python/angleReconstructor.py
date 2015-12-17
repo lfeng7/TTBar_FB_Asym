@@ -39,11 +39,7 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 	Bx = -1*Q.Px()/Q.E(); By = -1*Q.Py()/Q.E(); Bz = -1*Q.Pz()/Q.E()
 	#calculating beta for the boost
 	M2_1 = Top.Mag2(); M2_2 = ATop.Mag2()
-	num  = ( 1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + 
-		(M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass) )
-	denom_1 = (1. + (M2_1-M2_2)/(ttbar_mass*ttbar_mass))*(1. + (M2_1-M2_2)/(ttbar_mass*ttbar_mass))
-	denom_2 = (1. + (M2_2-M2_1)/(ttbar_mass*ttbar_mass))*(1. + (M2_2-M2_1)/(ttbar_mass*ttbar_mass))
-	beta = sqrt(sqrt((num*num)/(denom_1*denom_1) * (num*num)/(denom_2*denom_2)))
+	beta = sqrt(1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + (M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass))
 	#Doing the boost
 	R = R.Boost(Bx,By,Bz)
 	Top = R*Top; ATop = R*ATop
@@ -73,7 +69,7 @@ def getObservables(lept_vec,hadt_vec,lepton_charge) :
 #	1-3) MC truth costheta, feynman x, and ttbar mass
 #	4-8) antisymmetric, symmetric/antisymmetric xi, and symmetric/antisymmetic delta reweighting factors
 #	9-13) the same reweighting factors calculated with the opposite sign angle
-def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec) :
+def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec,eventtype) :
 	#initialize the rotation to the identity
 	R = ROOT.TLorentzRotation()
 	#Make the 4-vector of the ttbar pair, get its mass, calculate x_F
@@ -84,11 +80,7 @@ def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec) :
 	Bx = -1*Q.Px()/Q.E(); By = -1*Q.Py()/Q.E(); Bz = -1*Q.Pz()/Q.E()
 	#calculating beta for the boost
 	M2_1 = t_vec.Mag2(); M2_2 = tbar_vec.Mag2()
-	num  = ( 1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + 
-		(M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass) )
-	denom_1 = (1. + (M2_1-M2_2)/(ttbar_mass*ttbar_mass))*(1. + (M2_1-M2_2)/(ttbar_mass*ttbar_mass))
-	denom_2 = (1. + (M2_2-M2_1)/(ttbar_mass*ttbar_mass))*(1. + (M2_2-M2_1)/(ttbar_mass*ttbar_mass))
-	beta = sqrt(sqrt((num*num)/(denom_1*denom_1) * (num*num)/(denom_2*denom_2)))
+	beta = sqrt(1. - 2.*(M2_1+M2_2)/(ttbar_mass*ttbar_mass) + (M2_1-M2_2)*(M2_1-M2_2)/(ttbar_mass*ttbar_mass*ttbar_mass*ttbar_mass))
 	#Doing the boost
 	R = R.Boost(Bx,By,Bz)
 	t_vec = R*t_vec; tbar_vec = R*tbar_vec
@@ -98,7 +90,10 @@ def getMCObservables(q_vec,qbar_vec,t_vec,tbar_vec) :
 	#Define normalized three-vectors for the top and protons in the ttbar rest frame
 	top = t_vec.Vect(); q = q_vec.Vect(); qbar = qbar_vec.Vect()
 	#Normalize vectors (and flip the qbar direction)
-	top = top*(1.0/top.Mag()); q = q*(1.0/q.Mag()); qbar = -1.0*qbar*(1.0/qbar.Mag())
+	if eventtype != 0 and q.Mag()>qbar.Mag() :
+		top = top*(1.0/top.Mag()); q = -1.0*q*(1.0/q.Mag()); qbar = qbar*(1.0/qbar.Mag())
+	else :
+		top = top*(1.0/top.Mag()); q = q*(1.0/q.Mag()); qbar = -1.0*qbar*(1.0/qbar.Mag())
 	#find the unit bisectors
 	bisector = (q+qbar)*(1.0/(q+qbar).Mag())
 	#find the CS angle

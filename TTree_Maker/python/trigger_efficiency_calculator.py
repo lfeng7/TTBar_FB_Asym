@@ -1,10 +1,10 @@
 #Trigger efficiency calculator originally designed to measure efficiency 
 #of the HLT_Ele30_CaloIdVT_TrkIdT_PFNoPUJet100_PFNoPUJet25_v* trigger path
+#using SingleMu data events
 
 ##########								   Imports  								##########
 
 from ROOT import *
-from DataFormats.FWLite import Events, Handle
 from optparse import OptionParser
 from array import array
 from math import *
@@ -12,15 +12,10 @@ import sys
 
 #Global variables
 ##Histogram bins
-#eta_bins 	 = [-1.0*math.pi,-2.1,-1.6,-1.2,-0.9,-0.6,-0.3,-0.2,0.2,0.3,0.6,0.9,1.2,1.6,2.1,math.pi]
-#el_pt_bins 	 = [0.,30.,35.,40.,45.,50.,55.,60.,65.,70.,75.,80.,90.,100.,125.,150.,175.,200.,250.,300.,400.,550.]
-#jet1_pt_bins = [50.,100.,125.,150.,175.,200.,250.,300.,350.,400.,450.,500.,550.,600.,700.,800.,1200.]
-#jet2_pt_bins = [0.,25.,50.,75.,100.,125.,150.,175.,200.,250.,275.,300.,350.,400.,500.,700.]
-#Trigger paths
-REF_TRIG_PATH = 'HLT_Ele27_WP80_v'
-#REF_TRIG_PATH = 'HLT_Ele8_CaloIdT_TrkIdVL_v'
-#REF_TRIG_PATH = 'HLT_Ele8_CaloIdT_TrkIdVL_Jet30_v3'
-TRIG_PATH = 'HLT_Ele30_CaloIdVT_TrkIdT_PFNoPUJet100_PFNoPUJet25_v'
+#eta_bins 	  = [-1.*math.pi,math.pi]
+#el_pt_bins   = [20.,130.,135.,140.,145.,150.,155.,165.,175.,185.,200.,220.,245.,275.,350.,500.]
+#jet1_pt_bins = [100.,700.,1100.]
+#jet2_pt_bins = [20.,350.,650.]
 
 ##########								Parser Options								##########
 
@@ -40,19 +35,8 @@ parser.add_option('--on_grid', type='string',    action='store', default='no',	 
 	help='Running on the grid?')
 (options, args) = parser.parse_args()
 
-##################################  Handles and Labels  ##################################
 
-vector_of_4vecs = 'vector<ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> > >'
-#Trigger Bit Information
-trigHandle = Handle('edm::TriggerResults'); 	trigLabel = ('TriggerResults','','HLT')
-#muons
-muLabel = ('jhuMuonPFlowLoose','muonLoose'); 	muHandle = Handle(vector_of_4vecs)
-#electrons
-elLabel = ('jhuElePFlowLoose','electronLoose'); elHandle = Handle(vector_of_4vecs)
-#Jets
-jetLabel = ('jhuAk5','AK5'); 				jetHandle = Handle(vector_of_4vecs)
-
-##########							Set Up Event Loop								##########
+##########									Set up 									##########
 
 print 'Opening files . . . '
 #Build path to input file
@@ -65,16 +49,43 @@ if not '.' in options.input :
 print 'Using input file '+input_files_list+''
 #open input file in read only mode 
 input_files_list = open(input_files_list,'r')
-files = []
-print 'Getting these files: '
-#Read files in line by line
+#Set up the chain and add files
+chain = TChain('tree')
+filenamelist = []
 for input_file in input_files_list :
-	print '	'+input_file.rstrip()+''
-	files.append(input_file.rstrip())
-events = Events(files)
-ntotalevents = events.size()
+	filenamelist.append(input_file.rstrip())
+print 'Chaining files: '
+for filename in filenamelist :
+	print filename
+	chain.Add(filename)
+#Get relevant branches
+muon1_pt 	  = array('d',[-1.0]);  chain.SetBranchAddress('muon1_pt',muon1_pt)
+muon1_eta 	  = array('d',[100.0]); chain.SetBranchAddress('muon1_eta',muon1_eta)
+muon1_isLoose = array('I',[2]);  	chain.SetBranchAddress('muon1_isLoose',muon1_isLoose)
+muon1_relPt   = array('d',[-1.0]);  chain.SetBranchAddress('muon1_relPt',muon1_relPt)
+muon1_dR 	  = array('d',[-1.0]);  chain.SetBranchAddress('muon1_dR',muon1_dR)
+muon1_Q 	  = array('i',[0]); 	chain.SetBranchAddress('muon1_Q',muon1_Q)
+ele1_pt 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele1_pt',ele1_pt)
+ele1_eta 	  = array('d',[100.0]); chain.SetBranchAddress('ele1_eta',ele1_eta)
+ele1_isLoose  = array('I',[2]);  	chain.SetBranchAddress('ele1_isLoose',ele1_isLoose)
+ele1_relPt 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele1_relPt',ele1_relPt)
+ele1_dR 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele1_dR',ele1_dR)
+ele1_Q 		  = array('i',[0]); 	chain.SetBranchAddress('ele1_Q',ele1_Q)
+muon2_pt 	  = array('d',[-1.0]);  chain.SetBranchAddress('muon2_pt',muon2_pt)
+muon2_eta 	  = array('d',[100.0]); chain.SetBranchAddress('muon2_eta',muon2_eta)
+muon2_isLoose = array('I',[2]);  	chain.SetBranchAddress('muon2_isLoose',muon2_isLoose)
+muon2_relPt   = array('d',[-1.0]);  chain.SetBranchAddress('muon2_relPt',muon2_relPt)
+muon2_dR 	  = array('d',[-1.0]);  chain.SetBranchAddress('muon2_dR',muon2_dR)
+muon2_Q 	  = array('i',[0]); 	chain.SetBranchAddress('muon2_Q',muon2_Q)
+ele2_pt 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele2_pt',ele2_pt)
+ele2_eta 	  = array('d',[100.0]); chain.SetBranchAddress('ele2_eta',ele2_eta)
+ele2_isLoose  = array('I',[2]);  	chain.SetBranchAddress('ele2_isLoose',ele2_isLoose)
+ele2_relPt 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele2_relPt',ele2_relPt)
+ele2_dR 	  = array('d',[-1.0]);  chain.SetBranchAddress('ele2_dR',ele2_dR)
+ele2_Q 		  = array('i',[0]); 	chain.SetBranchAddress('ele2_Q',ele2_Q)
+el_trigger 	  = array('I',[2]); 	chain.SetBranchAddress('el_trigger',el_trigger)
 #Set up output file
-filename = TRIG_PATH+'_efficiency'
+filename = 'electron_trigger_efficiency'
 if options.n_jobs != 1 :
 	filename+='_'+str(options.i_job)
 filename+='.root'
@@ -83,18 +94,13 @@ outfile  = TFile(filename,'recreate')
 tree 	  = TTree('tree','tree')
 el_pt 	  = array('d',[-1.0]); tree.Branch('el_pt',el_pt,'el_pt/D')
 el_eta 	  = array('d',[100.]); tree.Branch('el_eta',el_eta,'el_eta/D')
-jet1_pt   = array('d',[-1.0]); tree.Branch('jet1_pt',jet1_pt,'jet1_pt/D')
-jet2_pt   = array('d',[-1.0]); tree.Branch('jet2_pt',jet2_pt,'jet2_pt/D')
 pass_trig = array('I',[2]); tree.Branch('pass_trig',pass_trig,'pass_trig/i')
-pass_ref  = array('I',[2]); tree.Branch('pass_ref',pass_ref,'pass_ref/i')
 #Counters
 realcount = 0
 count = 0
-
 ##########								Main Event Loop								##########
-
-print 'Files opened, starting event loop'
-for event in events:
+nEntries = chain.GetEntries()
+for entry in range(nEntries) :
 	#increment the 'real' counter
 	realcount+=1
 	#check the grid split
@@ -107,80 +113,29 @@ for event in events:
 		break
 	#print progress
 	if count % options.print_every == 0 or count == 1:
-		print 'Count at '+str(count)+' out of '+str(ntotalevents/options.n_jobs)+', (%.4f%% complete)'%(float(count) / float(ntotalevents/options.n_jobs) * 100.0)
-
-	#Read Trigger information
-	event.getByLabel(trigLabel,trigHandle)
-	if not trigHandle.isValid() :
-		print 'trigger handle is invalid, fool, crashing now, sorry : ('
-		break
-	trigResults = trigHandle.product()
-	trigNames = event.object().triggerNames(trigResults)
-	pass_trig[0] = 2
-	pass_ref[0] = 2
-	for i in range(trigResults.size()) :
-		s = str(trigNames.triggerName(i))
-		if s.startswith(TRIG_PATH) :
-			if trigResults.accept(i) :
-				pass_trig[0] = 1
-			else :
-				pass_trig[0] = 0
-			if pass_ref[0] != 2 :
-				break
-		elif s.startswith(REF_TRIG_PATH) :
-			if trigResults.accept(i) :
-				pass_ref[0] = 1
-			else :
-				pass_ref[0] = 0
-			if pass_trig[0] != 2 :
-				break
-	#make sure it passed at least one trigger
-	if pass_trig[0] != 1 and pass_ref[0] != 1 :
+		print 'Count at '+str(count)+' out of '+str(nEntries/options.n_jobs)+', (%.4f%% complete)'%(float(count) / float(nEntries/options.n_jobs) * 100.0)
+	chain.GetEntry(entry)
+	cuts = []
+	#muon1 selection
+	cuts.append(muon1_pt[0]>40. and abs(muon1_eta[0])<2.4)
+	cuts.append(muon1_isLoose[0]==1)
+	cuts.append(muon1_relPt[0]>25. or muon1_dR[0]>0.5)
+	#muon2 rejection
+	cuts.append(muon2_pt[0]<40. or abs(muon2_eta[0])>2.4 or muon2_isLoose[0]!=1 or (muon2_relPt[0]<25. and muon2_dR[0]<0.5))
+	#electron1 selection
+	cuts.append(ele1_pt[0]>40. and abs(ele1_eta[0])<2.4)
+	cuts.append(ele1_isLoose[0]==1)
+	cuts.append(ele1_relPt[0]>25. or ele1_dR[0]>0.5)
+	#electron2 rejection
+	cuts.append(ele2_pt[0]<25. or abs(ele2_eta[0])>2.4 or ele2_isLoose[0]!=1 or (ele2_relPt[0]<25. and ele2_dR[0]<0.5))
+	#Require electron and muon to have opposite charges
+	cuts.append(ele1_Q[0]!=muon1_Q[0])
+	#check all cuts
+	if cuts.count(False) > 0 :
 		continue
-
-	#get all the info from the event
-	#jets
-	event.getByLabel(jetLabel,jetHandle)
-	if not jetHandle.isValid() :
-		print 'jet handle is invalid, crashing : ('
-		break
-	jetVars = jetHandle.product()
-	jets = []
-	for jetVar in jetVars :
-		newJet = TLorentzVector(); newJet.SetPtEtaPhiM(jetVar.Pt(),jetVar.Eta(),jetVar.Phi(),jetVar.M())
-		jets.append(newJet)
-	jets.sort(key = lambda x: x.Pt(),reverse=True)
-	#muons
-	event.getByLabel(muLabel,muHandle)
-	if not muHandle.isValid() :
-		print 'muon handle is invalid, crashing : ('
-		break
-	muonVars = muHandle.product()
-	muons = []
-	for muonVar in muonVars :
-		newMuon = TLorentzVector(); newMuon.SetPtEtaPhiM(muonVar.Pt(),muonVar.Eta(),muonVar.Phi(),muonVar.M())
-		muons.append(newMuon)
-	muons.sort(key = lambda x: x.Pt(),reverse=True)
-	#electrons
-	event.getByLabel(elLabel,elHandle)
-	if not elHandle.isValid() :
-		print 'electron handle is invalid, crashing : ('
-		break
-	elVars = elHandle.product()
-	els = []
-	for elVar in elVars :
-		newEl = TLorentzVector(); newEl.SetPtEtaPhiM(elVar.Pt(),elVar.Eta(),elVar.Phi(),elVar.M())
-		els.append(newEl)
-	els.sort(key = lambda x: x.Pt(),reverse=True)
-
-	#write into the TTree
-	if len(els) > 0 :
-		el_pt[0]   = els[0].Pt()
-		el_eta[0]  = els[0].Eta()
-	if len(jets) > 0 :
-		jet1_pt[0] = jets[0].Pt()
-	if len(jets) > 1 :
-		jet2_pt[0] = jets[1].Pt()
+	el_pt[0] = ele1_pt[0]
+	el_eta[0] = ele1_eta[0]
+	pass_trig[0] = el_trigger[0]
 	tree.Fill()
 
 #Write the tree, close the file
