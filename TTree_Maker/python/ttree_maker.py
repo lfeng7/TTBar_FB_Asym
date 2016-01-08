@@ -57,7 +57,7 @@ class treemaker :
 	elLabels.append(('jhuElePFlowLoose','electronLoose')); 		  elHandles.append(Handle(vector_of_4vecs))
 	elLabels.append(('jhuElePFlowLoose','electronLoosecharge'));  elHandles.append(Handle('vector<int>'))
 	elLabels.append(('jhuElePFlowLoose','electronLooseistight')); elHandles.append(Handle('vector<unsigned int>'))
-	elLabels.append(('jhuElePFlowLoose','electronLooseisloose')); elHandles.append(Handle('vector<unsigned int>')) 
+	elLabels.append(('jhuElePFlowLoose','electronLooseispseudoloose')); elHandles.append(Handle('vector<unsigned int>')) 
 	#MET
 	metHandles = []; metLabels = []
 	metLabels.append(('jhuGen','metpt'));  metHandles.append(Handle('double'))

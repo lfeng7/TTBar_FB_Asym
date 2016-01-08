@@ -120,22 +120,24 @@ class distribution :
 			conv_func = TF1('conv_func','[0]*x+[1]',100.,500.)
 			#Fit the graph
 			gr.Fit('conv_func')
+			#get the fitter
+			fitter = TVirtualFitter.GetFitter()
 			#Build the nominal, slope up/down, and intercept up/down functions
 			nom_func = TF1('nom_func','[0]*x+[1]',100.,500.) 
 			nom_func.SetParameter(0,conv_func.GetParameter(0)) 
 			nom_func.SetParameter(1,conv_func.GetParameter(1))
-			slope_up_func = TF1('slope_up_func','[0]*x+[1]',100.,500.) 
-			slope_up_func.SetParameter(0,conv_func.GetParameter(0)) 
-			slope_up_func.SetParameter(1,conv_func.GetParameter(1)+conv_func.GetParError(1))
-			slope_down_func = TF1('slope_down_func','[0]*x+[1]',100.,500.) 
-			slope_down_func.SetParameter(0,conv_func.GetParameter(0)) 
-			slope_down_func.SetParameter(1,conv_func.GetParameter(1)-conv_func.GetParError(1))
-			int_up_func = TF1('int_up_func','[0]*x+[1]',100.,500.) 
-			int_up_func.SetParameter(0,conv_func.GetParameter(0)+conv_func.GetParError(0)) 
-			int_up_func.SetParameter(1,conv_func.GetParameter(1))
-			int_down_func = TF1('int_down_func','[0]*x+[1]',100.,500.) 
-			int_down_func.SetParameter(0,conv_func.GetParameter(0)-conv_func.GetParError(0)) 
-			int_down_func.SetParameter(1,conv_func.GetParameter(1))
+			fit_up_func = TF1('fit_up_func','[0]*x+[1]+sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',100.,500.) 
+			fit_up_func.SetParameter(0,conv_func.GetParameter(0)) 
+			fit_up_func.SetParameter(1,conv_func.GetParameter(1))
+			fit_up_func.SetParameter(2,conv_func.GetParError(1))
+			fit_up_func.SetParameter(3,fitter.GetCovarianceMatrixElement(0,1))
+			fit_up_func.SetParameter(4,conv_func.GetParError(0))
+			fit_down_func = TF1('fit_down_func','[0]*x+[1]-sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',100.,500.) 
+			fit_down_func.SetParameter(0,conv_func.GetParameter(0)) 
+			fit_down_func.SetParameter(1,conv_func.GetParameter(1))
+			fit_down_func.SetParameter(2,conv_func.GetParError(1))
+			fit_down_func.SetParameter(3,fitter.GetCovarianceMatrixElement(0,1))
+			fit_down_func.SetParameter(4,conv_func.GetParError(0))
 			#Build the template from the converted antitagged tree
 			for branch in self.all_branches :
 				at_tree.SetBranchAddress(branch[1],branch[2])
@@ -146,21 +148,15 @@ class distribution :
 				#apply the conversion function
 				conv_value = 1.0
 				plot_func = conv_func
-				if template_name.find('__slope_')==-1 and template_name.find('__int_')==-1 :
+				if template_name.find('__fit_')==-1 :
 					conv_value = nom_func.Eval(self.hadt_M[0])
 					plot_func = nom_func
-				elif template_name.find('__slope__up')!=-1 :
-					conv_value = slope_up_func.Eval(self.hadt_M[0])
-					plot_func = slope_up_func
-				elif template_name.find('__slope__down')!=-1 :
-					conv_value = slope_down_func.Eval(self.hadt_M[0])
-					plot_func = slope_down_func
-				elif template_name.find('__int__up')!=-1 :
-					conv_value = int_up_func.Eval(self.hadt_M[0])
-					plot_func = int_up_func
-				elif template_name.find('__int__down')!=-1 :
-					conv_value = int_down_func.Eval(self.hadt_M[0])
-					plot_func = int_down_func
+				elif template_name.find('__fit__up')!=-1 :
+					conv_value = fit_up_func.Eval(self.hadt_M[0])
+					plot_func = fit_up_func
+				elif template_name.find('__fit__down')!=-1 :
+					conv_value = fit_down_func.Eval(self.hadt_M[0])
+					plot_func = fit_down_func
 				eventweight*=conv_value; eventweight_opp*=conv_value
 				if self.addTwice[0]==1 :
 					eventweight*=0.5; eventweight_opp*=0.5
@@ -321,10 +317,8 @@ class distribution :
 				self.all_templates.append(template(self.name+'__par_'+self.fit_parameter_names[i]+'__down',self.formatted_name+', '+self.fit_parameter_names[i]+' down'))
 			#NTMJ fit parameters up/down
 			if self.name.find('ntmj')!=-1 :
-				self.all_templates.append(template(self.name+'__slope__up',self.formatted_name+', NTMJ fit slope up'))
-				self.all_templates.append(template(self.name+'__slope__down',self.formatted_name+', NTMJ fit slope down'))
-				self.all_templates.append(template(self.name+'__int__up',self.formatted_name+', NTMJ fit intercept up'))
-				self.all_templates.append(template(self.name+'__int__down',self.formatted_name+', NTMJ fit intercept down'))
+				self.all_templates.append(template(self.name+'__fit__up',self.formatted_name+', NTMJ fit error up'))
+				self.all_templates.append(template(self.name+'__fit__down',self.formatted_name+', NTMJ fit error down'))
 
 	def __get_event_weights__(self,templatename) :
 		#Lumi/cross section reweight
