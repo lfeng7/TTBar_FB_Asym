@@ -17,6 +17,13 @@ def newPlot(name,draw,cuts,nbins,low,high,title,options,weights,data) :
 		histograms[i].append(TH1D(histonames[len(histonames)-1]+'_'+str(i),title+'_'+str(i),nbins,low,high))
 	datahistograms.append(TH1D(histonames[len(histonames)-1]+'_data',title,nbins,low,high))
 	histostacks.append(THStack(histonames[len(histonames)-1]+'_stack',title))
+	resid_title = ';'
+	for i in range(1,len(title.split(';'))) :
+		resid_title+=title.split(';')[i]
+		if i<len(title.split(';'))-1 :
+			resid_title+=';'
+	resids.append(TH1D(histonames[len(histonames)-1]+'_resid',resid_title,nbins,low,high))
+	resid_lines.append(TLine(low,1.0,high,1.0))
 	optionstrings.append(options)
 	weightstrings.append(weights)
 	includedata.append(data)
@@ -46,15 +53,15 @@ filenames.append('Tbar_s');  fillcolors.append(kMagenta)
 filenames.append('Tbar_t');  fillcolors.append(kMagenta)
 filenames.append('Tbar_tW'); fillcolors.append(kMagenta)
 #DYnJets
-filenames.append('DY1Jets'); fillcolors.append(kAzure-2)
-filenames.append('DY2Jets'); fillcolors.append(kAzure-2)
-filenames.append('DY3Jets'); fillcolors.append(kAzure-2)
-filenames.append('DY4Jets'); fillcolors.append(kAzure-2)
+#filenames.append('DY1Jets'); fillcolors.append(kAzure-2)
+#filenames.append('DY2Jets'); fillcolors.append(kAzure-2)
+#filenames.append('DY3Jets'); fillcolors.append(kAzure-2)
+#filenames.append('DY4Jets'); fillcolors.append(kAzure-2)
 #WnJets samples
-filenames.append('W1Jets'); fillcolors.append(kGreen-3)
-filenames.append('W2Jets'); fillcolors.append(kGreen-3)
-filenames.append('W3Jets'); fillcolors.append(kGreen-3)
-filenames.append('W4Jets'); fillcolors.append(kGreen-3)
+#filenames.append('W1Jets'); fillcolors.append(kGreen-3)
+#filenames.append('W2Jets'); fillcolors.append(kGreen-3)
+#filenames.append('W3Jets'); fillcolors.append(kGreen-3)
+#filenames.append('W4Jets'); fillcolors.append(kGreen-3)
 #POWHEG TT
 #dileptonic 
 filenames.append('Powheg_dilep_TT'); 				 fillcolors.append(kRed-7)
@@ -62,7 +69,7 @@ filenames.append('Powheg_dilep_TT'); 				 fillcolors.append(kRed-7)
 #filenames.append('Powheg_dilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7)
 #filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7)
 #hadronic
-filenames.append('Powheg_had_TT'); 				   fillcolors.append(kRed-7)
+filenames.append('Powheg_had_TT'); 				   fillcolors.append(kRed-5)
 #filenames.append('Powheg_had_TT_SC'); 			   fillcolors.append(kRed-7)
 #filenames.append('Powheg_had_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7)
 #filenames.append('Powheg_had_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7)
@@ -93,15 +100,17 @@ elif leptype == 'el' :
 filelists = []
 data_filelists = []
 for filename in filenames :
-	path = '../'+filename+'/'+filename+'_*_skim_tree.root'
+	path = '../total_ttree_files/'+filename+'_skim_all.root'
 	filelists.append(glob.glob(path))
 for filename in data_filenames :
-	path = '../'+filename+'/'+filename+'_*_skim_tree.root'
+	path = '../total_ttree_files/'+filename+'_skim_all.root'
 	data_filelists.append(glob.glob(path))
 #lists of histogram names, temporary histograms for MC and data, histogram stacks, strings of what to draw, cutstrings, 
 #options strings, weight strings, and renormalization and include data options
 histonames = []
 histostacks = []
+resids = []
+resid_lines = []
 histograms = []
 for i in range(len(filenames)) :
 	histograms.append([])
@@ -148,8 +157,40 @@ ele_full_leptonic = ele_preselection+' && '+ele_kinematics+' && '+ele_ID+' && '+
 ele_hadronic_pretag = ele_full_leptonic+' && hadt_tau21>0.1'
 signal_mass = 'hadt_M>140. && hadt_M<250.'
 signal_tau32 = 'hadt_tau32<0.55' 
+#electron trigger selection cuts
+ELECTRON_TRIGGER_CUTS = 'mu_trigger==1 && muon1_pt>40. && abs(muon1_eta)<2.4 && muon1_isLoose==1 && (muon1_relPt>25. || muon1_dR>0.5)'
+ELECTRON_TRIGGER_CUTS += ' && ele1_pt>40. && abs(ele1_eta)<2.4 && ele1_isLoose==1 && (ele1_relPt>25. || ele1_dR>0.5)'
+ELECTRON_TRIGGER_CUTS += ' && (ele2_isLoose!=1 || ele2_pt<40. || abs(ele2_eta)>2.4 || (ele2_relPt<25. && ele2_dR<0.5))'
+ELECTRON_TRIGGER_CUTS += ' && (muon2_isLoose!=1 || muon2_pt<40. || abs(muon2_eta)>2.4 || (muon2_relPt<25. && muon2_dR<0.5))'
+ELECTRON_TRIGGER_CUTS += ' && muon1_Q+ele1_Q==0 && lepW_pt>50. && lept_M>140. && lept_M<250.'
+ELECTRON_TRIGGER_CUTS += ' && lepb_pt>50. && hadt_pt>50. && max(lepb_pt,hadt_pt)>150.'
+#electron ID selection cuts
+#electron 1 and/or 2 selection
+ele1_tag_selec = '(ele1_pt>40. && abs(ele1_eta)<2.4 && ele1_isLoose==1 && (ele1_relPt>25. || ele1_dR>0.5))'
+ele1_probe_selec = '(ele1_pt>40. && abs(ele1_eta)<2.4 && (ele1_relPt>25. || ele1_dR>0.5))'
+ele2_tag_selec = '(ele2_pt>40. && abs(ele2_eta)<2.4 && ele2_isLoose==1 && (ele2_relPt>25. || ele2_dR>0.5))'
+ele2_probe_selec = '(ele2_pt>40. && abs(ele2_eta)<2.4 && (ele2_relPt>25. || ele2_dR>0.5))'
+ELECTRON_ID_CUTS = '(('+ele1_tag_selec+' && '+ele2_probe_selec+') || ('+ele2_tag_selec+' && '+ele1_probe_selec+'))'
+#muon 1 and 2 rejection
+ELECTRON_ID_CUTS += ' && (muon1_pt<40. || abs(muon1_eta)>2.4 || muon1_isLoose!=1 || (muon1_relPt<25. && muon1_dR<0.5))'
+ELECTRON_ID_CUTS += ' && (muon2_pt<40. || abs(muon2_eta)>2.4 || muon2_isLoose!=1 || (muon2_relPt<25. && muon2_dR<0.5))'
+#require two electrons to have opposite charges
+ELECTRON_ID_CUTS += ' && (ele1_Q+ele2_Q==0)'
+#make the dielectron fourvector and cut on its mass
+eem = 'sqrt((sqrt(ele1_pt*ele1_pt*cosh(ele1_eta)*cosh(ele1_eta)+ele1_M*ele1_M)+sqrt(ele2_pt*ele2_pt*cosh(ele2_eta)*cosh(ele2_eta)+ele2_M*ele2_M))'
+eem+='*(sqrt(ele1_pt*ele1_pt*cosh(ele1_eta)*cosh(ele1_eta)+ele1_M*ele1_M)+sqrt(ele2_pt*ele2_pt*cosh(ele2_eta)*cosh(ele2_eta)+ele2_M*ele2_M))'
+eem+='-(ele1_pt*cos(ele1_phi)+ele2_pt*cos(ele2_phi))*(ele1_pt*cos(ele1_phi)+ele2_pt*cos(ele2_phi))'
+eem+='-(ele1_pt*sin(ele1_phi)+ele2_pt*sin(ele2_phi))*(ele1_pt*sin(ele1_phi)+ele2_pt*sin(ele2_phi))'
+eem+='-(ele1_pt*sinh(ele1_eta)+ele2_pt*sinh(ele2_eta))*(ele1_pt*sinh(ele1_eta)+ele2_pt*sinh(ele2_eta)))'
+ELECTRON_ID_CUTS+=' && '+eem+'>12.'
+ELECTRON_ID_CUTS+=' && ('+eem+'<76. || '+eem+'>106.)'
+#other leptonic side cuts
+ELECTRON_ID_CUTS+=' && lepW_pt[0]>50.'
+#other jet requirements
+ELECTRON_ID_CUTS+=' && lepb_pt>50. && hadt_pt>50. && max(lepb_pt,hadt_pt)>150.'
+ELECTRON_ID_CUTS+=' && (lepb_csv>0.244 || hadt_csv>0.244)'
 #Weight strings
-STD_WEIGHTS = 'weight*sf_pileup'
+STD_WEIGHTS = '19748.*weight*sf_pileup*sf_top_pT'
 
 ##############################################################################################################
 ############################						  PLOTS 					  ############################
@@ -161,12 +202,12 @@ if leptype == 'mu' :
 elif leptype == 'el' :
 	full_selection_cuts = MARC_CUTS_ELECTRONS
 
-#M
-newPlot('M','M',full_selection_cuts,25,0.,2500.,'M in Simulation and Data; M (GeV)','',STD_WEIGHTS,True)
-#c*
-newPlot('cstar','cstar',full_selection_cuts,20,-1.0,1.0,'c* in Simulation and Data; c*','',STD_WEIGHTS,True)
-#xF
-newPlot('x_F','abs(x_F)',full_selection_cuts,30,0.,0.6,'x_{F} in Simulation and Data; x_{F}','',STD_WEIGHTS,True)
+##M
+#newPlot('M','M',full_selection_cuts,25,0.,2500.,'M in Simulation and Data; M (GeV)','',STD_WEIGHTS,True)
+##c*
+#newPlot('cstar','cstar',full_selection_cuts,20,-1.0,1.0,'c* in Simulation and Data; c*','',STD_WEIGHTS,True)
+##xF
+#newPlot('x_F','abs(x_F)',full_selection_cuts,30,0.,0.6,'x_{F} in Simulation and Data; x_{F}','',STD_WEIGHTS,True)
 #M (scaled)
 newPlot('M_scaled','M_scaled',full_selection_cuts,25,0.,2500.,'scaled M in Simulation and Data; M (GeV)','',STD_WEIGHTS,True)
 #c* (scaled)
@@ -182,14 +223,14 @@ newPlot('x_F_scaled','abs(x_F_scaled)',full_selection_cuts,30,0.,0.6,'scaled x_{
 ##newPlot('muon2_pt','muon2_pt',MARC_PRESELECTION,20,0.,100.,'second leading muon p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
 ###second leading muon eta
 ##newPlot('muon2_eta','muon2_eta',MARC_PRESELECTION,35,-3.5,3.5,'second leading muon #eta; #eta','',STD_WEIGHTS,True)
-##leading electron pT
-#newPlot('ele1_pt','ele1_pt',MARC_PRESELECTION,20,0.,100.,'leading electron p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
-###leading electron eta
-##newPlot('ele1_eta','ele1_eta',MARC_PRESELECTION,35,-3.5,3.5,'leading electron #eta; #eta','',STD_WEIGHTS,True)
-###second leading electron pT
-##newPlot('ele2_pt','ele2_pt',MARC_PRESELECTION,20,0.,100.,'second leading electron p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
-###second leading electron eta
-##newPlot('ele2_eta','ele2_eta',MARC_PRESELECTION,35,-3.5,3.5,'second leading electron #eta; #eta','',STD_WEIGHTS,True)
+#leading electron pT
+#newPlot('ele1_pt','ele1_pt',ELECTRON_ID_CUTS,15,0.,300.,'leading electron p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
+#leading electron eta
+#newPlot('ele1_eta','ele1_eta',ELECTRON_ID_CUTS,35,-3.5,3.5,'leading electron #eta; #eta','',STD_WEIGHTS,True)
+#second leading electron pT
+#newPlot('ele2_pt','ele2_pt',ELECTRON_ID_CUTS,15,0.,300.,'second leading electron p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
+#second leading electron eta
+#newPlot('ele2_eta','ele2_eta',ELECTRON_ID_CUTS,35,-3.5,3.5,'second leading electron #eta; #eta','',STD_WEIGHTS,True)
 ##leptonic W pT
 #newPlot('lepW_pt','lepW_pt',MARC_PRESELECTION,20,0.,200.,'leptonic W candidate p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
 ##leptonic b mass
@@ -200,10 +241,16 @@ newPlot('x_F_scaled','abs(x_F_scaled)',full_selection_cuts,30,0.,0.6,'scaled x_{
 ##newPlot('hadt_pt','hadt_pt',ele_hadronic_pretag,50,250.,750.,'hadronic top candidate p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
 ###hadronic t mass
 #newPlot('hadt_M','hadt_M',ele_hadronic_pretag,35,0.,350.,'hadronic top candidate mass; M (GeV)','',STD_WEIGHTS,True)
+#hadronic t pt
+newPlot('hadt_pt','hadt_pt',full_selection_cuts,25,0.,1000.,'hadronic top candidate p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
 ###hadronic t tau32
 #newPlot('hadt_tau32','hadt_tau32',ele_hadronic_pretag,20,0.,1.,'hadronic top candidate #tau_{32}; #tau_{32}','',STD_WEIGHTS,True)
 ###hadronic t tau21
 ##newPlot('hadt_tau21','hadt_tau21',MARC_PRESELECTION,20,0.,1.,'hadronic top candidate #tau_{21}; #tau_{21}','',STD_WEIGHTS,True)
+#leading jet pT
+#newPlot('jet1_pt','max(lepb_pt,hadt_pt)',ELECTRON_ID_CUTS,25,0.,1000.,'leading jet p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
+#sub-leading jet pT
+#newPlot('jet2_pt','min(lepb_pt,hadt_pt)',ELECTRON_ID_CUTS,25,0.,500.,'sub-leading jet p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
 
 ##############################################################################################################
 ############################						  PLOTS 					  ############################
@@ -218,11 +265,13 @@ for data_file_list in data_filelists :
 print 'done'
 
 #define the pruning cuts
-prunestring = MARC_PRESELECTION
-if leptype == 'el' :
-	prunestring = MARC_PRESELECTION+' && ele1_pt>muon1_pt'
-elif leptype == 'mu' :
-	prunestring = MARC_PRESELECTION+' && muon1_pt>ele1_pt'
+prunestring = ''
+#prunestring = 'muon1_isLoose || ele1_isLoose'
+#prunestring = MARC_PRESELECTION
+#if leptype == 'el' :
+#	prunestring = MARC_PRESELECTION+' && ele1_pt>muon1_pt'
+#elif leptype == 'mu' :
+#	prunestring = MARC_PRESELECTION+' && muon1_pt>ele1_pt'
 
 #Put the data into histograms
 print 'Drawing events from data files into histograms...'
@@ -258,14 +307,18 @@ for i in range(len(MC_chains)) :
 		#Draw the plot I want from the tree
 		print '	Drawing '+histonames[j]+' ('+str(j+1)+' out of '+str(len(histonames))+')'
 		tmp = histograms[i][j].Clone('tmp')
-		MC_chains[i].CopyTree(prunestring).Draw(drawstrings[j]+'>>tmp','('+weightstrings[j]+')*('+cutstrings[j]+')',optionstrings[j]+'')
+		xtra = ''
+		if prunestring!='' :
+			xtra += ' && '
+		xtra+='weight!=1.0'
+		MC_chains[i].CopyTree(prunestring+xtra).Draw(drawstrings[j]+'>>tmp','('+weightstrings[j]+')*('+cutstrings[j]+')',optionstrings[j]+'')
 		histograms[i][j].Add(tmp)
 		#Set Colors and Fills
 		histograms[i][j].SetFillColor(fillcolors[i])
 		histograms[i][j].SetLineColor(fillcolors[i])
 		histograms[i][j].SetMarkerStyle(21)
 		histograms[i][j].SetDirectory(0)
-		renorms[j] = renorms[j]+histograms[i][j].Integral()
+#		renorms[j] = renorms[j]+histograms[i][j].Integral()
 
 #rescale MC histograms, add to stack
 leg = TLegend(0.62,0.67,0.9,0.9)
@@ -279,119 +332,166 @@ for i in range(len(filenames)) :
 	#Add to legend if need be
 	if i==0 :
 		leg.AddEntry(histograms[i][0],"Single Top","F")
-	elif i==6 :
+	elif i==-1:#6 :
 		leg.AddEntry(histograms[i][0],"Z/#gamma+Jets","F")
-	elif i==10 :
+	elif i==-1 :
 		leg.AddEntry(histograms[i][0],"W+Jets","F")
-	elif i==14 :
-		leg.AddEntry(histograms[i][0],"Dileptonic/Hadronic t#bar{t}","F")
+	elif i==6:#10 :
+		leg.AddEntry(histograms[i][0],"Dileptonic t#bar{t}","F")
+	elif i==7:#11 :
+		leg.AddEntry(histograms[i][0],"Hadronic t#bar{t}","F")
 	elif i==len(filenames)-1 :
 		leg.AddEntry(histograms[i][0],"Semileptonic t#bar{t}","F")
 leg.AddEntry(datahistograms[0],"Data","LPE")
 
-#plot on canvases
-print 'plotting stacked plots'
-canvs = []
-for i in range(len(histonames)) :
-	tmp_canv_name = histonames[i]+'_canv'
-	tmp_canv = TCanvas(tmp_canv_name,tmp_canv_name,1200,900)
-	tmp_canv.cd()
-	datamax = datahistograms[i].GetMaximum()+sqrt(datahistograms[i].GetMaximum())
-	histostacks[i].SetMaximum(max(1.02*datamax,1.02*histostacks[i].GetMaximum()))
-	histostacks[i].Draw()
-	if includedata[i] :
-		datahistograms[i].SetMarkerStyle(20)
-		datahistograms[i].DrawCopy("SAME PE1")
-	leg.Draw()
-	canvs.append(tmp_canv)
+#Make residual plots
+for j in range(len(histonames)) :
+	nhistobins = histograms[0][j].GetNbinsX()
+	maxdev = 0.
+	for i in range(nhistobins) :
+		xvalue = histograms[0][j].GetBinCenter(i)
+		xerr   = histograms[0][j].GetBinWidth(i)/2.
+		devents = datahistograms[j].GetBinContent(i) 
+		mcevents = histostacks[j].GetStack().Last().GetBinContent(i)
+		yvalue = 1.0; yerr = 1.0
+		if mcevents==0. or devents==0. :
+			continue
+		yvalue = devents/mcevents
+		yerr = yvalue*sqrt(1./devents+1./mcevents)
+		if abs(yvalue+yerr-1.0) > maxdev :
+			maxdev = abs(yvalue+yerr-1.0)
+		if abs(yvalue-yerr-1.0) > maxdev :
+			maxdev = abs(yvalue-yerr-1.0)
+		resids[j].SetBinContent(i,yvalue)
+		resids[j].SetBinError(i,yerr)
+	#set residue plot attributes
+	resids[j].GetXaxis().SetLabelSize((0.05*0.72)/0.28); resids[j].GetXaxis().SetTitleOffset(0.8)
+	resids[j].GetYaxis().SetLabelSize((0.05*0.72)/0.28); resids[j].GetYaxis().SetTitleOffset(0.4)
+	resids[j].GetXaxis().SetTitleSize((0.72/0.28)*resids[j].GetXaxis().GetTitleSize())
+	resids[j].GetYaxis().SetTitleSize((0.72/0.28)*resids[j].GetYaxis().GetTitleSize())
+	print 'maxdev = '+str(maxdev)
+	resids[j].GetYaxis().SetRangeUser(1.0-(1.05*maxdev),1.0+(1.05*maxdev))
+	resids[j].GetYaxis().SetNdivisions(503)
+	resids[j].SetStats(0)
+	resid_lines[j].SetLineWidth(2); resid_lines[j].SetLineStyle(2)
 
-#Make line plots
-unique_histos = []
-histo_colors = []
-unique_histo_maxes = []
-#look through all the MC filetypes
-print 'making line plots'
-for i in range(len(filenames)) :
-	#if we haven't yet seen a fill of this color add a new list of unique histograms and copy over
-	if fillcolors[i] not in histo_colors :
-		histo_colors.append(fillcolors[i])
-		unique_histos.append([])
-		for j in range(len(histonames)) :
-			unique_histos[len(unique_histos)-1].append(histograms[i][j].Clone())
-			unique_histos[len(unique_histos)-1][j].SetDirectory(0)
-	#otherwise find the point in the list of unique histograms with histograms of this color and add these
-	else : 
-		for j in range(len(histonames)) :
-			unique_histos[histo_colors.index(fillcolors[i])][j].Add(histograms[i][j].Clone())
-
-#renormalize all the unique histograms to one and set the marker and line styles
-for i in range(len(unique_histos)) :
-	for j in range(len(unique_histos[i])) :
-		if unique_histos[i][j].Integral() != 0. :
-			unique_histos[i][j].Scale(1.0/unique_histos[i][j].Integral())
-		unique_histos[i][j].SetFillStyle(0)
-		unique_histos[i][j].SetLineWidth(3)
-		unique_histos[i][j].SetLineStyle(1)
-#renormalize the data histograms, too
-for datahisto in datahistograms :
-	if datahisto.Integral() != 0. :
-		datahisto.Scale(1.0/datahisto.Integral())
-	datahisto.SetFillStyle(0)
-	datahisto.SetLineWidth(3)
-	datahisto.SetFillColor(kBlack)
-	datahisto.SetLineColor(kBlack)
-	datahisto.SetLineStyle(1)
-#find the max value on each unique histogram
-for i in range(len(histonames)) :
-	unique_histo_maxes.append(0.)
-	for j in range(len(unique_histos)) :
-		if 1.02*unique_histos[j][i].GetMaximum() > unique_histo_maxes[i] :
-			unique_histo_maxes[i] = 1.02*unique_histos[j][i].GetMaximum()
-#rebuild the legend
-leg = TLegend(0.62,0.67,0.9,0.9)
-for i in range(len(filenames)) :
-	if i==0 :
-		leg.AddEntry(histograms[i][0],"Single Top","F")
-	elif i==6 :
-		leg.AddEntry(histograms[i][0],"Z/#gamma+Jets","F")
-	elif i==10 :
-		leg.AddEntry(histograms[i][0],"W+Jets","F")
-	elif i==14 :
-		leg.AddEntry(histograms[i][0],"Dileptonic/Hadronic t#bar{t}","F")
-	elif i==len(filenames)-1 :
-		leg.AddEntry(histograms[i][0],"Semileptonic t#bar{t}","F")
-leg.AddEntry(datahistograms[0],"Data","F")
-
-#plot on canvases
-other_canvs = []
-for i in range(len(histonames)) :
-	tmp_canv_name = histonames[i]+'_line_canv'
-	tmp_canv = TCanvas(tmp_canv_name,tmp_canv_name,1200,900)
-	tmp_canv.cd()
-	other_canvs.append(tmp_canv)
-	datamax = datahistograms[i].GetMaximum()
-	unique_histos[0][i].SetMaximum(max(1.02*datamax,unique_histo_maxes[i]))
-	unique_histos[0][i].Draw('')
-	for j in range(1,len(unique_histos)) :
-		unique_histos[j][i].Draw('SAME')
-	if includedata[i] :
-		datahistograms[i].Draw('SAME')
-	leg.Draw()
-
-#save in file
-print 'saving plots'
-# Make a new root file and save the histogram stacks to it
+#make a new file
 name = options.outname
 if leptype == 'mu' :
 	name += '_muons'
 elif leptype == 'el' :
 	name += '_electrons'
 f = TFile(name+'.root', 'Recreate' )
+
+#plot on canvases
+print 'plotting stacked plots'
+for i in range(len(histonames)) :
+	tmp_canv_name = histonames[i]+'_canv'
+	tmp_canv = TCanvas(tmp_canv_name,tmp_canv_name,1200,900)
+	tmp_canv.cd()
+	histo_pad=TPad(histonames[i]+'_histo_pad',histonames[i]+'_histo_pad',0,0.25,1,1)
+	resid_pad=TPad(histonames[i]+'_resid_pad',histonames[i]+'_resid_pad',0,0,1.,0.25)
+	histo_pad.SetCanvas(tmp_canv); resid_pad.SetCanvas(tmp_canv)
+	histo_pad.SetLeftMargin(0.16); histo_pad.SetRightMargin(0.05) 
+	histo_pad.SetTopMargin(0.11);	 histo_pad.SetBottomMargin(0.02)
+	histo_pad.SetBorderMode(0)
+	resid_pad.SetLeftMargin(0.16); resid_pad.SetRightMargin(0.05)
+	resid_pad.SetTopMargin(0.0);   resid_pad.SetBottomMargin(0.3)
+	resid_pad.SetBorderMode(0)
+	resid_pad.Draw(); histo_pad.Draw()
+	histo_pad.cd(); 
+	datamax = datahistograms[i].GetMaximum()+sqrt(datahistograms[i].GetMaximum())
+	histostacks[i].SetMaximum(max(1.02*datamax,1.02*histostacks[i].GetMaximum()))
+	histostacks[i].Draw()
+	histostacks[i].GetXaxis().SetLabelOffset(999)
+	if includedata[i] :
+		datahistograms[i].SetMarkerStyle(20)
+		datahistograms[i].DrawCopy("SAME PE1")
+	leg.Draw()
+	resid_pad.cd(); 
+	resids[i].Draw('PE1X0'); resid_lines[i].Draw('SAME')
+	tmp_canv.Update()
+	f.cd()
+	tmp_canv.Write()
+
+##Make line plots
+#unique_histos = []
+#histo_colors = []
+#unique_histo_maxes = []
+##look through all the MC filetypes
+#print 'making line plots'
+#for i in range(len(filenames)) :
+#	#if we haven't yet seen a fill of this color add a new list of unique histograms and copy over
+#	if fillcolors[i] not in histo_colors :
+#		histo_colors.append(fillcolors[i])
+#		unique_histos.append([])
+#		for j in range(len(histonames)) :
+#			unique_histos[len(unique_histos)-1].append(histograms[i][j].Clone())
+#			unique_histos[len(unique_histos)-1][j].SetDirectory(0)
+#	#otherwise find the point in the list of unique histograms with histograms of this color and add these
+#	else : 
+#		for j in range(len(histonames)) :
+#			unique_histos[histo_colors.index(fillcolors[i])][j].Add(histograms[i][j].Clone())
+#
+##renormalize all the unique histograms to one and set the marker and line styles
+#for i in range(len(unique_histos)) :
+#	for j in range(len(unique_histos[i])) :
+#		if unique_histos[i][j].Integral() != 0. :
+#			unique_histos[i][j].Scale(1.0/unique_histos[i][j].Integral())
+#		unique_histos[i][j].SetFillStyle(0)
+#		unique_histos[i][j].SetLineWidth(3)
+#		unique_histos[i][j].SetLineStyle(1)
+##renormalize the data histograms, too
+#for datahisto in datahistograms :
+#	if datahisto.Integral() != 0. :
+#		datahisto.Scale(1.0/datahisto.Integral())
+#	datahisto.SetFillStyle(0)
+#	datahisto.SetLineWidth(3)
+#	datahisto.SetFillColor(kBlack)
+#	datahisto.SetLineColor(kBlack)
+#	datahisto.SetLineStyle(1)
+##find the max value on each unique histogram
+#for i in range(len(histonames)) :
+#	unique_histo_maxes.append(0.)
+#	for j in range(len(unique_histos)) :
+#		if 1.02*unique_histos[j][i].GetMaximum() > unique_histo_maxes[i] :
+#			unique_histo_maxes[i] = 1.02*unique_histos[j][i].GetMaximum()
+##rebuild the legend
+#leg = TLegend(0.62,0.67,0.9,0.9)
+#for i in range(len(filenames)) :
+#	if i==0 :
+#		leg.AddEntry(histograms[i][0],"Single Top","F")
+#	elif i==6 :
+#		leg.AddEntry(histograms[i][0],"Z/#gamma+Jets","F")
+#	elif i==10 :
+#		leg.AddEntry(histograms[i][0],"W+Jets","F")
+#	elif i==14 :
+#		leg.AddEntry(histograms[i][0],"Dileptonic/Hadronic t#bar{t}","F")
+#	elif i==len(filenames)-1 :
+#		leg.AddEntry(histograms[i][0],"Semileptonic t#bar{t}","F")
+#leg.AddEntry(datahistograms[0],"Data","F")
+#
+##plot on canvases
+#other_canvs = []
+#for i in range(len(histonames)) :
+#	tmp_canv_name = histonames[i]+'_line_canv'
+#	tmp_canv = TCanvas(tmp_canv_name,tmp_canv_name,1200,900)
+#	tmp_canv.cd()
+#	other_canvs.append(tmp_canv)
+#	datamax = datahistograms[i].GetMaximum()
+#	unique_histos[0][i].SetMaximum(max(1.02*datamax,unique_histo_maxes[i]))
+#	unique_histos[0][i].Draw('')
+#	for j in range(1,len(unique_histos)) :
+#		unique_histos[j][i].Draw('SAME')
+#	if includedata[i] :
+#		datahistograms[i].Draw('SAME')
+#	leg.Draw()
+
+#save in file
+print 'saving plots'
+#save stuff
 f.cd()
-for canv in canvs :
-	canv.Write()
-f.cd()
-for canv in other_canvs :
-	canv.Write()
+#for canv in other_canvs :
+#	canv.Write()
 f.Write()
 f.Close()

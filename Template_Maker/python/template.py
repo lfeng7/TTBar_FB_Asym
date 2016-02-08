@@ -1,11 +1,12 @@
 #imports
 from ROOT import *
+from array import array
 
 #global variables
 #histogram limits
-XBINS = 20;		XMIN = -1.0;	XMAX = 1.0
-YBINS = 6;		YMIN = 0.0;		YMAX = 0.6
-ZBINS = 10;		ZMIN = 500.;	ZMAX = 2500.
+XBINS = array('d',[-1.0,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+YBINS = array('d',[0.,0.075,0.15,0.3,0.7])
+ZBINS = array('d',[500.,700.,900.,1100.,1300.,1500.,2500.])
 
 #TDR Style
 #gROOT.Macro('rootlogon.C')
@@ -21,10 +22,10 @@ class template :
 		print '				Adding template with name '+name
 		self.name = name
 		self.formatted_name = formatted_name
-		self.histo_3D = TH3D(name,	   formatted_name+'; c*; |x_{F}|; M (GeV)',XBINS,XMIN,XMAX,YBINS,YMIN,YMAX,ZBINS,ZMIN,ZMAX)
-		self.histo_x  = TH1D(name+'_x',formatted_name+' X Projection; c*',	  XBINS,XMIN,XMAX)
-		self.histo_y  = TH1D(name+'_y',formatted_name+' Y Projection; |x_{F}|',		  YBINS,YMIN,YMAX)
-		self.histo_z  = TH1D(name+'_z',formatted_name+' Z Projection; M (GeV)',		  ZBINS,ZMIN,ZMAX)
+		self.histo_3D = TH3D(name,	   formatted_name+'; c*; |x_{F}|; M (GeV)',len(XBINS)-1,XBINS,len(YBINS)-1,YBINS,len(ZBINS)-1,ZBINS)
+		self.histo_x  = TH1D(name+'_x',formatted_name+' X Projection; c*',len(XBINS)-1,XBINS)
+		self.histo_y  = TH1D(name+'_y',formatted_name+' Y Projection; |x_{F}|',len(YBINS)-1,YBINS)
+		self.histo_z  = TH1D(name+'_z',formatted_name+' Z Projection; M (GeV)',len(ZBINS)-1,ZBINS)
 		self.histo_3D.SetDirectory(0); self.histo_x.SetDirectory(0); self.histo_y.SetDirectory(0); self.histo_z.SetDirectory(0)
 
 	def Fill(self,c,x,m,w) :

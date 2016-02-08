@@ -9,13 +9,21 @@ import pickle
 
 #global variables
 MUON_ID_EFF_PKL_FILENAME   = 'MuonEfficiencies_Run2012ReReco_53X.pkl'
-ELECTRON_ID_EFF_HISTO_FILENAME = 'electrons_scale_factors.root'
-ELECTRON_ID_EFF_HISTO_NAME = 'electronsDATAMCratio_FO_ID'
+ELECTRON_ID_EFF_HISTO_FILENAME = 'electron_ID_efficiency.root'
+ELECTRON_ID_EFF_HISTO_NAME = 'sf_plot'
 MUON_TRIG_EFF_PKL_FILENAME = 'SingleMuonTriggerEfficiencies_eta2p1_Run2012ABCD_v5trees.pkl' 
 DATA_PU_FILENAME_NOMINAL = 'data_pileup_nominal_69400.root'
 DATA_PU_FILENAME_UP 	 = 'data_pileup_up_73564.root'
 DATA_PU_FILENAME_DOWN 	 = 'data_pileup_down_65236.root'
 MC_PU_FILENAME = 'dumped_Powheg_TT.root'
+#Stuff for calculating high-pt top pt reweighting factors from TOP-14-012
+#TWiki: https://twiki.cern.ch/twiki/bin/viewauth/CMS/PaperTop14012
+HADT_PT_BINS   = [400.,500.,600., 700., 800.]
+MC_CS_POWHEG   = [11.6,3.17,0.948,0.316,0.0475]
+MC_CS_MADGRAPH = [12.5,3.46,1.05, 0.345,0.047]
+MC_CS_MCATNLO  = [10.1,2.6,0.719, 0.250,0.033]
+DATA_CS_NOM    = [9.71,2.52,0.716,0.229,0.0327]
+DATA_CS_ERR    = [0.10,0.13,0.19, 0.20, 0.31]
 
 ##########							   MC_corrector Class 								##########
 
@@ -88,16 +96,44 @@ class MC_corrector :
 	#takes in the MC truth t and tbar vectors
 	#returns the reweighting factor
 	#8TeV Powheg and Madgraph semi/dilep events: https://twiki.cern.ch/twiki/bin/viewauth/CMS/TopPtReweighting
-	def getToppT_reweight(self,t_vec,tbar_vec) :
+	def getToppT_reweight(self,t_vec,tbar_vec,Q_l) :
 		if (self.generator != 'powheg' and self.generator != 'madgraph') or self.event_type>2 : 
-			return 1.0
-		a = 0.; b = 0.
-		if self.event_type<2 :
-			a = 0.159; b = -0.00141
-		elif self.event_type == 2 :
-			a = 0.148; b = -0.00129
-		sf_top = exp(a+b*t_vec.Pt()); sf_antitop = exp(a+b*tbar_vec.Pt())
-		return sqrt(sf_top*sf_antitop)
+			return 1.0,1.0,1.0
+		if ((t_vec.Pt()>400. and Q_l<0) or (tbar_vec.Pt()>400. and Q_l>0)) and self.event_type<2 : #hadronic top pt>400GeV
+			mc_css = MC_CS_POWHEG
+			if self.generator == 'madgraph' :
+				mc_css = MC_CS_MADGRAPH
+			if self.generator == 'mcatnlo' :
+				mc_css = MC_CS_MCATNLO
+			hadtpt = t_vec.Pt()
+			if Q_l>0 :
+				hadtpt = tbar_vec.Pt()
+			bini = 0
+			for i in range(len(HADT_PT_BINS)) :
+				if ((i<len(HADT_PT_BINS)-1) and hadtpt>HADT_PT_BINS[i] and hadtpt<=HADT_PT_BINS[i+1]) or (i == len(HADT_PT_BINS)-1 and (hadtpt>HADT_PT_BINS[i])) :
+					bini = i
+					break
+			rw = DATA_CS_NOM[bini]/mc_css[bini]
+			rwlow = ((1-DATA_CS_ERR[bini])*DATA_CS_NOM[bini])/mc_css[bini]
+			rwhi = ((1+DATA_CS_ERR[bini])*DATA_CS_NOM[bini])/mc_css[bini]
+			return rw,rwlow,rwhi
+		elif (t_vec.Pt()<=400. and tbar_vec.Pt()<=400.) :
+			a = 0.; b = 0.
+			if self.event_type<2 :
+				a = 0.159; b = -0.00141
+			elif self.event_type == 2 :
+				a = 0.148; b = -0.00129
+			sf_top = exp(a+b*t_vec.Pt()); sf_antitop = exp(a+b*tbar_vec.Pt())
+			total_sf = sqrt(sf_top*sf_antitop)
+			if total_sf != 1.0 :
+				total_sf = total_sf/1.0017963977923225 #divided by average value over all phase space
+			dev = total_sf-1.0
+			if dev>0 :
+				return total_sf,1.0,total_sf+dev
+			else :
+				return total_sf,total_sf+dev,1.0
+		else :
+			return 1.0,1.0,1.0
 		#return 1.0 #DEBUG RETURN
 	
 	#pileup reweighting factor
@@ -146,15 +182,12 @@ class MC_corrector :
 			sf_low = sf*(1.0-sqrt((sf_vtx_low/sf_vtx)**2+(sf_eta_low/sf_eta)**2+(sf_pt_low/sf_pt)**2))
 			sf_hi  = sf*(1.0+sqrt((sf_vtx_hi/sf_vtx)**2+(sf_eta_hi/sf_eta)**2+(sf_pt_hi/sf_pt)**2))
 		#electrons
-		#correction taken right from file listed under "Triggering MVA" in 
-		#"Recommended Working Points with Scale Factors" on
-		#https://twiki.cern.ch/twiki/bin/viewauth/CMS/MultivariateElectronIdentification
 		elif lep_type == 1 :
 			if meas_lep_pt>200. :
 				meas_lep_pt = 200.
 			if abs(meas_lep_eta)>2.5 :
 				meas_lep_eta = 2.5
-			bin = self.electron_id_histo.FindFixBin(abs(meas_lep_eta),meas_lep_pt)
+			bin = self.electron_id_histo.FindFixBin(meas_lep_pt,abs(meas_lep_eta))
 			sf = self.electron_id_histo.GetBinContent(bin)
 			sf_err = self.electron_id_histo.GetBinError(bin)
 			sf_low = sf-sf_err; sf_hi = sf+sf_err
@@ -193,8 +226,9 @@ class MC_corrector :
 			sf_hi  = sf*(1.0+sqrt((sf_vtx_hi/sf_vtx)**2+(sf_eta_hi/sf_eta)**2+(sf_pt_hi/sf_pt)**2))
 		#electrons
 		elif lep_type == 1 :
-			#DEBUG RETURN, THIS IS NOT A REAL THING YET!!!!
-			sf = 1.0; sf_low = 1.0; sf_hi = 1.0
+			sf = 0.917532417972
+			sferr = 0.053526320518
+			sf_low = sf-sferr; sf_hi = sf+sferr
 		return sf,sf_low,sf_hi
 		#return 1.0 #DEBUG RETURN
 
