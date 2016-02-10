@@ -384,9 +384,9 @@ class template_group :
 	#__addAllDistributions__ sets up all of the final distributions depending on whether we want the charges summed
 	#also handles the JEC corrections
 	def __addAllDistributions__(self) :
-#		lepprefixes = ['allchannels','mu','el']
+		lepprefixes = ['allchannels','mu','el']
 #		lepprefixes = ['el','mu']
-		lepprefixes = ['mu']
+#		lepprefixes = ['mu']
 		for lepprefix in lepprefixes :
 			chargeseps = ['']
 			if not self.sum_charge and lepprefix != 'allchannels' :
