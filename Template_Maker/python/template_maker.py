@@ -17,18 +17,22 @@ class template_group :
 	"""template_group class"""
 	
 	#__init__function
-	def __init__(self,outputname,parfilename) :
+	def __init__(self,outputname,parfilename,sumcharges,includepdf,includejec) :
 		#set the input variables
 		self.step = parfilename.split('_')[0]
-		self.f_nominal  = TFile(outputname+'nominal.root','recreate')
-		self.f_simple_systematics = TFile(outputname+'simple_systematics.root','recreate')
-		self.f_PDF_systematics = TFile(outputname+'PDF_systematics.root','recreate')
-		self.f_JEC = TFile(outputname+'JEC.root','recreate')
 		self.f_fit_parameters  = TFile(outputname+'fit_parameters.root','recreate')
 		self.f_NTMJ = TFile(outputname+'NTMJ.root','recreate')
 		self.f_aux = TFile(outputname+'aux.root','recreate')
+		if self.step == 'initial' or self.step == 'final' :
+			self.f_nominal  = TFile(outputname+'nominal.root','recreate')
+			if self.step == 'initial' :
+				self.f_simple_systematics = TFile(outputname+'simple_systematics.root','recreate')
+				self.f_PDF_systematics = TFile(outputname+'PDF_systematics.root','recreate')
+				self.f_JEC = TFile(outputname+'JEC.root','recreate')
 		self.parfile = parfilename
-		self.sum_charge = outputname.find('charge_summed')!=-1
+		self.sum_charge = sumcharges
+		self.include_pdf = includepdf
+		self.include_JEC = includejec
 		#final distributions
 		print '	Initializing Distributions'
 		self.dists = []
@@ -42,24 +46,25 @@ class template_group :
 		f = TFile(ttree_file_path)
 		tree = f.Get('tree')
 		#get all of the observables needed for making cuts
-		muon1_pt 	  = array('d',[-1.0]);  tree.SetBranchAddress('muon1_pt',muon1_pt)
-		ele1_pt 	  = array('d',[-1.0]);  tree.SetBranchAddress('ele1_pt',ele1_pt)
-		lepW_pt 	  = array('d',[-1.0]);  tree.SetBranchAddress('scaled_lepW_pt',lepW_pt)
-		hadt_pt 	  = array('d',[-1.0]);  tree.SetBranchAddress('scaled_hadt_pt',hadt_pt)
-		muon1_eta 	  = array('d',[100.0]); tree.SetBranchAddress('muon1_eta',muon1_eta)
-		muon1_isLoose = array('I',[2]);  	tree.SetBranchAddress('muon1_isLoose',muon1_isLoose)
-		muon1_relPt   = array('d',[-1.0]);  tree.SetBranchAddress('muon1_relPt',muon1_relPt)
-		muon1_dR 	  = array('d',[-1.0]);  tree.SetBranchAddress('muon1_dR',muon1_dR)
-		mu_trigger 	  = array('I',[2]); 	tree.SetBranchAddress('mu_trigger',mu_trigger)
-		ele1_eta 	  = array('d',[100.0]); tree.SetBranchAddress('ele1_eta',ele1_eta)
-		ele1_isLoose  = array('I',[2]);  	tree.SetBranchAddress('ele1_isLoose',ele1_isLoose)
-		ele1_relPt 	  = array('d',[-1.0]);  tree.SetBranchAddress('ele1_relPt',ele1_relPt)
-		ele1_dR 	  = array('d',[-1.0]);  tree.SetBranchAddress('ele1_dR',ele1_dR)
-		el_trigger 	  = array('I',[2]); 	tree.SetBranchAddress('el_trigger',el_trigger)
-		lept_M 		  = array('d',[-1.0]);  tree.SetBranchAddress('scaled_lept_M',lept_M)
-		hadt_M 		  = array('d',[-1.0]);  tree.SetBranchAddress('scaled_hadt_M',hadt_M)
-		hadt_tau21 	  = array('d',[-1.0]);  tree.SetBranchAddress('hadt_tau21',hadt_tau21)
-		hadt_tau32 	  = array('d',[-1.0]);  tree.SetBranchAddress('hadt_tau32',hadt_tau32)
+		original_branches = []
+		muon1_pt 	  = array('d',[-1.0]);  original_branches.append(['muon1_pt',muon1_pt])
+		ele1_pt 	  = array('d',[-1.0]);  original_branches.append(['ele1_pt',ele1_pt])
+		lepW_pt 	  = array('d',[-1.0]);  original_branches.append(['scaled_lepW_pt',lepW_pt])
+		hadt_pt 	  = array('d',[-1.0]);  original_branches.append(['scaled_hadt_pt',hadt_pt])
+		muon1_eta 	  = array('d',[100.0]); original_branches.append(['muon1_eta',muon1_eta])
+		muon1_isLoose = array('I',[2]);  	original_branches.append(['muon1_isLoose',muon1_isLoose])
+		muon1_relPt   = array('d',[-1.0]);  original_branches.append(['muon1_relPt',muon1_relPt])
+		muon1_dR 	  = array('d',[-1.0]);  original_branches.append(['muon1_dR',muon1_dR])
+		mu_trigger 	  = array('I',[2]); 	original_branches.append(['mu_trigger',mu_trigger])
+		ele1_eta 	  = array('d',[100.0]); original_branches.append(['ele1_eta',ele1_eta])
+		ele1_isLoose  = array('I',[2]);  	original_branches.append(['ele1_isLoose',ele1_isLoose])
+		ele1_relPt 	  = array('d',[-1.0]);  original_branches.append(['ele1_relPt',ele1_relPt])
+		ele1_dR 	  = array('d',[-1.0]);  original_branches.append(['ele1_dR',ele1_dR])
+		el_trigger 	  = array('I',[2]); 	original_branches.append(['el_trigger',el_trigger])
+		lept_M 		  = array('d',[-1.0]);  original_branches.append(['scaled_lept_M',lept_M])
+		hadt_M 		  = array('d',[-1.0]);  original_branches.append(['scaled_hadt_M',hadt_M])
+		hadt_tau21 	  = array('d',[-1.0]);  original_branches.append(['hadt_tau21',hadt_tau21])
+		hadt_tau32 	  = array('d',[-1.0]);  original_branches.append(['hadt_tau32',hadt_tau32])
 		#build the list of distributions this tree will contribute to
 		dists_to_add_to = []
 		for i in range(len(self.dists)) :
@@ -74,13 +79,15 @@ class template_group :
 			print '	'+dists_to_add_to[i].name
 		#loop over events in tree
 		for entry in range(nEntries) :
+			for branch in original_branches :
+				tree.SetBranchAddress(branch[0],branch[1])
 			tree.GetEntry(entry)
 			cuts = []
-			muon_preselection = mu_trigger[0]==1 and muon1_pt[0]>ele1_pt[0] and lepW_pt[0]>50. and hadt_pt[0]>300. and hadt_M[0]>100.
+			muon_preselection = mu_trigger[0]==1 and muon1_pt[0]>ele1_pt[0] and hadt_pt[0]>300. and hadt_M[0]>100.
 			muon_kinematics   = muon1_pt[0]>40. and abs(muon1_eta[0])<2.4
 			muon_ID = muon1_isLoose[0]==1
 			muon_2D = muon1_relPt[0]>25. or muon1_dR[0]>0.5
-			ele_preselection = el_trigger[0]==1 and ele1_pt[0]>muon1_pt[0] and lepW_pt[0]>50. and hadt_pt[0]>300. and hadt_M[0]>100.
+			ele_preselection = el_trigger[0]==1 and ele1_pt[0]>muon1_pt[0] and hadt_pt[0]>300. and hadt_M[0]>100.
 			ele_kinematics = ele1_pt[0]>40. and abs(ele1_eta[0])<2.4
 			ele_ID = ele1_isLoose[0]==1
 			ele_2D = ele1_relPt[0]>25. or ele1_dR[0]>0.5
@@ -146,28 +153,37 @@ class template_group :
 				temp.histo_y.Write()
 				temp.histo_z.Write()
 		for dist in self.dists :
+			distfile = self.f_NTMJ
+			if dist.name.startswith('allchannels') :
+				continue
 			if dist.name.find('ntmj') != -1 :
-				self.f_NTMJ.cd() 
-			elif dist.name.find('JER')!=-1 or dist.name.find('JES')!=-1 :
-				self.f_JEC.cd()
-			else :	
-				self.f_simple_systematics.cd()
+				distfile = self.f_NTMJ 
+			if self.step == 'initial' :
+				if dist.name.find('JER')!=-1 or dist.name.find('JES')!=-1 :
+					distfile = self.f_JEC
+				else :	
+					distfile = self.f_simple_systematics
 			for temp in dist.all_templates :
-				if temp.name.find('up')==-1 and temp.name.find('down')==-1 :
-					self.f_nominal.cd()
-				elif temp.name.find('pdf_lambda')!=-1 :
-					self.f_PDF_systematics.cd()	
-				elif temp.name.find('par_')!=-1 :
-					self.f_fit_parameters.cd()
+				tempfile = distfile
+				if self.step == 'initial' :
+					if temp.name.find('__up')==-1 and temp.name.find('__down')==-1 :
+						tempfile = self.f_nominal
+					elif temp.name.find('pdf_lambda')!=-1 :
+						tempfile = self.f_PDF_systematics	
+				if temp.name.find('par_')!=-1 :
+					tempfile = self.f_fit_parameters
+				tempfile.cd()
 				new1Dtemp = temp.convertTo1D()
 				new1Dtemp.Write()
-		self.f_nominal.Close()
-		self.f_simple_systematics.Close()
-		self.f_PDF_systematics.Close()
-		self.f_JEC.Close()
 		self.f_fit_parameters.Close()
-		self.f_NTMJ.Close()
 		self.f_aux.Close()
+		self.f_NTMJ.Close()
+		if self.step == 'initial' :
+			self.f_nominal.Close()
+			self.f_simple_systematics.Close()
+			self.f_PDF_systematics.Close()
+			self.f_JEC.Close()
+		
 
 	def make_plots(self) :
 		#First make a list of all the channels in the file
@@ -384,28 +400,40 @@ class template_group :
 	#__addAllDistributions__ sets up all of the final distributions depending on whether we want the charges summed
 	#also handles the JEC corrections
 	def __addAllDistributions__(self) :
+		PREFAC_1 = '(#NTOT#-#NBCK#*#Rbck#-#NNTMJ#*#Rntmj#)*(1./#NTTBAR#)'
+		PREFAC_2 = '(#NTTBAR#-#NQQBAR#*#Rqqbar#)*(1./(#NTTBAR#-#NQQBAR#))'
+		FGG  = '1. + #mu#*(1.-#mu#)*(#NG1#/(#NTTBAR#-#NQQBAR#))'
+		FGG += '+ (#mu#*#mu#+#d#*#d#)*(1.+#mu#)*(#NG2#/(#NTTBAR#-#NQQBAR#))'
+		FGG += '+ (#mu#*#mu#+#d#*#d#)*(1.-5.*#mu#)*(#NG3#/(#NTTBAR#-#NQQBAR#))'
+		FGG += '+ (#mu#*#mu#+#d#*#d#)*(#mu#*#mu#+#d#*#d#)*(#NG4#/(#NTTBAR#-#NQQBAR#))'
+		FQQ  = '1. + (2.*#mu#+#mu#*#mu#-#d#*#d#)*(#NQ1#/#NQQBAR#) + (#mu#*#mu#+#d#*#d#)*(#NQ2#/#NQQBAR#)'
+		fbck_func  = '#scale#*#Rbck#'
+		fntmj_func = '#scale#*#Rntmj#'
+		fgg_func   = '#scale#*'+PREFAC_1+'*'+PREFAC_2+'*(1./'+FGG+')*(1.+ #mu#*(1.-#mu#)*#wg1#'
+		fgg_func  += '+ (#mu#*#mu#+#d#*#d#)*(1.+#mu#)*#wg2# + (#mu#*#mu#+#d#*#d#)*(1.-5.*#mu#)*#wg3#'
+		fgg_func  += '+ (#mu#*#mu#+#d#*#d#)*(#mu#*#mu#+#d#*#d#)*#wg4#)'
+		fqq_func   = '#scale#*'+PREFAC_1+'*(1./'+FQQ+')*#Rqqbar#*(1.+#Afb#*#wqa0# + (2.*#mu#+#mu#*#mu#-#d#*#d#)*(#wqs1#+#Afb#*#wqa1#)'
+		fqq_func  += '+ (#mu#*#mu#+#d#*#d#)*(#wqs2#+#Afb#*#wqa2#))'
 		lepprefixes = ['allchannels','mu','el']
-#		lepprefixes = ['el','mu']
 #		lepprefixes = ['mu']
+#		lepprefixes = ['el']
 		for lepprefix in lepprefixes :
 			chargeseps = ['']
 			if not self.sum_charge and lepprefix != 'allchannels' :
 				chargeseps = ['plus','minus']
 			for chargesep in chargeseps :
-				self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__DATA',kBlack,'data distribution',None,None))
-				self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fg0',kBlue,'0th gg (qg,q_{i}q_{j},etc.) distribution',None,'#scale#*(#NTOT#-#NBCK#*#Rbck#-#NNTMJ#*#Rntmj#)*(1./#NTTBAR#)*(#NTTBAR#-#NQQBAR#*#Rqqbar#)*(1./(#NTTBAR#-#NQQBAR#))'))
-				self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fqs0',kRed+1,'0th Symmetric q#bar{q} distribution',None,'#scale#*(#NTOT#-#NBCK#*#Rbck#-#NNTMJ#*#Rntmj#)*(1./#NTTBAR#)*#Rqqbar#'))
-				self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fqa0',kRed-7,'0th Antisymmetric q#bar{q} distribution','wqa0','#scale#*(#NTOT#-#NBCK#*#Rbck#-#NNTMJ#*#Rntmj#)*(1./#NTTBAR#)*#Rqqbar#*#Afb#'))
-				self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fbck',kYellow,'background distribution',None,'#scale#*#Rbck#'))
-				self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fntmj',kGreen,'NTMJ background distribution',None,'#scale#*#Rntmj#'))
-				if self.step == 'initial' :
+				self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__DATA',kBlack,'data distribution',None))
+				self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__fgg',kBlue,'gg (qg,q_{i}q_{j},etc.) distribution',fgg_func))
+				self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__fqq',kRed+2,'0th Symmetric q#bar{q} distribution',fqq_func))
+				self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__fbck',kYellow,'background distribution',fbck_func))
+				self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__fntmj',kGreen,'NTMJ background distribution',fntmj_func))
+				if self.include_JEC and self.step == 'initial' :
 					JEC_wiggles = ['JES__up','JES__down','JER__up','JER__down']
 					for JEC_wiggle in JEC_wiggles :
-						self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fg0__'+JEC_wiggle,kBlue,'0th gg (qg,q_{i}q_{j},etc.) distribution',None,'#scale#*(#NTOT#-#NBCK#*#Rbck#-#NNTMJ#*#Rntmj#)*(1./#NTTBAR#)*(#NTTBAR#-#NQQBAR#*#Rqqbar#)*(1./(#NTTBAR#-#NQQBAR#))'))
-						self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fqs0__'+JEC_wiggle,kRed+1,'0th Symmetric q#bar{q} distribution',None,'#scale#*(#NTOT#-#NBCK#*#Rbck#-#NNTMJ#*#Rntmj#)*(1./#NTTBAR#)*#Rqqbar#'))
-						self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fqa0__'+JEC_wiggle,kRed-7,'0th Antisymmetric q#bar{q} distribution','wqa0','#scale#*(#NTOT#-#NBCK#*#Rbck#-#NNTMJ#*#Rntmj#)*(1./#NTTBAR#)*#Rqqbar#*#Afb#'))
-						self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fbck__'+JEC_wiggle,kYellow,'background distribution',None,'#scale#*#Rbck#'))
-						self.dists.append(distribution(self.parfile,lepprefix+chargesep+'__fntmj__'+JEC_wiggle,kGreen,'NTMJ background distribution',None,'#scale#*#Rntmj#'))
+						self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__fgg__'+JEC_wiggle,kBlue,JEC_wiggle+'gg (qg,q_{i}q_{j},etc.) distribution',fgg_func))
+						self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__fqq__'+JEC_wiggle,kRed+2,JEC_wiggle+'0th Symmetric q#bar{q} distribution',fqq_func))
+						self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__fbck__'+JEC_wiggle,kYellow,JEC_wiggle+'background distribution',fbck_func))
+						self.dists.append(distribution(self.parfile,self.include_PDF,lepprefix+chargesep+'__fntmj__'+JEC_wiggle,kGreen,JEC_wiggle+'NTMJ background distribution',fntmj_func))
 
 	#__contributesToDist__ finds out whether the tree coming in should be added to the ith distribution
 	def __contributesToDist__(self,ttree_path,distname,jecwiggles) :
@@ -416,25 +444,26 @@ class template_group :
 			if samplename.find(bkg_name)!=-1 :
 				isbkg=True
 				break
-		iswig = distname.find('JES')!=-1 or distname.find('JER')!=-1
+		iswig = len(distname.split('__')>2) and distname.split('__')[2].find('JES')!=-1 or distname.split('__')[2].find('JER')!=-1
 		wig = ''
 		for j in range(len(jecwiggles)) :
 			if samplename.find(jecwiggles[j])!=-1 :
 				wig = jecwiggles[j]
 				break
+		disttype = distname.split('__')[1]
 		if (iswig and (wig == '' or distname.find(wig.split('_')[0]+'__'+wig.split('_')[1])==-1) and samplename.find('Run2012')==-1) or (not iswig and wig != '') :
 			return 0.0
 		if ((distname.startswith('mu') or distname.startswith('allchannels')) and samplename.find('SingleMu')!=-1 and (distname.endswith('DATA') or distname.find('fntmj')!=-1)) :
 			return 1.0
 		elif ((distname.startswith('el') or distname.startswith('allchannels')) and samplename.find('SingleEl')!=-1 and (distname.endswith('DATA') or distname.find('fntmj')!=-1)) :
 			return 1.0
-		elif (samplename.find('qq_semilep_TT')!=-1 and (distname.find('fqs')!=-1 or distname.find('fqa')!=-1)) :
+		elif samplename.find('qq_semilep_TT'!=-1 and disttype.find('fqq')!=-1 :
 			return LUMINOSITY
-		elif samplename.find('gg_semilep_TT')!=-1 and distname.find('fg')!=-1 :
+		elif samplename.find('gg_semilep_TT')!=-1 and disttype.find('fgg')!=-1 :
 			return LUMINOSITY
-		elif isbkg and distname.find('fbck')!=-1 :
+		elif isbkg and disttype.find('fbck')!=-1 :
 			return LUMINOSITY
-		elif samplename.find('SingleMu')==-1 and samplename.find('SingleEl')==-1 and distname.find('fntmj')!=-1 :
+		elif samplename.find('SingleMu')==-1 and samplename.find('SingleEl')==-1 and disttype.find('fntmj')!=-1 :
 			return -1.0*LUMINOSITY
 		else :
 			return 0.0

@@ -46,17 +46,17 @@ fillcolors = []
 sample_weights = []
 data_filenames = []
 #Single top
-filenames.append('T_s'); 	 fillcolors.append(kMagenta)
-filenames.append('T_t'); 	 fillcolors.append(kMagenta)
-filenames.append('T_tW'); 	 fillcolors.append(kMagenta)
-filenames.append('Tbar_s');  fillcolors.append(kMagenta)
-filenames.append('Tbar_t');  fillcolors.append(kMagenta)
-filenames.append('Tbar_tW'); fillcolors.append(kMagenta)
+filenames.append('T_s'); 	 fillcolors.append(kYellow)#kMagenta)
+filenames.append('T_t'); 	 fillcolors.append(kYellow)#kMagenta)
+filenames.append('T_tW'); 	 fillcolors.append(kYellow)#kMagenta)
+filenames.append('Tbar_s');  fillcolors.append(kYellow)#kMagenta)
+filenames.append('Tbar_t');  fillcolors.append(kYellow)#kMagenta)
+filenames.append('Tbar_tW'); fillcolors.append(kYellow)#kMagenta)
 #DYnJets
-#filenames.append('DY1Jets'); fillcolors.append(kAzure-2)
-#filenames.append('DY2Jets'); fillcolors.append(kAzure-2)
-#filenames.append('DY3Jets'); fillcolors.append(kAzure-2)
-#filenames.append('DY4Jets'); fillcolors.append(kAzure-2)
+filenames.append('DY1Jets'); fillcolors.append(kYellow)#kAzure-2)
+filenames.append('DY2Jets'); fillcolors.append(kYellow)#kAzure-2)
+filenames.append('DY3Jets'); fillcolors.append(kYellow)#kAzure-2)
+filenames.append('DY4Jets'); fillcolors.append(kYellow)#kAzure-2)
 #WnJets samples
 #filenames.append('W1Jets'); fillcolors.append(kGreen-3)
 #filenames.append('W2Jets'); fillcolors.append(kGreen-3)
@@ -64,25 +64,25 @@ filenames.append('Tbar_tW'); fillcolors.append(kMagenta)
 #filenames.append('W4Jets'); fillcolors.append(kGreen-3)
 #POWHEG TT
 #dileptonic 
-filenames.append('Powheg_dilep_TT'); 				 fillcolors.append(kRed-7)
+filenames.append('Powheg_dilep_TT'); 				 fillcolors.append(kYellow)#kRed-7)
 #filenames.append('Powheg_dilep_TT_SC'); 			 fillcolors.append(kRed-7)
 #filenames.append('Powheg_dilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7)
 #filenames.append('Powheg_dilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7)
 #hadronic
-filenames.append('Powheg_had_TT'); 				   fillcolors.append(kRed-5)
+filenames.append('Powheg_had_TT'); 				   fillcolors.append(kYellow)#kRed-5)
 #filenames.append('Powheg_had_TT_SC'); 			   fillcolors.append(kRed-7)
 #filenames.append('Powheg_had_TT_Mtt_700_to_1000'); fillcolors.append(kRed-7)
 #filenames.append('Powheg_had_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed-7)
+#semileptonic gg
+filenames.append('Powheg_gg_semilep_TT'); 				  fillcolors.append(kBlue)#kRed+1)
+#filenames.append('Powheg_gg_semilep_TT_SC'); 			  fillcolors.append(kRed+1)
+#filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed+1)
+#filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed+1)
 #semileptonic qq
 filenames.append('Powheg_qq_semilep_TT'); 				  fillcolors.append(kRed+1)
 #filenames.append('Powheg_qq_semilep_TT_SC'); 			  fillcolors.append(kRed+1)
 #filenames.append('Powheg_qq_semilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed+1)
 #filenames.append('Powheg_qq_semilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed+1)
-#semileptonic gg
-filenames.append('Powheg_gg_semilep_TT'); 				  fillcolors.append(kRed+1)
-#filenames.append('Powheg_gg_semilep_TT_SC'); 			  fillcolors.append(kRed+1)
-#filenames.append('Powheg_gg_semilep_TT_Mtt_700_to_1000'); fillcolors.append(kRed+1)
-#filenames.append('Powheg_gg_semilep_TT_Mtt_1000_to_Inf'); fillcolors.append(kRed+1)
 #data
 #data_filenames.append('Powheg_semilep_TT')
 if leptype == 'mu' :
@@ -90,7 +90,7 @@ if leptype == 'mu' :
 	data_filenames.append('SingleMu_Run2012B')
 	data_filenames.append('SingleMu_Run2012C')
 	data_filenames.append('SingleMu_Run2012D')
-elif leptype == 'el' :
+#elif leptype == 'el' :
 	data_filenames.append('SingleEl_Run2012A')
 	data_filenames.append('SingleEl_Run2012B')
 	data_filenames.append('SingleEl_Run2012C')
@@ -123,46 +123,30 @@ weightstrings = []
 includedata = []
 
 #Default Cut Strings
-MARC_PRESELECTION = 'hadt_pt>300. && hadt_M>100. && lepW_pt>50.'
-MARC_CUTS_MUONS = 'lepW_pt>50. && muon1_pt>40. && muon1_pt>ele1_pt && abs(muon1_eta)<2.4 && muon1_isLoose==1'
-MARC_CUTS_MUONS+= ' && (muon1_relPt>25. || muon1_dR>0.5)'
-MARC_CUTS_MUONS+= ' && lepb_M<50. && lept_M>140. && lept_M<250. && hadt_pt>400. && hadt_M>140. && hadt_M<250.'
-MARC_CUTS_MUONS+= ' && hadt_tau32<0.55 && hadt_tau21>0.1'
-MORE_SELECTIVE_MUONS = MARC_CUTS_MUONS+' && (muon2_isLoose!=1 || muon2_pt<40. || abs(muon2_eta)>2.4)'
-MORE_SELECTIVE_MUONS+=' && (ele1_isLoose!=1 || ele1_pt<40. || abs(ele1_eta)>2.4)'
-MORE_SELECTIVE_MUONS+=' && (ele2_isLoose!=1 || ele2_pt<40. || abs(ele2_eta)>2.4)'
-MARC_CUTS_ELECTRONS = 'lepW_pt>50. && ele1_pt>40. && ele1_pt>muon1_pt && abs(ele1_eta)<2.4 && ele1_isLoose==1'
-MARC_CUTS_ELECTRONS+= ' && (ele1_relPt>25. || ele1_dR>0.5)'
-MARC_CUTS_ELECTRONS+= ' && lepb_M<50. && lept_M>140. && lept_M<250. && hadt_pt>400. && hadt_M>140. && hadt_M<250.'
-MARC_CUTS_ELECTRONS+= ' && hadt_tau32<0.55 && hadt_tau21>0.1'
-MORE_SELECTIVE_ELECTRONS = MARC_CUTS_ELECTRONS+' && (ele2_isLoose!=1 || ele2_pt<40. || abs(ele2_eta)>2.4)'
-MORE_SELECTIVE_ELECTRONS+=' && (muon1_isLoose!=1 || muon1_pt<40. || abs(muon1_eta)>2.4)'
-MORE_SELECTIVE_ELECTRONS+=' && (muon2_isLoose!=1 || muon2_pt<40. || abs(muon2_eta)>2.4)'
-MARC_PLUS_TRIANGLE = MARC_CUTS_ELECTRONS+' && ele1_tri_el_val<ele1_tri_cut_val && ele1_tri_jet_val<ele1_tri_cut_val'
-MORE_SELECTIVE_PLUS_TRIANGLE = MARC_PLUS_TRIANGLE+' && (ele2_isLoose!=1 || ele2_pt<25. || abs(ele2_eta)>2.4)'
-MORE_SELECTIVE_PLUS_TRIANGLE+=' && (muon1_isLoose!=1 || muon1_pt<40. || abs(muon1_eta)>2.4)'
-MORE_SELECTIVE_PLUS_TRIANGLE+=' && (muon2_isLoose!=1 || muon2_pt<40. || abs(muon2_eta)>2.4)'
-muon_preselection = 'muon1_pt>ele1_pt && lepW_pt>50. && hadt_pt>300. && hadt_M>100.'
-muon_kinematics = 'muon1_pt>40. && abs(muon1_eta)<2.4'
-muon_ID = 'muon1_isLoose==1'
-muon_2D = '(muon1_relPt>25. || muon1_dR>0.5)'
-ele_preselection = 'ele1_pt>muon1_pt && lepW_pt>50. && hadt_pt>300. && hadt_M>100.'
-ele_kinematics = 'ele1_pt>40. && abs(ele1_eta)<2.4'
-ele_ID = 'ele1_isLoose==1'
-ele_2D = '(ele1_relPt>25. || ele1_dR>0.5)'
-lep_top_mass = 'lept_M>140. && lept_M<250.'
-muon_full_leptonic = muon_preselection+' && '+muon_kinematics+' && '+muon_ID+' && '+muon_2D+' && '+lep_top_mass
-muon_hadronic_pretag = muon_full_leptonic+' && hadt_tau21>0.1'
-ele_full_leptonic = ele_preselection+' && '+ele_kinematics+' && '+ele_ID+' && '+ele_2D+' && '+lep_top_mass
-ele_hadronic_pretag = ele_full_leptonic+' && hadt_tau21>0.1'
-signal_mass = 'hadt_M>140. && hadt_M<250.'
-signal_tau32 = 'hadt_tau32<0.55' 
+skim = 'hadt_M>100. && lepb_pt>0.'
+mu_trigger = 'mu_trigger==1'
+el_trigger = 'el_trigger==1'
+lep_trigger_plots = skim+' && (('+mu_trigger+') || ('+el_trigger+'))' #just for presentation plots
+mu_kinematics = 'muon1_pt>40. && abs(muon1_eta)<2.4'
+el_kinematics = 'ele1_pt>40. && abs(ele1_eta)<2.4'
+lep_kinematics_plots = skim+' && (('+mu_trigger+' && '+mu_kinematics+') || ('+el_trigger+' && '+el_kinematics+'))' #just for presentation plots
+mu_ID_iso = 'muon1_isLoose==1 && (muon1_relPt>25. || muon1_dR>0.5)'
+el_ID_iso = 'ele1_isLoose==1  && (ele1_relPt>25.  || ele1_dR>0.5)'
+lep_ID_iso_plots = skim+' && (('+mu_trigger+' && '+mu_kinematics+' && '+mu_ID_iso+') || ('+el_trigger+' && '+el_kinematics+' && '+el_ID_iso+'))'
+lept_mass = 'lept_M>140. && lept_M<250.'
+lept_mass_plots = lep_ID_iso_plots+' && '+lept_mass
+hadt_pt = 'hadt_pt>300.'
+hadt_pt_plots = lept_mass_plots+' && '+hadt_pt
+hadt_mass = 'hadt_M>140. && hadt_M<250.'
+hadt_mass_plots = hadt_pt_plots+' && '+hadt_mass
+hadt_structure = 'hadt_tau21>0.1 && hadt_tau32<0.55'
+hadt_structure_plots = hadt_mass_plots+' && '+hadt_structure
 #electron trigger selection cuts
 ELECTRON_TRIGGER_CUTS = 'mu_trigger==1 && muon1_pt>40. && abs(muon1_eta)<2.4 && muon1_isLoose==1 && (muon1_relPt>25. || muon1_dR>0.5)'
 ELECTRON_TRIGGER_CUTS += ' && ele1_pt>40. && abs(ele1_eta)<2.4 && ele1_isLoose==1 && (ele1_relPt>25. || ele1_dR>0.5)'
 ELECTRON_TRIGGER_CUTS += ' && (ele2_isLoose!=1 || ele2_pt<40. || abs(ele2_eta)>2.4 || (ele2_relPt<25. && ele2_dR<0.5))'
 ELECTRON_TRIGGER_CUTS += ' && (muon2_isLoose!=1 || muon2_pt<40. || abs(muon2_eta)>2.4 || (muon2_relPt<25. && muon2_dR<0.5))'
-ELECTRON_TRIGGER_CUTS += ' && muon1_Q+ele1_Q==0 && lepW_pt>50. && lept_M>140. && lept_M<250.'
+ELECTRON_TRIGGER_CUTS += ' && muon1_Q+ele1_Q==0 && lept_M>140. && lept_M<250.'
 ELECTRON_TRIGGER_CUTS += ' && lepb_pt>50. && hadt_pt>50. && max(lepb_pt,hadt_pt)>150.'
 #electron ID selection cuts
 #electron 1 and/or 2 selection
@@ -190,17 +174,17 @@ ELECTRON_ID_CUTS+=' && lepW_pt[0]>50.'
 ELECTRON_ID_CUTS+=' && lepb_pt>50. && hadt_pt>50. && max(lepb_pt,hadt_pt)>150.'
 ELECTRON_ID_CUTS+=' && (lepb_csv>0.244 || hadt_csv>0.244)'
 #Weight strings
-STD_WEIGHTS = '19748.*weight*sf_pileup*sf_top_pT'
+STD_WEIGHTS = '19748.*weight*sf_pileup*sf_top_pT*sf_lep_ID*sf_trig_eff*1.2'
 
 ##############################################################################################################
 ############################						  PLOTS 					  ############################
 ##############################################################################################################
 
-full_selection_cuts = MARC_PRESELECTION
-if leptype == 'mu' :
-	full_selection_cuts = MARC_CUTS_MUONS
-elif leptype == 'el' :
-	full_selection_cuts = MARC_CUTS_ELECTRONS
+full_selection_cuts = hadt_structure_plots
+#if leptype == 'mu' :
+#	full_selection_cuts = skim+' && '+mu_trigger+' && '+mu_kinematics+' && '+mu_ID_iso+' && '+lept_mass+' && '+hadt_pt+' && '+hadt_mass+' && '+hadt_structure
+#elif leptype == 'el' :
+#	full_selection_cuts = skim+' && '+el_trigger+' && '+el_kinematics+' && '+el_ID_iso+' && '+lept_mass+' && '+hadt_pt+' && '+hadt_mass+' && '+hadt_structure
 
 ##M
 #newPlot('M','M',full_selection_cuts,25,0.,2500.,'M in Simulation and Data; M (GeV)','',STD_WEIGHTS,True)
@@ -209,11 +193,18 @@ elif leptype == 'el' :
 ##xF
 #newPlot('x_F','abs(x_F)',full_selection_cuts,30,0.,0.6,'x_{F} in Simulation and Data; x_{F}','',STD_WEIGHTS,True)
 #M (scaled)
-newPlot('M_scaled','M_scaled',full_selection_cuts,25,0.,2500.,'scaled M in Simulation and Data; M (GeV)','',STD_WEIGHTS,True)
+newPlot('M_scaled_skim','M_scaled',skim,25,0.,2500.,'scaled M in Simulation and Data, step 0; M (GeV); Events/100 GeV','',STD_WEIGHTS,True)
+newPlot('M_scaled_trig','M_scaled',lep_trigger_plots,25,0.,2500.,'scaled M in Simulation and Data, step 1; M (GeV); Events/100 GeV','',STD_WEIGHTS,True)
+newPlot('M_scaled_kine','M_scaled',lep_kinematics_plots,25,0.,2500.,'scaled M in Simulation and Data, step 2; M (GeV); Events/100 GeV','',STD_WEIGHTS,True)
+newPlot('M_scaled_ID_iso','M_scaled',lep_ID_iso_plots,25,0.,2500.,'scaled M in Simulation and Data, step 3; M (GeV); Events/100 GeV','',STD_WEIGHTS,True)
+#newPlot('M_scaled_lept_M','M_scaled',lept_mass_plots,25,0.,2500.,'scaled M in Simulation and Data, step 4; M (GeV); Events/100 GeV','',STD_WEIGHTS,True)
+#newPlot('M_scaled_hadt_pt','M_scaled',hadt_pt_plots,25,0.,2500.,'scaled M in Simulation and Data, step 5; M (GeV); Events/100 GeV','',STD_WEIGHTS,True)
+#newPlot('M_scaled_hadt_M','M_scaled',hadt_mass_plots,25,0.,2500.,'scaled M in Simulation and Data, step 6; M (GeV); Events/100 GeV','',STD_WEIGHTS,True)
+#newPlot('M_scaled_hadt_s','M_scaled',hadt_structure_plots,25,0.,2500.,'scaled M in Simulation and Data, step 7; M (GeV); Events/100 GeV','',STD_WEIGHTS,True)
 #c* (scaled)
-newPlot('cstar_scaled','cstar_scaled',full_selection_cuts,20,-1.0,1.0,'scaled c* in Simulation and Data; c*','',STD_WEIGHTS,True)
+#newPlot('cstar_scaled','cstar_scaled',full_selection_cuts,10,-1.0,1.0,'scaled c* in Simulation and Data; c*','',STD_WEIGHTS,True)
 #xF (scaled)
-newPlot('x_F_scaled','abs(x_F_scaled)',full_selection_cuts,30,0.,0.6,'scaled x_{F} in Simulation and Data; x_{F}','',STD_WEIGHTS,True)
+#newPlot('x_F_scaled','abs(x_F_scaled)',full_selection_cuts,30,0.,0.6,'scaled x_{F} in Simulation and Data; x_{F}','',STD_WEIGHTS,True)
 
 ##leading muon pT
 #newPlot('muon1_pt','muon1_pt',MARC_PRESELECTION,20,0.,100.,'leading muon p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
@@ -242,7 +233,7 @@ newPlot('x_F_scaled','abs(x_F_scaled)',full_selection_cuts,30,0.,0.6,'scaled x_{
 ###hadronic t mass
 #newPlot('hadt_M','hadt_M',ele_hadronic_pretag,35,0.,350.,'hadronic top candidate mass; M (GeV)','',STD_WEIGHTS,True)
 #hadronic t pt
-newPlot('hadt_pt','hadt_pt',full_selection_cuts,25,0.,1000.,'hadronic top candidate p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
+#newPlot('hadt_pt','hadt_pt',full_selection_cuts,25,0.,1000.,'hadronic top candidate p_{T}; p_{T} (GeV)','',STD_WEIGHTS,True)
 ###hadronic t tau32
 #newPlot('hadt_tau32','hadt_tau32',ele_hadronic_pretag,20,0.,1.,'hadronic top candidate #tau_{32}; #tau_{32}','',STD_WEIGHTS,True)
 ###hadronic t tau21
@@ -330,19 +321,25 @@ for i in range(len(filenames)) :
 		#add to histogram stack
 		histostacks[j].Add(histograms[i][j])
 	#Add to legend if need be
+#	if i==0 :
+#		leg.AddEntry(histograms[i][0],"Single Top","F")
+#	elif i==-1:#6 :
+#		leg.AddEntry(histograms[i][0],"Z/#gamma+Jets","F")
+#	elif i==-1 :
+#		leg.AddEntry(histograms[i][0],"W+Jets","F")
+#	elif i==6:#10 :
+#		leg.AddEntry(histograms[i][0],"Dileptonic t#bar{t}","F")
+#	elif i==7:#11 :
+#		leg.AddEntry(histograms[i][0],"Hadronic t#bar{t}","F")
+#	elif i==len(filenames)-1 :
+#		leg.AddEntry(histograms[i][0],"Semileptonic t#bar{t}","F")
 	if i==0 :
-		leg.AddEntry(histograms[i][0],"Single Top","F")
-	elif i==-1:#6 :
-		leg.AddEntry(histograms[i][0],"Z/#gamma+Jets","F")
-	elif i==-1 :
-		leg.AddEntry(histograms[i][0],"W+Jets","F")
-	elif i==6:#10 :
-		leg.AddEntry(histograms[i][0],"Dileptonic t#bar{t}","F")
-	elif i==7:#11 :
-		leg.AddEntry(histograms[i][0],"Hadronic t#bar{t}","F")
+		leg.AddEntry(histograms[i][0],"Background","F")
+	elif i==len(filenames)-2 :
+		leg.AddEntry(histograms[i][0],"gg/qg #rightarrow t#bar{t}","F")
 	elif i==len(filenames)-1 :
-		leg.AddEntry(histograms[i][0],"Semileptonic t#bar{t}","F")
-leg.AddEntry(datahistograms[0],"Data","LPE")
+		leg.AddEntry(histograms[i][0],"q#bar{q} #rightarrow t#bar{t}","F")
+leg.AddEntry(datahistograms[0],"2012 Data","LPE")
 
 #Make residual plots
 for j in range(len(histonames)) :
@@ -369,6 +366,7 @@ for j in range(len(histonames)) :
 	resids[j].GetYaxis().SetLabelSize((0.05*0.72)/0.28); resids[j].GetYaxis().SetTitleOffset(0.4)
 	resids[j].GetXaxis().SetTitleSize((0.72/0.28)*resids[j].GetXaxis().GetTitleSize())
 	resids[j].GetYaxis().SetTitleSize((0.72/0.28)*resids[j].GetYaxis().GetTitleSize())
+	resids[j].GetYaxis().SetTitle('Data/MC')
 	print 'maxdev = '+str(maxdev)
 	resids[j].GetYaxis().SetRangeUser(1.0-(1.05*maxdev),1.0+(1.05*maxdev))
 	resids[j].GetYaxis().SetNdivisions(503)

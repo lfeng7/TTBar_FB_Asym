@@ -15,20 +15,28 @@ parser.add_option('--on_grid', 	  type='string', action='store', default='no',	 
 parser.add_option('--parameters', type='string', action='store', default='initial_parameters',	 		dest='parameters',		help='Path to input file holding list of fitting parameters and their initial values')
 parser.add_option('--out_name',	  type='string', action='store', default='templates',dest='out_name',   help='Name of output file that will have all the templates in it')
 parser.add_option('--sum_charges',type='string', action='store', default='no',		 dest='sum_charges',help='Whether or not to integrate over the lepton charge in building templates')
+parser.add_option('--include_PDF',type='string', action='store', default='yes',		 dest='include_PDF',help='Whether or not to include PDF uncertainty in building templates')
+parser.add_option('--include_JEC',type='string', action='store', default='yes',		 dest='include_JEC',help='Whether or not to include JEC systematics in building templates')
 (options, args) = parser.parse_args()
 
-#Start up the output file
-output_name = options.out_name
+SUM_CHARGES = False
 if options.sum_charges.lower() == 'yes' :
-	output_name+= '_charge_summed_'
-else :
-	output_name+='_'
+	SUM_CHARGES = True
+INCLUDE_PDF = False
+if options.include_PDF.lower() == 'yes' :
+	INCLUDE_PDF = True
+INCLUDE_JEC = False
+if options.include_JEC.lower() == 'yes' :
+	INCLUDE_JEC = True
+
+#Start up the output file
+output_name = options.out_name+'_'
 parfilename = options.parameters
 if '.txt' not in parfilename :
 	parfilename+='.txt'
 #Start up the group of templates
 print 'Creating template group'
-templates = template_group(output_name,parfilename)
+templates = template_group(output_name,parfilename,SUM_CHARGES,INCLUDE_PDF,INCLUDE_JEC)
 print 'Done'
 #Open the input file
 input_file_path =''
@@ -57,29 +65,30 @@ print 'Done'
 print 'Building templates from distributions'
 templates.build_templates()
 print 'Done'
-#Save all the templates for this group
-print 'Writing templates to files'
-templates.write_to_files()
-print 'Done'
-#Make and save the theta feed file
-print 'Making theta feed file from separate template files'
-step = options.parameters.split('_')[0]
-if step == 'initial' or step == 'final' :
-	separate_files = ['nominal','simple_systematics','fit_parameters','JEC','PDF_systematics','NTMJ']
-	for i in range(len(separate_files)) :
-		tmp = output_name+separate_files[i]
-		separate_files[i] = tmp
-else : 
-	iname = output_name.split('_refined')[0]+'_initial'+output_name.split('_refined')[1]
-	separate_files = [iname+'nominal',iname+'simple_systematics',output_name+'fit_parameters',iname+'JEC',iname+'PDF_systematics',output_name+'NTMJ']
-cmd = 'hadd -f theta_feed'+output_name.split('templates')[1].rstrip('_')+'.root'
-for separate_file in separate_files :
-	cmd += ' '+separate_file+'.root'
-print '	'+cmd
-os.system(cmd)
-print 'Done'
+if options.parameters.find('final') == -1 :
+	#Save all the templates for this group
+	print 'Writing templates to files'
+	templates.write_to_files()
+	print 'Done'
+	#Make and save the theta feed file
+	print 'Making theta feed file from separate template files'
+	step = options.parameters.split('_')[0]
+	if step == 'initial' or step == 'final' :
+		separate_files = ['nominal','simple_systematics','fit_parameters','JEC','PDF_systematics','NTMJ']
+		for i in range(len(separate_files)) :
+			tmp = output_name+separate_files[i]
+			separate_files[i] = tmp
+	else : 
+		iname = output_name.split('_refined')[0]+'_initial'+output_name.split('_refined')[1]
+		separate_files = [iname+'nominal',iname+'simple_systematics',output_name+'fit_parameters',iname+'JEC',iname+'PDF_systematics',output_name+'NTMJ']
+	cmd = 'hadd -f theta_feed'+output_name.split('templates')[1].rstrip('_')+'.root'
+	for separate_file in separate_files :
+		cmd += ' '+separate_file+'.root'
+	print '	'+cmd
+	os.system(cmd)
+	print 'Done'
 #Make and save comparison plots if necessary
-if options.parameters.find('final') != -1 :
+else :
 	print 'Making comparison plots'
 	templates.make_plots()
 	print 'Done'
