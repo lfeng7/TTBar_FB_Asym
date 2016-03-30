@@ -62,12 +62,12 @@ class distribution :
 			#Get the total numbers of events for 
 			NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,'hadt_M>140. && hadt_M<=250. && hadt_tau32<0.55',template_name)
 #			print '		NGG, NG1, NG2, NG3, NG4, NQQ, NQ1, NQ2, NBCK, NNTMJ = %f, %f, %f, %f, %f, %f, %f, %f, %f, %f'%(NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ) #DEBUG
-			funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
 			for entry in range(nEntries) :
 				self.tree.GetEntry(entry)
 				if self.hadt_M[0]<140. or self.hadt_M[0]>250. or self.hadt_tau32[0]>0.55 :
 					continue
 				eventweight, eventweight_opp = self.__get_event_weights__(template_name)
+				funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
 				eventweight*=funcweight; eventweight_opp*=funcweight_opp
 				#if we want to add the event twice half the weight
 				if self.addTwice[0]==1 :
@@ -103,7 +103,6 @@ class distribution :
 				#Get the event numbers from other distributions
 				NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,all_tree_cuts[j],template_name)
 				NNTMJ = 0. #because we're going to find what it is
-				funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
 				all_event_counts[j].append(0.)
 				for entry in range(nEntries) :
 					self.tree.GetEntry(entry)
@@ -132,6 +131,7 @@ class distribution :
 						print 'CUTSTRING NOT RECOGNIZED ('+all_tree_cuts[j]+')'
 						continue
 					eventweight, eventweight_opp = self.__get_event_weights__(template_name)
+					funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
 					eventweight*=funcweight; eventweight_opp*=funcweight_opp
 					if self.addTwice[0]==1 :
 						eventweight*=0.5; eventweight_opp*=0.5
@@ -196,12 +196,12 @@ class distribution :
 			NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,all_tree_cuts[len(all_tree_cuts)-1],template_name)
 			NNTMJ = 0. #because we're going to find what it is
 #			print '		NGG, NG1, NG2, NG3, NG4, NQQ, NQ1, NQ2, NBCK, NNTMJ = %f, %f, %f, %f, %f, %f, %f, %f, %f, %f'%(NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ) #DEBUG
-			funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
 			for entry in range(nEntries) :
 				self.tree.GetEntry(entry)
 				if self.hadt_M[0]<140. or self.hadt_M[0]>250. or self.hadt_tau32[0]<0.55 :
 					continue
 				eventweight, eventweight_opp = self.__get_event_weights__(template_name)
+				funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
 				eventweight*=funcweight; eventweight_opp*=funcweight_opp
 				#apply the conversion function
 				conv_value = 1.0
@@ -246,7 +246,9 @@ class distribution :
 		self.Q_l 				  = array('i',[0]);     self.all_branches.append(('Q_l','Q_l',self.Q_l,'/I'))
 		self.addTwice 			  = array('I',[2]);     self.all_branches.append(('addTwice','addTwice',self.addTwice,'/i'))
 		self.contrib_weight 	  = array('d',[1.0]);   self.all_branches.append((None,'contrib_weight',self.contrib_weight,'/D'))
+		self.dist_reweight_names = []
 		self.dist_reweight_arrays = [] 
+		self.dist_reweight_opp_arrays = []
 		self.const_reweights_arrays = []
 		self.simple_systematic_reweights_arrays = []
 		self.pdf_reweight_array = array('d',[1.0])
@@ -282,9 +284,6 @@ class distribution :
 				self.pdf_reweight_array = array('d',53*[1.0])
 				self.all_branches.append((pdf_reweight_vector_trees,pdf_reweight_vector_dists,self.pdf_reweight_array,'[53]/D'))
 			#fit parameters and distribution reweights
-			print '				Adding branch for distribution reweight ('+self.dist_rw+')'
-			self.dist_reweight 	  	  = array('d',[1.0]); self.all_branches.append((self.dist_rw,'dist_reweight',self.dist_reweight,'/D'))
-			self.dist_reweight_opp    = array('d',[1.0]); self.all_branches.append((self.dist_rw+'_opp','dist_reweight_opp',self.dist_reweight_opp,'/D'))
 			#read the numerical values in from the parameter file
 			pars = []
 			parfile = open(self.parfile_name)
@@ -311,12 +310,15 @@ class distribution :
 							self.fit_parameter_names.append(par[0])
 						break
 				if args[j].startswith('wg') or args[j].startswith('wq') :
-					self.dist_reweight_arrays.append(' ') #ON THIS LINE HERE
+					self.dist_reweight_names.append(args[j])
+					self.dist_reweight_arrays.append(array('d',[1.0])); self.dist_reweight_opp_arrays.append(array('d',[1.0]))
+					self.all_branches.append((args[j],args[j],self.dist_reweight_arrays[len(dist_reweight_arrays)-1],'/D'))
+					self.all_branches.append((args[j]+'_opp',args[j]+'_opp',self.dist_reweight_opp_arrays[len(dist_reweight_opp_arrays)-1],'/D'))
 			#nominal distribution
 			factorstring = ''
 			for j in range(len(args)) :
 				if not argispar[j] :
-					if args[j].startswith('N') :
+					if args[j].startswith('N') or args[j].startswith('wg') or args[j].startswith('wq') :
 						factorstring+='#'+args[j]+'#'
 					else :
 						factorstring+=args[j]
@@ -332,7 +334,7 @@ class distribution :
 					thisparname = ''
 					for j in range(len(args)) :
 						if not argispar[j] :
-							if args[j].startswith('N') :
+							if args[j].startswith('N') or args[j].startswith('wg') or args[j].startswith('wq') :
 								factorstring_down+='#'+args[j]+'#'; factorstring_up+='#'+args[j]+'#'
 							else :
 								factorstring_down+=args[j]; factorstring_up+=args[j]
@@ -378,16 +380,16 @@ class distribution :
 
 	def  __get_total_event_numbers__(self,ds,cuts,templatename) :
 		ns = [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
-		names = ['fg0','fg1','fg2','fg3','fg4','fqs0','fqs1','fqs2','fbck','fntmj']
+		names = ['fgg_0','fgg_1','fgg_2','fgg_3','fgg_4','fqq_0','fqq_1','fqq_2','fbck','fntmj']
+		rws   = [None,   'wg1',  'wg2',  'wg3',  'wg4',  None,   'wqs1', 'wqs2', None,  None]
 		#find the right trees
 		for i in range(len(ds)) :
 			#check that the distribution is in the right channel
 			thisdistsplit = self.name.split('__')
 			if ds[i].name.split('__')[0]!=thisdistsplit[0] :
 				continue
-			if len(thisdistsplit)>2 :
-				if len(ds[i].name.split('__'))<4 or ds[i].name.split('__')[2]!=thisdistsplit[2] or ds[i].name.split('__')[3]!=thisdistsplit[3] :
-					continue
+			if len(thisdistsplit)>2 and (len(ds[i].name.split('__'))<4 or ds[i].name.split('__')[2]!=thisdistsplit[2] or ds[i].name.split('__')[3]!=thisdistsplit[3]) :
+				continue
 			#get each type of number
 			for j in range(len(names)) :
 				if names[j]=='fntmj' and ds[i].name.split('__')[1].find(names[j])!=-1 :
@@ -399,9 +401,17 @@ class distribution :
 							break
 						elif len(thistempnamesplit)<4 : 
 							ns[j] = ds[i].all_templates[k].histo_3D.Integral()
-				elif ds[i].name.split('__')[1].find(names[j])!=-1 :
+				elif ds[i].name.split('__')[1].find(names[j].split('_')[0])!=-1 :
+					#Set branches
 					for branch in ds[i].all_branches :
 						ds[i].tree.SetBranchAddress(branch[1],branch[2])
+					dist_rw_branch = array('d',[1.0])
+					dist_rw_opp_branch = array('d',[1.0])
+					for k in range(len(ds[i].dist_reweight_names)) :
+						if ds[i].dist_reweight_names[k] == rws[j] :
+							dist_rw_branch = ds[i].dist_reweight_arrays[k]
+							dist_rw_opp_branch = ds[i].dist_reweight_opp_arrays[k]
+							break
 					#loop over events
 					nEntries = ds[i].tree.GetEntries()
 					for entry in range(nEntries) :
@@ -432,7 +442,9 @@ class distribution :
 								continue
 						else :
 							print 'CUTSTRING NOT RECOGNIZED ('+cuts+')'
+						#get event weights
 						eventweight, eventweight_opp = ds[i].__get_event_weights__(templatename)
+						eventweight*=dist_rw_branch[0]; eventweight_opp*=dist_rw_opp_branch[0]
 						if ds[i].addTwice[0]==1 :
 							eventweight*=0.5; eventweight_opp*=0.5
 						ns[j]+=eventweight
@@ -448,10 +460,6 @@ class distribution :
 		#data doesn't need anything else
 		if templatename.find('DATA')!=-1 :
 			return eweight, eweight_opp
-		#dist reweight
-		if self.dist_rw != None :
-			eweight*=self.dist_reweight[0]; eweight_opp*=self.dist_reweight_opp[0]
-#			print '	eweight *= dist reweight ('+str(self.dist_reweight[0])+') = '+str(eweight) #DEBUG
 		#Constant reweights
 		for reweight in self.const_reweights_arrays :
 			eweight*=reweight[0]; eweight_opp*=reweight[0]
@@ -493,52 +501,56 @@ class distribution :
 		eweight = 1.0; eweight_opp = 1.0
 		#fit parameter function weights
 		#replace the total event numbers in the function strings
-		real_rw_arrays = []
+		real_rw_arrays = []; real_rw_opp_arrays = []
 		for i in range(len(self.fit_function_reweight_arrays)) :
-			newfunction = ''
+			newfunction = ''; newfunction_opp = ''
 			arraysplit = self.fit_function_reweight_arrays[i].split('#')
 			for j in range(len(arraysplit)) :
 				if arraysplit[j] == 'NTOT' :
-					newfunction+='('+str(ngg+nqq+nbck+nntmj)+')'
+					newfunction+='('+str(ngg+nqq+nbck+nntmj)+')'; newfunction_opp+='('+str(ngg+nqq+nbck+nntmj)+')'
 				elif arraysplit[j] == 'NBCK' :
-					newfunction+='('+str(nbck)+')'
+					newfunction+='('+str(nbck)+')'; newfunction_opp+='('+str(nbck)+')'
 				elif arraysplit[j] == 'NNTMJ' :
-					newfunction+='('+str(nntmj)+')'
+					newfunction+='('+str(nntmj)+')'; newfunction_opp+='('+str(nntmj)+')'
 				elif arraysplit[j] == 'NTTBAR' :
-					newfunction+='('+str(ngg+nqq)+')'
+					newfunction+='('+str(ngg+nqq)+')'; newfunction_opp+='('+str(ngg+nqq)+')'
 				elif arraysplit[j] == 'NQQBAR' :
-					newfunction+='('+str(nqq)+')'
+					newfunction+='('+str(nqq)+')'; newfunction_opp+='('+str(nqq)+')'
 				elif arraysplit[j] == 'NG1' :
-					newfunction+='('+str(ng1)+')'
+					newfunction+='('+str(ng1)+')'; newfunction_opp+='('+str(ng1)+')'
 				elif arraysplit[j] == 'NG2' :
-					newfunction+='('+str(ng2)+')'
+					newfunction+='('+str(ng2)+')'; newfunction_opp+='('+str(ng2)+')'
 				elif arraysplit[j] == 'NG3' :
-					newfunction+='('+str(ng3)+')'
+					newfunction+='('+str(ng3)+')'; newfunction_opp+='('+str(ng3)+')'
 				elif arraysplit[j] == 'NG4' :
-					newfunction+='('+str(ng4)+')'
+					newfunction+='('+str(ng4)+')'; newfunction_opp+='('+str(ng4)+')'
 				elif arraysplit[j] == 'NQ1' :
-					newfunction+='('+str(nq1)+')'
+					newfunction+='('+str(nq1)+')'; newfunction_opp+='('+str(nq1)+')'
 				elif arraysplit[j] == 'NQ2' :
-					newfunction+='('+str(nq2)+')'
+					newfunction+='('+str(nq2)+')'; newfunction_opp+='('+str(nq2)+')'
+				elif arraysplit[j].startswith('wg') or arraysplit[j].startswith('wq') :
+					for k in range(len(self.dist_reweight_names)) :
+						if self.dist_reweight_names[k]==arraysplit[j] :
+							newfunction+='('+str(self.dist_reweight_arrays[k][0])+')'; newfunction_opp+='('+str(self.dist_reweight_opp_arrays[k][0])+')'
 				else :
-					newfunction+=arraysplit[j]
-			real_rw_arrays.append(eval(newfunction))
+					newfunction+=arraysplit[j]; newfunction_opp+=arraysplit[j]
+			real_rw_arrays.append(eval(newfunction)); real_rw_opp_arrays.append(eval(newfunction_opp))
 		for j in range(len(self.fit_parameter_names)) :
 			if len(templatename.split('__'))>2 and templatename.split('__')[2].find(self.fit_parameter_names[j])!=-1 :
 				if templatename.split('__')[3].find('up')!=-1 :
 					eweight*=real_rw_arrays[2*j+1]
 #					print '	eweight *= real_rw_arrays['+str(2*j+1)+'] ('+str(real_rw_arrays[2*j+1])+') = '+str(eweight) #DEBUG 
-					eweight_opp*=real_rw_arrays[2*j+1]
+					eweight_opp*=real_rw_opp_arrays[2*j+1]
 					break
 				elif templatename.split('__')[3].find('down')!=-1 :
 					eweight*=real_rw_arrays[2*j+2]
 #					print '	eweight *= real_rw_arrays['+str(2*j+2)+'] ('+str(real_rw_arrays[2*j+2])+') = '+str(eweight) #DEBUG 
-					eweight_opp*=real_rw_arrays[2*j+2]
+					eweight_opp*=real_rw_opp_arrays[2*j+2]
 					break
 			elif j == len(self.fit_parameter_names)-1 :
 				eweight*=real_rw_arrays[0]
 #				print '	eweight *= real_rw_arrays[0] ('+str(real_rw_arrays[0])+') = '+str(eweight) #DEBUG 
-				eweight_opp*=real_rw_arrays[0]
+				eweight_opp*=real_rw_opp_arrays[0]
 		return eweight,eweight_opp
 
 
