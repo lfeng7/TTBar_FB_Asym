@@ -31,7 +31,7 @@ class template_group :
 				self.f_JEC = TFile(outputname+'JEC.root','recreate')
 		self.parfile = parfilename
 		self.sum_charge = sumcharges
-		self.include_pdf = includepdf
+		self.include_PDF = includepdf
 		self.include_JEC = includejec
 		#final distributions
 		print '	Initializing Distributions'
@@ -73,11 +73,13 @@ class template_group :
 			contribution = self.__contributesToDist__(ttree_file_path,distname,jecwiggles)
 			if contribution != 0. :
 				dists_to_add_to.append(self.dists[i])
+		if len(dists_to_add_to)==0 :
+			return
+		#loop over events in tree
 		nEntries = tree.GetEntries()
 		print 'Adding trees from '+ttree_file_path[ttree_file_path.find('total_ttree_files'):]+' to distributions: '
 		for i in range(len(dists_to_add_to)) :
 			print '	'+dists_to_add_to[i].name
-		#loop over events in tree
 		for entry in range(nEntries) :
 			for branch in original_branches :
 				tree.SetBranchAddress(branch[0],branch[1])
@@ -158,14 +160,14 @@ class template_group :
 				continue
 			if dist.name.find('ntmj') != -1 :
 				distfile = self.f_NTMJ 
-			if self.step == 'initial' :
+			elif self.step == 'initial' :
 				if dist.name.find('JER')!=-1 or dist.name.find('JES')!=-1 :
 					distfile = self.f_JEC
 				else :	
 					distfile = self.f_simple_systematics
 			for temp in dist.all_templates :
 				tempfile = distfile
-				if self.step == 'initial' :
+				if dist.name.find('ntmj')==-1 and self.step == 'initial' :
 					if temp.name.find('__up')==-1 and temp.name.find('__down')==-1 :
 						tempfile = self.f_nominal
 					elif temp.name.find('pdf_lambda')!=-1 :
@@ -444,12 +446,14 @@ class template_group :
 			if samplename.find(bkg_name)!=-1 :
 				isbkg=True
 				break
-		iswig = len(distname.split('__')>2) and distname.split('__')[2].find('JES')!=-1 or distname.split('__')[2].find('JER')!=-1
+		iswig = len(distname.split('__'))>2 and (distname.split('__')[2].find('JES')!=-1 or distname.split('__')[2].find('JER')!=-1)
 		wig = ''
 		for j in range(len(jecwiggles)) :
 			if samplename.find(jecwiggles[j])!=-1 :
 				wig = jecwiggles[j]
 				break
+		if wig != '' and not self.include_JEC :
+			return 0.0
 		disttype = distname.split('__')[1]
 		if (iswig and (wig == '' or distname.find(wig.split('_')[0]+'__'+wig.split('_')[1])==-1) and samplename.find('Run2012')==-1) or (not iswig and wig != '') :
 			return 0.0
@@ -457,7 +461,7 @@ class template_group :
 			return 1.0
 		elif ((distname.startswith('el') or distname.startswith('allchannels')) and samplename.find('SingleEl')!=-1 and (distname.endswith('DATA') or distname.find('fntmj')!=-1)) :
 			return 1.0
-		elif samplename.find('qq_semilep_TT'!=-1 and disttype.find('fqq')!=-1 :
+		elif samplename.find('qq_semilep_TT')!=-1 and disttype.find('fqq')!=-1 :
 			return LUMINOSITY
 		elif samplename.find('gg_semilep_TT')!=-1 and disttype.find('fgg')!=-1 :
 			return LUMINOSITY

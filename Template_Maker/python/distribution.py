@@ -302,18 +302,19 @@ class distribution :
 				args = self.function.split('#')
 			for j in range(len(args)) : #replace the parameters within the arguments
 				argispar.append(False)
-				for par in pars :
-					if par[0] == args[j] :
-						args[j] = par
-						argispar[j] = True
-						if par[0] not in self.fit_parameter_names :
-							self.fit_parameter_names.append(par[0])
-						break
 				if args[j].startswith('wg') or args[j].startswith('wq') :
 					self.dist_reweight_names.append(args[j])
 					self.dist_reweight_arrays.append(array('d',[1.0])); self.dist_reweight_opp_arrays.append(array('d',[1.0]))
-					self.all_branches.append((args[j],args[j],self.dist_reweight_arrays[len(dist_reweight_arrays)-1],'/D'))
-					self.all_branches.append((args[j]+'_opp',args[j]+'_opp',self.dist_reweight_opp_arrays[len(dist_reweight_opp_arrays)-1],'/D'))
+					self.all_branches.append((args[j],args[j],self.dist_reweight_arrays[len(self.dist_reweight_arrays)-1],'/D'))
+					self.all_branches.append((args[j]+'_opp',args[j]+'_opp',self.dist_reweight_opp_arrays[len(self.dist_reweight_opp_arrays)-1],'/D'))
+				else :
+					for par in pars :
+						if par[0] == args[j] :
+							args[j] = par
+							argispar[j] = True
+							if par[0] not in self.fit_parameter_names :
+								self.fit_parameter_names.append(par[0])
+							break
 			#nominal distribution
 			factorstring = ''
 			for j in range(len(args)) :
