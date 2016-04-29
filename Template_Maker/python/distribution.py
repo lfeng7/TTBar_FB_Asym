@@ -14,6 +14,16 @@ pdf_reweight_vector_trees = 'CT10_weights'
 pdf_reweight_vector_dists = 'CT10_weights'
 #Luminosity min bias
 LUMI_MIN_BIAS = 0.026
+#Cuts for conversion function calculation
+LM1_LOW = 50.
+LM1_HI  = 95.
+LM2_LOW = 95.
+LM2_HI  = 140.
+SM_LOW  = 140.
+SM_HI   = 250.
+HM_LOW  = 250.
+HM_HI   = 350.
+SUBS_CUT = 0.55
 
 
 #TDR Style
@@ -37,9 +47,13 @@ class distribution :
 		self.formatted_name = formatted_name
 		#fitting function string
 		self.function = function
-		#pretagged tree and branches
-		self.tree = TTree(self.name+'_tree',self.name+'_tree')
-		self.tree.SetDirectory(0)
+		#trees and branches
+		self.signal_tree     = TTree(self.name+'_signal_tree',self.name+'_signal_tree')
+		self.antitagged_tree = TTree(self.name+'_antitagged_tree',self.name+'_antitagged_tree')
+		self.sidebands_tree  = TTree(self.name+'_sidebands_tree',self.name+'_sidebands_tree')
+		self.signal_tree.SetDirectory(0)
+		self.antitagged_tree.SetDirectory(0)
+		self.sidebands_tree.SetDirectory(0)
 		self.all_branches = []
 		print '			Adding branches'
 		self.__add_all_branches__()
@@ -49,23 +63,31 @@ class distribution :
 		self.__add_all_templates__()
 		print '		Done'
 
+	def filltree(self) :
+		hadtM = self.hadt_M[0]; hadttau32 = self.hadt_tau32[0]
+		if hadtM>SM_LOW and hadtM<SM_HI :
+			if hadttau32<SUBS_CUT :
+				self.signal_tree.Fill()
+			else :
+				self.antitagged_tree.Fill()
+		else:
+			self.sidebands_tree.Fill()
+
 	#build_templates builds the 3D templates for a distribution, and returns a list of 1D templates
 	def build_templates(self,distlist) :
 		#set the branches to read
 		for branch in self.all_branches :
-			self.tree.SetBranchAddress(branch[1],branch[2])
-		nEntries = self.tree.GetEntries()
+			self.signal_tree.SetBranchAddress(branch[1],branch[2])
+		nEntries = self.signal_tree.GetEntries()
 		#read and add events from the tree to all of the derived templates
 		for i in range(len(self.all_templates)) :
 			template_name = self.all_templates[i].name
 			print '		Doing template '+template_name
 			#Get the total numbers of events for 
-			NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,'hadt_M>140. && hadt_M<=250. && hadt_tau32<0.55',template_name)
+			NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,'sm_ps',template_name)
 #			print '		NGG, NG1, NG2, NG3, NG4, NQQ, NQ1, NQ2, NBCK, NNTMJ = %f, %f, %f, %f, %f, %f, %f, %f, %f, %f'%(NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ) #DEBUG
 			for entry in range(nEntries) :
-				self.tree.GetEntry(entry)
-				if self.hadt_M[0]<140. or self.hadt_M[0]>250. or self.hadt_tau32[0]>0.55 :
-					continue
+				self.signal_tree.GetEntry(entry)
 				eventweight, eventweight_opp = self.__get_event_weights__(template_name)
 				funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
 				eventweight*=funcweight; eventweight_opp*=funcweight_opp
@@ -77,164 +99,120 @@ class distribution :
 				if self.addTwice[0]==1 :
 					self.all_templates[i].Fill(-1.0*self.cstar[0],abs(self.x_F[0]),self.M[0],eventweight_opp)
 
-	def fix_NTMJ_templates(self,f_aux,distlist) :
-		#start by splitting the tree into several
-		all_tree_cuts = []
-		all_tree_cuts.append('hadt_M>100. && hadt_M<=120. && hadt_tau32<0.55')
-		all_tree_cuts.append('hadt_M>120. && hadt_M<=140. && hadt_tau32<0.55')
-		all_tree_cuts.append('hadt_M>250. && hadt_M<=500. && hadt_tau32<0.55')
-		all_tree_cuts.append('hadt_M>100. && hadt_M<=120. && hadt_tau32>0.55')
-		all_tree_cuts.append('hadt_M>120. && hadt_M<=140. && hadt_tau32>0.55')
-		all_tree_cuts.append('hadt_M>250. && hadt_M<=500. && hadt_tau32>0.55')
-		all_tree_cuts.append('hadt_M>140. && hadt_M<=250. && hadt_tau32>0.55')
-		all_event_counts = []
-		for i in range(6) :
-			all_event_counts.append([])
+	def add_to_NTMJ_dictionary(self,distlist,event_counts,tree_cuts) :
 		#Set Branches
 		for branch in self.all_branches :
-			self.tree.SetBranchAddress(branch[1],branch[2])
-		nEntries = self.tree.GetEntries()
+			self.sidebands_tree.SetBranchAddress(branch[1],branch[2])
+		nEntries = self.sidebands_tree.GetEntries()
+		#For all of the lepton types
+		for ltype in event_counts :
+			#check that this distribution contributes to templates with leptons of this type
+			if self.name.split('__')[0].split('plus')[0] != ltype and self.name.split('__')[0].split('minus')[0] != ltype :
+				continue
+			#for all of the template types
+			for ttype in event_counts[ltype] :
+				if (self.name.find('JES__up')!=-1 and not ttype.find('JES__up')!=-1) or (self.name.find('JER__up')!=-1 and not ttype.find('JER__up')!=-1) :
+					continue
+				if (ttype.find('JES__up')!=-1 and not self.name.find('JES__up')!=-1) or (ttype.find('JER__up')!=-1 and not self.name.find('JER__up')!=-1) :
+					continue
+				if (self.name.find('JES__down')!=-1 and not ttype.find('JES__down')!=-1) or (self.name.find('JER__down')!=-1 and not ttype.find('JER__down')!=-1) :
+					continue
+				if (ttype.find('JES__down')!=-1 and not self.name.find('JES__down')!=-1) or (ttype.find('JER__down')!=-1 and not self.name.find('JER__down')!=-1) :
+					continue
+				template_name = ltype+'__fntmj__'+ttype
+				print '			Adding with lepton type '+ltype+' and template type '+ttype #DEBUG	
+				#Get the total event numbers based on the template type and set of cuts
+				NGGS = []; NG1S = []; NG2S = []; NG3S = []; NG4S = []; NQQS = []; NQ1S = []; NQ2S = []; NBCKS = []; NNTMJS = []
+				for j in range(len(event_counts[ltype][ttype])) :
+					first, second = tree_cuts[j].split('_')[0], tree_cuts[j].split('_')[1]
+					if not (first == 'lm1' or first == 'lm2' or first =='sm' or first == 'hm') or not (second == 'ps' or second == 'fs') :
+						print 'WARNING: CUTSTRING NOT RECOGNIZED: '+tree_cuts[j]
+						return
+					NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,tree_cuts[j],template_name)
+					NNTMJ = 0. #because we're going to find what it is
+					NGGS.append(NGG); NG1S.append(NG1); NG2S.append(NG2); NG3S.append(NG3); NG4S.append(NG4) 
+					NQQS.append(NQQ); NQ1S.append(NQ1); NQ2S.append(NQ2) 
+					NBCKS.append(NBCK) 
+					NNTMJS.append(NNTMJ)
+				#some loop optimization
+				getentry = self.sidebands_tree.GetEntry
+				geteventweights = self.__get_event_weights__
+				getfuncweights = self.__get_func_weights__
+				for entry in range(nEntries) :
+					getentry(entry)
+					hadtM = self.hadt_M[0]; hadttau32 = self.hadt_tau32[0]
+					lm1 = hadtM>LM1_LOW and hadtM<=LM1_HI
+					lm2 = hadtM>LM2_LOW and hadtM<=LM2_HI
+					hm  = hadtM>HM_LOW and hadtM<=HM_HI
+					sm  = hadtM>SM_LOW and hadtM<=SM_HI
+					ps  = hadttau32<SUBS_CUT
+					fs  = hadttau32>SUBS_CUT
+					eventweight_event, eventweight_opp_event = geteventweights(template_name)
+					if self.addTwice[0]==1 :
+						eventweight_event*=0.5; eventweight_opp_event*=0.5
+					#Add to all distributions
+					for j in range(len(event_counts[ltype][ttype])) :
+						eventweight, eventweight_opp = eventweight_event, eventweight_opp_event
+						if tree_cuts[j] == 'sm_ps' and not (sm and ps) :
+							continue
+						elif tree_cuts[j] == 'lm1_ps' and not (lm1 and ps) :
+							continue
+						elif tree_cuts[j] == 'lm2_ps' and not (lm2 and ps) :
+							continue
+						elif tree_cuts[j] == 'hm_ps' and not (hm and ps) :
+							continue
+						elif tree_cuts[j] == 'lm1_fs' and not (lm1 and fs) :
+							continue
+						elif tree_cuts[j] == 'lm2_fs' and not (lm2 and fs) :
+							continue
+						elif tree_cuts[j] == 'hm_fs' and not (hm and fs) :
+							continue
+						funcweight, funcweight_opp = getfuncweights(template_name,NGGS[j],NG1S[j],NG2S[j],NG3S[j],NG4S[j],NQQS[j],NQ1S[j],NQ2S[j],NBCKS[j],NNTMJS[j])
+						eventweight*=funcweight; eventweight_opp*=funcweight_opp
+						event_counts[ltype][ttype][j]+=eventweight
+						if self.addTwice[0]==1 :
+							event_counts[ltype][ttype][j]+=eventweight_opp
+
+	def apply_conversion_functions(self,distlist,conv_functions) :
+		#Set Branches
+		for branch in self.all_branches :
+			self.antitagged_tree.SetBranchAddress(branch[1],branch[2])
+		nEntries = self.antitagged_tree.GetEntries()
 		#For all of the NTMJ templates
 		for i in range(len(self.all_templates)) :
 			template_name = self.all_templates[i].name
-			print '		Doing template '+template_name
-			#Get the total number of events in each of the sideband trees
-			for j in range(len(all_event_counts)) :
-				#Get the event numbers from other distributions
-				NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,all_tree_cuts[j],template_name)
-				NNTMJ = 0. #because we're going to find what it is
-				all_event_counts[j].append(0.)
-				for entry in range(nEntries) :
-					self.tree.GetEntry(entry)
-					if all_tree_cuts[j] == 'hadt_M>140. && hadt_M<=250. && hadt_tau32<0.55' :
-						if not (self.hadt_M[0] > 140. and self.hadt_M[0] <= 250. and self.hadt_tau32[0] < 0.55) :
-							continue
-					elif all_tree_cuts[j] == 'hadt_M>100. && hadt_M<=120. && hadt_tau32<0.55' :
-						if not (self.hadt_M[0]>100. and self.hadt_M[0]<=120. and self.hadt_tau32[0] < 0.55) :
-							continue
-					elif all_tree_cuts[j] == 'hadt_M>120. && hadt_M<=140. && hadt_tau32<0.55' :
-						if not (self.hadt_M[0]>120. and self.hadt_M[0]<=140. and self.hadt_tau32[0] < 0.55) :
-							continue
-					elif all_tree_cuts[j] == 'hadt_M>250. && hadt_M<=500. && hadt_tau32<0.55' :
-						if not (self.hadt_M[0]>250. and self.hadt_M[0]<=500. and self.hadt_tau32[0] < 0.55) :
-							continue
-					elif all_tree_cuts[j] == 'hadt_M>100. && hadt_M<=120. && hadt_tau32>0.55' :
-						if not (self.hadt_M[0]>100. and self.hadt_M[0]<=120. and self.hadt_tau32[0] > 0.55) :
-							continue
-					elif all_tree_cuts[j] == 'hadt_M>120. && hadt_M<=140. && hadt_tau32>0.55' :
-						if not (self.hadt_M[0]>120. and self.hadt_M[0]<=140. and self.hadt_tau32[0] > 0.55) :
-							continue
-					elif all_tree_cuts[j] == 'hadt_M>250. && hadt_M<=500. && hadt_tau32>0.55' :
-						if not (self.hadt_M[0]>250. and self.hadt_M[0]<=500. and self.hadt_tau32[0] > 0.55) :
-							continue
-					else :
-						print 'CUTSTRING NOT RECOGNIZED ('+all_tree_cuts[j]+')'
-						continue
-					eventweight, eventweight_opp = self.__get_event_weights__(template_name)
-					funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
-					eventweight*=funcweight; eventweight_opp*=funcweight_opp
-					if self.addTwice[0]==1 :
-						eventweight*=0.5; eventweight_opp*=0.5
-					all_event_counts[j][i]+=eventweight
-					if self.addTwice[0]==1 :
-						all_event_counts[j][i]+=eventweight_opp
-				if all_event_counts[j][i] <= 0. :
-					all_event_counts[j][i] = 1.0
-			print 'NUMBERS OF EVENTS: ' #DEBUG
-			for j in range(len(all_event_counts)) : #DEBUG
-				print '		'+str(all_event_counts[j][i]) #DEBUG
-			#Find the y values and errors for the points on the graph
-			l1y = all_event_counts[0][i]/all_event_counts[3][i]
-			l2y = all_event_counts[1][i]/all_event_counts[4][i]
-			hy  = all_event_counts[2][i]/all_event_counts[5][i]
-			l1ye = l1y*sqrt((1./all_event_counts[3][i])+(1./all_event_counts[0][i]))
-			l2ye = l2y*sqrt((1./all_event_counts[4][i])+(1./all_event_counts[1][i]))
-			hye  = hy*sqrt((1./all_event_counts[5][i])+(1./all_event_counts[2][i]))
-			print '		l1y = '+str(l1y) #DEBUG
-			print '		l2y = '+str(l2y) #DEBUG
-			print '		hy = '+str(hy) #DEBUG
-			print '		l1ye = '+str(l1ye) #DEBUG
-			print '		l2ye = '+str(l2ye) #DEBUG
-			print '		hye = '+str(hye) #DEBUG
-			#Build the TGraph to fit with the conversion function
-			n=3
-			xs  = array('d',[110.,130.,375.])
-			xes = array('d',[10.,10.,125.])
-			ys  = array('d',[l1y,l2y,hy])
-			yes = array('d',[l1ye,l2ye,hye])
-			gr = TGraphErrors(n,xs,ys,xes,yes)
-			#Define the conversion function
-			conv_func = TF1('conv_func','[0]*x+[1]',100.,500.)
-			#Fit the graph
-			gr.Fit('conv_func')
-			#get the fitter
-			fitter = TVirtualFitter.GetFitter()
-			#Build the nominal, slope up/down, and intercept up/down functions
-			nom_func = TF1('nom_func','[0]*x+[1]',100.,500.) 
-			nom_func.SetParameter(0,conv_func.GetParameter(0)) 
-			nom_func.SetParameter(1,conv_func.GetParameter(1))
-			fit_up_func = TF1('fit_up_func','[0]*x+[1]+sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',100.,500.) 
-			fit_up_func.SetParameter(0,conv_func.GetParameter(0)) 
-			fit_up_func.SetParameter(1,conv_func.GetParameter(1))
-			fit_up_func.SetParameter(2,conv_func.GetParError(1))
-			fit_up_func.SetParameter(3,fitter.GetCovarianceMatrixElement(0,1))
-			fit_up_func.SetParameter(4,conv_func.GetParError(0))
-			fit_down_func = TF1('fit_down_func','[0]*x+[1]-sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',100.,500.) 
-			fit_down_func.SetParameter(0,conv_func.GetParameter(0)) 
-			fit_down_func.SetParameter(1,conv_func.GetParameter(1))
-			fit_down_func.SetParameter(2,conv_func.GetParError(1))
-			fit_down_func.SetParameter(3,fitter.GetCovarianceMatrixElement(0,1))
-			fit_down_func.SetParameter(4,conv_func.GetParError(0))
-			#Build the template from the converted antitagged tree
-			plot_func = conv_func
-			if template_name.find('__fit_')==-1 :
-				plot_func = nom_func
-			elif template_name.find('__fit__up')!=-1 :
-				plot_func = fit_up_func
-			elif template_name.find('__fit__down')!=-1 :
-				plot_func = fit_down_func
-			NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,all_tree_cuts[len(all_tree_cuts)-1],template_name)
-			NNTMJ = 0. #because we're going to find what it is
-#			print '		NGG, NG1, NG2, NG3, NG4, NQQ, NQ1, NQ2, NBCK, NNTMJ = %f, %f, %f, %f, %f, %f, %f, %f, %f, %f'%(NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ) #DEBUG
-			for entry in range(nEntries) :
-				self.tree.GetEntry(entry)
-				if self.hadt_M[0]<140. or self.hadt_M[0]>250. or self.hadt_tau32[0]<0.55 :
+			print '			Doing template '+template_name
+			for ltype in conv_functions :
+				if self.name.split('__')[0].split('plus')[0] != ltype and self.name.split('__')[0].split('minus')[0] != ltype :
 					continue
-				eventweight, eventweight_opp = self.__get_event_weights__(template_name)
-				funcweight, funcweight_opp = self.__get_func_weights__(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
-				eventweight*=funcweight; eventweight_opp*=funcweight_opp
-				#apply the conversion function
-				conv_value = 1.0
-				if template_name.find('__fit__up')!=-1 :
-					conv_value = fit_up_func.Eval(self.hadt_M[0])
-				elif template_name.find('__fit__down')!=-1 :
-					conv_value = fit_down_func.Eval(self.hadt_M[0])
-				elif template_name.find('__fit_')==-1 :
-					conv_value = nom_func.Eval(self.hadt_M[0])
-				eventweight*=conv_value; eventweight_opp*=conv_value
-				if self.addTwice[0]==1 :
-					eventweight*=0.5; eventweight_opp*=0.5
-				self.all_templates[i].Fill(self.cstar[0],abs(self.x_F[0]),self.M[0],eventweight)
-				if self.addTwice[0]==1 :
-					self.all_templates[i].Fill(-1.0*self.cstar[0],abs(self.x_F[0]),self.M[0],eventweight_opp)
-			#Make the plot of the fit
-#			canv = TCanvas(template_name+'_conv_func_canv',template_name+' conversion function canvas',900,900)
-#			gr.SetTitle(template_name+' conversion function fit')
-#			gr.GetXaxis().SetTitle('hadronic top candidate mass (GeV)')
-#			gr.GetYaxis().SetTitle('conversion rate (N_{passed}/N_{failed})')
-#			gr.GetXaxis().SetRangeUser(100.,500.)
-#			gr.SetMarkerStyle(21)
-#			gr.Draw('AP')
-#			plot_func.SetLineWidth(3)
-#			plot_func.SetLineColor(kRed)
-#			plot_func.Draw('L SAME')
-#			leg = TLegend(0.62,0.67,0.9,0.9)
-#			leg.AddEntry(gr,'measured rates','PE')
-#			leg.AddEntry(plot_func,'linear fit','L')
-#			leg.Draw()
-#			f_aux.cd()
-#			canv.Write()
-
+				for ttype in conv_functions[ltype] :
+					if (len(self.name.split('__'))==2 and ttype=='nominal') or (len(self.name.split('__'))>2 and ttype==self.name.split('__')[2]+'__'+self.name.split('__')[3]) :
+						#Get the event numbers from other distributions
+						NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ = self.__get_total_event_numbers__(distlist,'sm_fs',template_name)
+						NNTMJ = 0. #because we're going to find what it is
+						#Loop optimization
+						getentry_here = self.antitagged_tree.GetEntry
+						geteventweights_here = self.__get_event_weights__
+						getfuncweights_here = self.__get_func_weights__
+						for entry in range(nEntries) :
+							getentry_here(entry)
+							eventweight, eventweight_opp = geteventweights_here(template_name)
+							funcweight, funcweight_opp = getfuncweights_here(template_name,NGG,NG1,NG2,NG3,NG4,NQQ,NQ1,NQ2,NBCK,NNTMJ)
+							eventweight*=funcweight; eventweight_opp*=funcweight_opp
+							#apply the conversion function
+							conv_value = 1.0
+							if template_name.find('__fit__up')!=-1 :
+								conv_value = conv_functions[ltype][ttype][1].Eval(self.hadt_M[0])
+							elif template_name.find('__fit__down')!=-1 :
+								conv_value = conv_functions[ltype][ttype][2].Eval(self.hadt_M[0])
+							elif template_name.find('__fit__')==-1 :
+								conv_value = conv_functions[ltype][ttype][0].Eval(self.hadt_M[0])
+							eventweight*=conv_value; eventweight_opp*=conv_value
+							if self.addTwice[0]==1 :
+								eventweight*=0.5; eventweight_opp*=0.5
+							self.all_templates[i].Fill(self.cstar[0],abs(self.x_F[0]),self.M[0],eventweight)
+							if self.addTwice[0]==1 :
+								self.all_templates[i].Fill(-1.0*self.cstar[0],abs(self.x_F[0]),self.M[0],eventweight_opp)
 
 	def __add_all_branches__(self) :
 		print '				Adding observables branches'
@@ -344,13 +322,15 @@ class distribution :
 						elif argispar[j] and self.fit_parameter_names[k]==args[j][0] :
 							thisparname = args[j][0]
 							factorstring_down+='('+str(args[j][2])+')'; factorstring_up+='('+str(args[j][3])+')'
-					print '				Adding '+self.fit_parameter_names[k]+' up function: '+factorstring_up+' = '+factorstring_up
+					print '				Adding '+self.fit_parameter_names[k]+' up function: '+factorstring_up
 					self.fit_function_reweight_arrays.append(factorstring_up)
-					print '				Adding '+self.fit_parameter_names[k]+' down function: '+factorstring_down+' = '+factorstring_down
+					print '				Adding '+self.fit_parameter_names[k]+' down function: '+factorstring_down
 					self.fit_function_reweight_arrays.append(factorstring_down)
 		#finally add all the new branches to the tree
 		for branch in self.all_branches :
-			self.tree.Branch(branch[1],branch[2],branch[1]+branch[3])
+			self.signal_tree.Branch(branch[1],branch[2],branch[1]+branch[3])
+			self.antitagged_tree.Branch(branch[1],branch[2],branch[1]+branch[3])
+			self.sidebands_tree.Branch(branch[1],branch[2],branch[1]+branch[3])
 
 	def __add_all_templates__(self) :
 		#nominal
@@ -383,6 +363,11 @@ class distribution :
 		ns = [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
 		names = ['fgg_0','fgg_1','fgg_2','fgg_3','fgg_4','fqq_0','fqq_1','fqq_2','fbck','fntmj']
 		rws   = [None,   'wg1',  'wg2',  'wg3',  'wg4',  None,   'wqs1', 'wqs2', None,  None]
+		#check the cut string
+		f, s = cuts.split('_')[0], cuts.split('_')[1]
+		if not (f == 'lm1' or f == 'lm2' or f =='sm' or f == 'hm') or not (s == 'ps' or s == 'fs') :
+			print 'WARNING: CUTSTRING NOT RECOGNIZED: '+cuts
+			return
 		#find the right trees
 		for i in range(len(ds)) :
 			#check that the distribution is in the right channel
@@ -404,8 +389,13 @@ class distribution :
 							ns[j] = ds[i].all_templates[k].histo_3D.Integral()
 				elif ds[i].name.split('__')[1].find(names[j].split('_')[0])!=-1 :
 					#Set branches
+					tree = ds[i].sidebands_tree
+					if f == 'sm' and s == 'ps' :
+						tree = ds[i].signal_tree
+					elif f == 'sm' and s == 'fs' :
+						tree = ds[i].antitagged_tree
 					for branch in ds[i].all_branches :
-						ds[i].tree.SetBranchAddress(branch[1],branch[2])
+						tree.SetBranchAddress(branch[1],branch[2])
 					dist_rw_branch = array('d',[1.0])
 					dist_rw_opp_branch = array('d',[1.0])
 					for k in range(len(ds[i].dist_reweight_names)) :
@@ -414,37 +404,39 @@ class distribution :
 							dist_rw_opp_branch = ds[i].dist_reweight_opp_arrays[k]
 							break
 					#loop over events
-					nEntries = ds[i].tree.GetEntries()
+					nEntries = tree.GetEntries()
+					#some loop optimization
+					getentry_local = tree.GetEntry
+					geteventweights_local = ds[i].__get_event_weights__
 					for entry in range(nEntries) :
-						ds[i].tree.GetEntry(entry)
-						if cuts == 'hadt_M>140. && hadt_M<=250. && hadt_tau32<0.55' :
-							if not (ds[i].hadt_M[0] > 140. and ds[i].hadt_M[0] <= 250. and ds[i].hadt_tau32[0] < 0.55) :
+						getentry_local(entry)
+						hadtM_local = ds[i].hadt_M[0]; hadttau32_local = ds[i].hadt_tau32[0]
+						lm1_local = hadtM_local>LM1_LOW and hadtM_local<=LM1_HI
+						lm2_local = hadtM_local>LM2_LOW and hadtM_local<=LM2_HI
+						hm_local  = hadtM_local>HM_LOW and hadtM_local<=HM_HI
+						sm_local  = hadtM_local>SM_LOW and hadtM_local<=SM_HI
+						ps_local  = hadttau32_local<SUBS_CUT
+						fs_local  = hadttau32_local>SUBS_CUT
+						if f == 'sm' :
+							if cuts == 'sm_ps' and not (sm_local and ps_local) :
 								continue
-						elif cuts == 'hadt_M>100. && hadt_M<=120. && hadt_tau32<0.55' :
-							if not (ds[i].hadt_M[0]>100. and ds[i].hadt_M[0]<=120. and ds[i].hadt_tau32[0] < 0.55) :
-								continue
-						elif cuts == 'hadt_M>120. && hadt_M<=140. && hadt_tau32<0.55' :
-							if not (ds[i].hadt_M[0]>120. and ds[i].hadt_M[0]<=140. and ds[i].hadt_tau32[0] < 0.55) :
-								continue
-						elif cuts == 'hadt_M>250. && hadt_M<=500. && hadt_tau32<0.55' :
-							if not (ds[i].hadt_M[0]>250. and ds[i].hadt_M[0]<=500. and ds[i].hadt_tau32[0] < 0.55) :
-								continue
-						elif cuts == 'hadt_M>100. && hadt_M<=120. && hadt_tau32>0.55' :
-							if not (ds[i].hadt_M[0]>100. and ds[i].hadt_M[0]<=120. and ds[i].hadt_tau32[0] > 0.55) :
-								continue
-						elif cuts == 'hadt_M>120. && hadt_M<=140. && hadt_tau32>0.55' :
-							if not (ds[i].hadt_M[0]>120. and ds[i].hadt_M[0]<=140. and ds[i].hadt_tau32[0] > 0.55) :
-								continue
-						elif cuts == 'hadt_M>250. && hadt_M<=500. && hadt_tau32>0.55' :
-							if not (ds[i].hadt_M[0]>250. and ds[i].hadt_M[0]<=500. and ds[i].hadt_tau32[0] > 0.55) :
-								continue
-						elif cuts == 'hadt_M>140. && hadt_M<=250. && hadt_tau32>0.55' :
-							if not (ds[i].hadt_M[0]>140. and ds[i].hadt_M[0]<=250. and ds[i].hadt_tau32[0] > 0.55) :
+							elif cuts == 'sm_fs' and not (sm_local and fs_local) :
 								continue
 						else :
-							print 'CUTSTRING NOT RECOGNIZED ('+cuts+')'
+							if cuts == 'lm1_ps' and not (lm1_local and ps_local) :
+								continue
+							elif cuts == 'lm2_ps' and not (lm2_local and ps_local) :
+								continue
+							elif cuts == 'hm_ps' and not (hm_local and ps_local) :
+								continue
+							elif cuts == 'lm1_fs' and not (lm1_local and fs_local) :
+								continue
+							elif cuts == 'lm2_fs' and not (lm2_local and fs_local) :
+								continue
+							elif cuts == 'hm_fs' and not (hm_local and fs_local) :
+								continue
 						#get event weights
-						eventweight, eventweight_opp = ds[i].__get_event_weights__(templatename)
+						eventweight, eventweight_opp = geteventweights_local(templatename)
 						eventweight*=dist_rw_branch[0]; eventweight_opp*=dist_rw_opp_branch[0]
 						if ds[i].addTwice[0]==1 :
 							eventweight*=0.5; eventweight_opp*=0.5
@@ -466,36 +458,39 @@ class distribution :
 			eweight*=reweight[0]; eweight_opp*=reweight[0]
 #			print '	eweight *= constreweight ('+str(reweight[0])+') = '+str(eweight) #DEBUG
 		#Simple systematics
+		ssras = self.simple_systematic_reweights_arrays
 		for j in range(len(self.simple_systematic_reweights_arrays)/3) :
-			if templatename.find(simple_systematics_dists[j]+'__up')!=-1 : 
-				eweight*=self.simple_systematic_reweights_arrays[3*j+1][0]
-#				print '	eweight *= self.simple_systematic_reweights_arrays['+str(3*j+1)+'][0] ('+str(self.simple_systematic_reweights_arrays[3*j+1][0])+') = '+str(eweight) #DEBUG 
-				eweight_opp*=self.simple_systematic_reweights_arrays[3*j+1][0]
-			elif templatename.find(simple_systematics_dists[j]+'__down')!=-1 :
-				eweight*=self.simple_systematic_reweights_arrays[3*j+2][0]
-#				print '	eweight *= self.simple_systematic_reweights_arrays['+str(3*j+2)+'][0] ('+str(self.simple_systematic_reweights_arrays[3*j+2][0])+') = '+str(eweight) #DEBUG 
-				eweight_opp*=self.simple_systematic_reweights_arrays[3*j+2][0]
+			thissys = simple_systematics_dists[j]
+			if templatename.find(thissys+'__up')!=-1 : 
+				eweight*=ssras[3*j+1][0]
+#				print '	eweight *= ssras['+str(3*j+1)+'][0] ('+str(ssras[3*j+1][0])+') = '+str(eweight) #DEBUG 
+				eweight_opp*=ssras[3*j+1][0]
+			elif templatename.find(thissys+'__down')!=-1 :
+				eweight*=ssras[3*j+2][0]
+#				print '	eweight *= ssras['+str(3*j+2)+'][0] ('+str(ssras[3*j+2][0])+') = '+str(eweight) #DEBUG 
+				eweight_opp*=ssras[3*j+2][0]
 			else :
-				eweight*=self.simple_systematic_reweights_arrays[3*j][0]
-#				print '	eweight *= self.simple_systematic_reweights_arrays['+str(3*j)+'][0] ('+str(self.simple_systematic_reweights_arrays[3*j][0])+') = '+str(eweight) #DEBUG 
-				eweight_opp*=self.simple_systematic_reweights_arrays[3*j][0]
+				eweight*=ssras[3*j][0]
+#				print '	eweight *= ssras['+str(3*j)+'][0] ('+str(ssras[3*j][0])+') = '+str(eweight) #DEBUG 
+				eweight_opp*=ssras[3*j][0]
 		#PDF systematics
+		pra = self.pdf_reweight_array
 		tnamesplit = templatename.split('pdf_lambda_')
 		if len(tnamesplit) > 1 :
 			ipdf = eval(tnamesplit[len(tnamesplit)-1].split('__')[0])
 			upordown = tnamesplit[len(tnamesplit)-1].split('__')[1]
 			if upordown=='up' :
-				eweight*=self.pdf_reweight_array[2*(ipdf-1)+1]
-#				print '	eweight *= self.pdf_reweight_array['+str(2*(ipdf-1)+1)+'] ('+str(self.pdf_reweight_array[2*(ipdf-1)+1])+') = '+str(eweight) #DEBUG 
-				eweight_opp*=self.pdf_reweight_array[2*(ipdf-1)+1]
+				eweight*=pra[2*(ipdf-1)+1]
+#				print '	eweight *= pra['+str(2*(ipdf-1)+1)+'] ('+str(pra[2*(ipdf-1)+1])+') = '+str(eweight) #DEBUG 
+				eweight_opp*=pra[2*(ipdf-1)+1]
 			elif upordown=='down' :
-				eweight*=self.pdf_reweight_array[2*(ipdf-1)+2]
-#				print '	eweight *= self.pdf_reweight_array['+str(2*(ipdf-1)+2)+'] ('+str(self.pdf_reweight_array[2*(ipdf-1)+2])+') = '+str(eweight) #DEBUG 
-				eweight_opp*=self.pdf_reweight_array[2*(ipdf-1)+2]
+				eweight*=pra[2*(ipdf-1)+2]
+#				print '	eweight *= pra['+str(2*(ipdf-1)+2)+'] ('+str(pra[2*(ipdf-1)+2])+') = '+str(eweight) #DEBUG 
+				eweight_opp*=pra[2*(ipdf-1)+2]
 		else :
-			eweight*=self.pdf_reweight_array[0]
-#			print '	eweight *= self.pdf_reweight_array[0] ('+str(self.pdf_reweight_array[0])+') = '+str(eweight) #DEBUG
-			eweight_opp*=self.pdf_reweight_array[0]
+			eweight*=pra[0]
+#			print '	eweight *= pra[0] ('+str(pra[0])+') = '+str(eweight) #DEBUG
+			eweight_opp*=pra[0]
 		return eweight,eweight_opp
 
 	def __get_func_weights__(self,templatename,ngg,ng1,ng2,ng3,ng4,nqq,nq1,nq2,nbck,nntmj) :
@@ -503,33 +498,35 @@ class distribution :
 		#fit parameter function weights
 		#replace the total event numbers in the function strings
 		real_rw_arrays = []; real_rw_opp_arrays = []
-		for i in range(len(self.fit_function_reweight_arrays)) :
+		ffras = self.fit_function_reweight_arrays
+		for i in range(len(ffras)) :
 			newfunction = ''; newfunction_opp = ''
-			arraysplit = self.fit_function_reweight_arrays[i].split('#')
+			arraysplit = ffras[i].split('#')
 			for j in range(len(arraysplit)) :
-				if arraysplit[j] == 'NTOT' :
+				check = arraysplit[j]
+				if check == 'NTOT' :
 					newfunction+='('+str(ngg+nqq+nbck+nntmj)+')'; newfunction_opp+='('+str(ngg+nqq+nbck+nntmj)+')'
-				elif arraysplit[j] == 'NBCK' :
+				elif check == 'NBCK' :
 					newfunction+='('+str(nbck)+')'; newfunction_opp+='('+str(nbck)+')'
-				elif arraysplit[j] == 'NNTMJ' :
+				elif check == 'NNTMJ' :
 					newfunction+='('+str(nntmj)+')'; newfunction_opp+='('+str(nntmj)+')'
-				elif arraysplit[j] == 'NTTBAR' :
+				elif check == 'NTTBAR' :
 					newfunction+='('+str(ngg+nqq)+')'; newfunction_opp+='('+str(ngg+nqq)+')'
-				elif arraysplit[j] == 'NQQBAR' :
+				elif check == 'NQQBAR' :
 					newfunction+='('+str(nqq)+')'; newfunction_opp+='('+str(nqq)+')'
-				elif arraysplit[j] == 'NG1' :
+				elif check == 'NG1' :
 					newfunction+='('+str(ng1)+')'; newfunction_opp+='('+str(ng1)+')'
-				elif arraysplit[j] == 'NG2' :
+				elif check == 'NG2' :
 					newfunction+='('+str(ng2)+')'; newfunction_opp+='('+str(ng2)+')'
-				elif arraysplit[j] == 'NG3' :
+				elif check == 'NG3' :
 					newfunction+='('+str(ng3)+')'; newfunction_opp+='('+str(ng3)+')'
-				elif arraysplit[j] == 'NG4' :
+				elif check == 'NG4' :
 					newfunction+='('+str(ng4)+')'; newfunction_opp+='('+str(ng4)+')'
-				elif arraysplit[j] == 'NQ1' :
+				elif check == 'NQ1' :
 					newfunction+='('+str(nq1)+')'; newfunction_opp+='('+str(nq1)+')'
-				elif arraysplit[j] == 'NQ2' :
+				elif check == 'NQ2' :
 					newfunction+='('+str(nq2)+')'; newfunction_opp+='('+str(nq2)+')'
-				elif arraysplit[j].startswith('wg') or arraysplit[j].startswith('wq') :
+				elif check.startswith('wg') or check.startswith('wq') :
 					for k in range(len(self.dist_reweight_names)) :
 						if self.dist_reweight_names[k]==arraysplit[j] :
 							newfunction+='('+str(self.dist_reweight_arrays[k][0])+')'; newfunction_opp+='('+str(self.dist_reweight_opp_arrays[k][0])+')'
@@ -553,13 +550,3 @@ class distribution :
 #				print '	eweight *= real_rw_arrays[0] ('+str(real_rw_arrays[0])+') = '+str(eweight) #DEBUG 
 				eweight_opp*=real_rw_opp_arrays[0]
 		return eweight,eweight_opp
-
-
-#convertTo1D takes a 3D distribution and makes it 1D for use with theta
-def convertTo1D(original) :
-	nBins = original.GetNbinsX()*original.GetNbinsY()*original.GetNbinsZ()
-	newHisto = TH1F(original.GetName(),original.GetTitle(),nBins,0.,nBins-1.)
-	newHisto.SetDirectory(0)
-	for k in range(nBins) :
-		newHisto.SetBinContent(k,original.GetBinContent(k))
-	return newHisto

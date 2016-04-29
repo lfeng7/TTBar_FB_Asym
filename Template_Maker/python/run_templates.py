@@ -88,7 +88,7 @@ if options.parameters.find('final') == -1 :
 	os.system(cmd)
 	print 'Done'
 #Make and save comparison plots if necessary
-else :
+if options.parameters.find('final') != -1 or options.parameters.find('refined') != -1 :
 	print 'Making comparison plots'
 	templates.make_plots()
 	print 'Done'

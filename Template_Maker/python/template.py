@@ -5,8 +5,8 @@ from array import array
 #global variables
 #histogram limits
 XBINS = array('d',[-1.0,-0.8,-0.6,-0.4,-0.2,0.,0.2,0.4,0.6,0.8,1.0])
-YBINS = array('d',[0.,0.075,0.15,0.3,0.7])
-ZBINS = array('d',[500.,700.,900.,1100.,1300.,1500.,2500.])
+YBINS = array('d',[0.,0.1,0.2,0.3,0.7])
+ZBINS = array('d',[500.,700.,900.,1100.,1300.,2500.])
 
 #TDR Style
 #gROOT.Macro('rootlogon.C')
@@ -39,6 +39,36 @@ class template :
 		nBins = self.histo_3D.GetNbinsX()*self.histo_3D.GetNbinsY()*self.histo_3D.GetNbinsZ()
 		newHisto = TH1F(self.histo_3D.GetName(),self.histo_3D.GetTitle(),nBins,0.,nBins-1.)
 		newHisto.SetDirectory(0)
-		for k in range(nBins) :
-			newHisto.SetBinContent(k,self.histo_3D.GetBinContent(k))
+		realbincounter = 1
+		nglobalbins = self.histo_3D.GetSize()
+		for k in range(nglobalbins) :
+			if not self.histo_3D.IsBinOverflow(k) and not self.histo_3D.IsBinUnderflow(k) :
+				newHisto.SetBinContent(realbincounter,self.histo_3D.GetBinContent(k))
+				newHisto.SetBinError(realbincounter,self.histo_3D.GetBinError(k))
+				realbincounter+=1
 		return newHisto
+
+	#make_from_1D_histo takes a 1D distribution and makes a template out of it!
+	def make_from_1D_histo(self,histo_1D) :
+		nglobalbins = self.histo_3D.GetSize()
+		global1Dbincounter = 1
+		for k in range(nglobalbins) :
+			if not self.histo_3D.IsBinOverflow(k) and not self.histo_3D.IsBinUnderflow(k) :
+				content = histo_1D.GetBinContent(global1Dbincounter)
+				error   = histo_1D.GetBinError(global1Dbincounter)
+				self.histo_3D.SetBinContent(k,content)
+				self.histo_3D.SetBinError(k,error)
+				binx = array('i',[0]); biny = array('i',[0]); binz = array('i',[0])
+				self.histo_3D.GetBinXYZ(k,binx,biny,binz)
+				self.histo_x.SetBinContent(binx[0],self.histo_x.GetBinContent(binx[0])+content)
+				self.histo_y.SetBinContent(biny[0],self.histo_y.GetBinContent(biny[0])+content)
+				self.histo_z.SetBinContent(binz[0],self.histo_z.GetBinContent(binz[0])+content)
+				self.histo_x.SetBinError(binx[0],self.histo_x.GetBinError(binx[0])+error*error)
+				self.histo_y.SetBinError(biny[0],self.histo_y.GetBinError(biny[0])+error*error)
+				self.histo_z.SetBinError(binz[0],self.histo_z.GetBinError(binz[0])+error*error)
+				global1Dbincounter+=1
+		hs = [self.histo_x,self.histo_y,self.histo_z]
+		for h in hs :
+			for k in range(h.GetSize()) :
+				if not h.IsBinUnderflow(k) and not h.IsBinOverflow(k) :
+					h.SetBinError(k,sqrt(h.GetBinError(k)))

@@ -3,6 +3,7 @@ import glob
 from array import array
 from math import *
 from distribution import distribution
+from template import template
 
 #luminosity
 LUMINOSITY = 19748.
@@ -30,6 +31,11 @@ class template_group :
 				self.f_PDF_systematics = TFile(outputname+'PDF_systematics.root','recreate')
 				self.f_JEC = TFile(outputname+'JEC.root','recreate')
 		self.parfile = parfilename
+		self.postfit_histo_file = 'histos_theta_feed_'
+		if self.step == 'refined' :
+			self.postfit_histo_file+='initial.root'
+		if self.step == 'final' :
+			self.postfit_histo_file+='refined.root'
 		self.sum_charge = sumcharges
 		self.include_PDF = includepdf
 		self.include_JEC = includejec
@@ -67,10 +73,11 @@ class template_group :
 		hadt_tau32 	  = array('d',[-1.0]);  original_branches.append(['hadt_tau32',hadt_tau32])
 		#build the list of distributions this tree will contribute to
 		dists_to_add_to = []
+		conttodist = self.__contributesToDist__
 		for i in range(len(self.dists)) :
 			distname = self.dists[i].name
 			#if events in this tree should be added to this distribution
-			contribution = self.__contributesToDist__(ttree_file_path,distname,jecwiggles)
+			contribution = conttodist(ttree_file_path,distname,jecwiggles)
 			if contribution != 0. :
 				dists_to_add_to.append(self.dists[i])
 		if len(dists_to_add_to)==0 :
@@ -80,16 +87,19 @@ class template_group :
 		print 'Adding trees from '+ttree_file_path[ttree_file_path.find('total_ttree_files'):]+' to distributions: '
 		for i in range(len(dists_to_add_to)) :
 			print '	'+dists_to_add_to[i].name
+		#Loop optimization
+		tsetbranchaddress = tree.SetBranchAddress
+		tgetentry = tree.GetEntry
 		for entry in range(nEntries) :
 			for branch in original_branches :
-				tree.SetBranchAddress(branch[0],branch[1])
-			tree.GetEntry(entry)
+				tsetbranchaddress(branch[0],branch[1])
+			tgetentry(entry)
 			cuts = []
-			muon_preselection = mu_trigger[0]==1 and muon1_pt[0]>ele1_pt[0] and hadt_pt[0]>300. and hadt_M[0]>100.
+			muon_preselection = mu_trigger[0]==1 and muon1_pt[0]>ele1_pt[0] and hadt_pt[0]>300. and hadt_M[0]>50.
 			muon_kinematics   = muon1_pt[0]>40. and abs(muon1_eta[0])<2.4
 			muon_ID = muon1_isLoose[0]==1
 			muon_2D = muon1_relPt[0]>25. or muon1_dR[0]>0.5
-			ele_preselection = el_trigger[0]==1 and ele1_pt[0]>muon1_pt[0] and hadt_pt[0]>300. and hadt_M[0]>100.
+			ele_preselection = el_trigger[0]==1 and ele1_pt[0]>muon1_pt[0] and hadt_pt[0]>300. and hadt_M[0]>50.
 			ele_kinematics = ele1_pt[0]>40. and abs(ele1_eta[0])<2.4
 			ele_ID = ele1_isLoose[0]==1
 			ele_2D = ele1_relPt[0]>25. or ele1_dR[0]>0.5
@@ -107,8 +117,8 @@ class template_group :
 				#set all of the branch addresses to copy over the relevant parts of the tree
 				for branch in dists_to_add_to[i].all_branches :
 					if branch[0]!=None :
-						tree.SetBranchAddress(branch[0],branch[2])
-				tree.GetEntry(entry)
+						tsetbranchaddress(branch[0],branch[2])
+				tgetentry(entry)
 				#make appropriate lepton cuts
 				xtra_cuts = []
 				if distname.startswith('mu') :
@@ -122,9 +132,10 @@ class template_group :
 				if xtra_cuts.count(False) > 0 :
 					continue
 				#change the event weight to add or subtract as appropriate
-				contribution = self.__contributesToDist__(ttree_file_path,distname,jecwiggles)
+				contribution = conttodist(ttree_file_path,distname,jecwiggles)
 				dists_to_add_to[i].contrib_weight[0]=contribution
-				dists_to_add_to[i].tree.Fill()
+				#find the right tree to add to
+				dists_to_add_to[i].filltree()
 
 	#build_templates builds the template histograms from the distributions
 	def build_templates(self) :
@@ -138,17 +149,127 @@ class template_group :
 	#build_NTMJ_templates automatically generates templates for all of the data-driven NTMJ background
 	#automatically accounting for systematics
 	def build_NTMJ_templates(self) :
+		#Build the event number and conversion function dictionaries
+		all_event_counts = {}
+		conv_functions = {}
+		#For each type of leptons
+		for leptype in self.lepprefixes :
+			all_event_counts[leptype] = {'nominal':[0.,0.,0.,0.,0.,0.]}
+			conv_functions[leptype] = {'nominal':[]}
+		#And each type of template
+		for ltype in all_event_counts :
+			for dist in self.dists :
+				if dist.name.split('__')[1].find('ntmj')!=-1 and dist.name.split('__')[0].find(ltype)!=-1 :
+					for temp in dist.all_templates :
+						tempnamesplit = temp.name.split('__')
+						if len(tempnamesplit) > 2 :
+							newtemptype = tempnamesplit[2]+'__'+tempnamesplit[3]
+							if newtemptype!='fit__up' and newtemptype!='fit__down' and newtemptype not in all_event_counts[ltype].keys() :
+								all_event_counts[ltype][newtemptype] = [0.,0.,0.,0.,0.,0.]
+		#Set of cuts
+		all_tree_cuts = ['lm1_ps','lm2_ps','hm_ps','lm1_fs','lm2_fs','hm_fs']
+		#Fill the dictionary
+		print '	Filling event numbers'
 		for dist in self.dists :
-			if dist.name.find('ntmj')!=-1 :
-				print '	Building NTMJ templates for distribution '+dist.name
-				dist.fix_NTMJ_templates(self.f_aux,self.dists)
-				print '	Done'
+			if dist.name.split('__')[1].find('ntmj')!=-1 :
+				print '		Getting numbers for distribution '+dist.name
+				dist.add_to_NTMJ_dictionary(self.dists,all_event_counts,all_tree_cuts)
+		print '	Done'
+		#Determine the conversion functions
+		print '	Finding conversion functions'
+		for ltype in all_event_counts :
+			for ttype in all_event_counts[ltype] :
+				print '		Doing conversion function for '+ltype+' leptons and template type '+ttype+''
+				print '			NUMBERS OF EVENTS: ' #DEBUG
+				for j in range(len(all_event_counts[ltype][ttype])) : #DEBUG
+					if all_event_counts[ltype][ttype][j] <= 0. :
+						all_event_counts[ltype][ttype][j] = 1.
+					print '				'+str(all_event_counts[ltype][ttype][j]) #DEBUG
+				#Find the y values and errors for the points on the graph
+				l1y = all_event_counts[ltype][ttype][0]/all_event_counts[ltype][ttype][3]
+				l2y = all_event_counts[ltype][ttype][1]/all_event_counts[ltype][ttype][4]
+				hy  = all_event_counts[ltype][ttype][2]/all_event_counts[ltype][ttype][5]
+				l1ye = l1y*sqrt((1./all_event_counts[ltype][ttype][3])+(1./all_event_counts[ltype][ttype][0]))
+				l2ye = l2y*sqrt((1./all_event_counts[ltype][ttype][4])+(1./all_event_counts[ltype][ttype][1]))
+				hye  = hy*sqrt((1./all_event_counts[ltype][ttype][5])+(1./all_event_counts[ltype][ttype][2]))
+				print '		l1y = '+str(l1y) #DEBUG
+				print '		l2y = '+str(l2y) #DEBUG
+				print '		hy = '+str(hy) #DEBUG
+				print '		l1ye = '+str(l1ye) #DEBUG
+				print '		l2ye = '+str(l2ye) #DEBUG
+				print '		hye = '+str(hye) #DEBUG
+				#Build the TGraph to fit with the conversion function
+				n=3
+				xs  = array('d',[87.5,122.5,275.])
+				xes = array('d',[17.5,17.5,25.])
+				ys  = array('d',[l1y,l2y,hy])
+				yes = array('d',[l1ye,l2ye,hye])
+				gr = TGraphErrors(n,xs,ys,xes,yes)
+				#Define the conversion function
+				conv_func = TF1('conv_func','[0]*x+[1]',70.,300.)
+				#Fit the graph
+				gr.Fit('conv_func')
+				#get the fitter
+				fitter = TVirtualFitter.GetFitter()
+				#Build the nominal, slope up/down, and intercept up/down functions
+				nom_func = TF1('nom_func','[0]*x+[1]',70.,300.) 
+				nom_func.SetParameter(0,conv_func.GetParameter(0)) 
+				nom_func.SetParameter(1,conv_func.GetParameter(1))
+				fit_up_func = TF1('fit_up_func','[0]*x+[1]+sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',70.,300.) 
+				fit_up_func.SetParameter(0,conv_func.GetParameter(0)) 
+				fit_up_func.SetParameter(1,conv_func.GetParameter(1))
+				fit_up_func.SetParameter(2,conv_func.GetParError(1))
+				fit_up_func.SetParameter(3,fitter.GetCovarianceMatrixElement(0,1))
+				fit_up_func.SetParameter(4,conv_func.GetParError(0))
+				fit_down_func = TF1('fit_down_func','[0]*x+[1]-sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',70.,300.) 
+				fit_down_func.SetParameter(0,conv_func.GetParameter(0)) 
+				fit_down_func.SetParameter(1,conv_func.GetParameter(1))
+				fit_down_func.SetParameter(2,conv_func.GetParError(1))
+				fit_down_func.SetParameter(3,fitter.GetCovarianceMatrixElement(0,1))
+				fit_down_func.SetParameter(4,conv_func.GetParError(0))
+				conv_functions[ltype][ttype] = [nom_func,fit_up_func,fit_down_func]
+				#Make the plot of the fit
+				canv = TCanvas(ltype+'_'+ttype+'_conv_func_canv',ltype+' '+ttype+' conversion function canvas',900,900)
+				gr.SetTitle(ltype+' '+ttype+' conversion function fit')
+				gr.GetXaxis().SetTitle('hadronic top candidate mass (GeV)')
+				gr.GetYaxis().SetTitle('conversion rate (N_{passed}/N_{failed})')
+				gr.GetXaxis().SetRangeUser(50.,320.)
+				gr.GetYaxis().SetRangeUser(0.,1.1*fit_up_func.Eval(300.))
+				gr.SetMarkerStyle(21)
+				gr.Draw('AP')
+				nom_func.SetLineWidth(3)
+				nom_func.SetLineColor(kBlue)
+				nom_func.Draw('L SAME')
+				fit_up_func.SetLineWidth(3)
+				fit_up_func.SetLineStyle(2)
+				fit_up_func.SetLineColor(kBlue)
+				fit_up_func.Draw('L SAME')
+				fit_down_func.SetLineWidth(3)
+				fit_down_func.SetLineStyle(2)
+				fit_down_func.SetLineColor(kBlue)
+				fit_down_func.Draw('L SAME')
+				leg = TLegend(0.62,0.67,0.9,0.9)
+				leg.AddEntry(gr,'measured rates','PE')
+				leg.AddEntry(nom_func,'linear fit','L')
+				leg.AddEntry(fit_up_func,'fit error','L')
+				leg.Draw()
+				self.f_aux.cd()
+				canv.Write()
+		print '	Done'
+		#Apply the conversion functions
+		print '	Applying conversion functions'
+		for dist in self.dists :
+			if dist.name.split('__')[1].find('ntmj')!=-1 :
+				dist.apply_conversion_functions(self.dists,conv_functions)
+		print '	Done'
 
 	def write_to_files(self) :
 		self.f_aux.cd()
 		for dist in self.dists :
 			if not dist.name.startswith('allchannels') :
-				dist.tree.Write()
+				dist.signal_tree.Write()
+				dist.antitagged_tree.Write()
+				dist.sidebands_tree.Write()
 			for temp in dist.all_templates :
 				temp.histo_3D.Write()
 				temp.histo_x.Write()
@@ -186,16 +307,17 @@ class template_group :
 			self.f_PDF_systematics.Close()
 			self.f_JEC.Close()
 		
-
 	def make_plots(self) :
 		#First make a list of all the channels in the file
-		channel_names = []
+		channel_names = ['allchannels']
 		for dist in self.dists :
 			if dist.name.endswith('DATA') :
 				a = dist.name.split('__')
-				channel_names.append(a[0])
-		#Make lists of histogram stacks, residual plots, canvases, and pads
+				if a[0] != 'allchannels' :
+					channel_names.append(a[0])
+		#Make lists of histogram stacks, MC uncertainty graphs, residual plots, canvases, and pads
 		x_stacks = []; y_stacks = []; z_stacks = []
+		x_err_hs = []; y_err_hs = []; z_err_hs = []
 		x_resids = []; y_resids = []; z_resids = []
 		x_canvs  = []; y_canvs  = []; z_canvs  = []
 		x_histo_pads = []; y_histo_pads = []; z_histo_pads = []
@@ -205,221 +327,278 @@ class template_group :
 			x_stacks.append(THStack(channame+'_x_stack',channame+' channel comparison plot, c* projection;;Events'))
 			y_stacks.append(THStack(channame+'_y_stack',channame+' channel comparison plot, x_{F} projection;;Events'))
 			z_stacks.append(THStack(channame+'_z_stack',channame+' channel comparison plot, M projection;;Events'))
+			#MC Uncertainty graphs
+			x_err_hs.append(self.dists[0].all_templates[0].histo_x.Clone()); x_err_hs[len(x_err_hs)-1].Reset(); x_err_hs[len(x_err_hs)-1].SetFillColor(kBlack)
+			y_err_hs.append(self.dists[0].all_templates[0].histo_y.Clone()); y_err_hs[len(y_err_hs)-1].Reset(); y_err_hs[len(y_err_hs)-1].SetFillColor(kBlack)
+			z_err_hs.append(self.dists[0].all_templates[0].histo_z.Clone()); z_err_hs[len(z_err_hs)-1].Reset(); z_err_hs[len(z_err_hs)-1].SetFillColor(kBlack)
 			#Residual plots
 			x_resids.append(self.dists[0].all_templates[0].histo_x.Clone())
-			x_resids[len(x_resids)-1].SetTitle(';c*;Data/MC')
+			x_resids[len(x_resids)-1].SetTitle(';c*;(Data-MC)/#sigma'); x_resids[len(x_resids)-1].SetFillColor(kMagenta+4)
 			y_resids.append(self.dists[0].all_templates[0].histo_y.Clone())
-			y_resids[len(x_resids)-1].SetTitle(';x_{F};Data/MC')
+			y_resids[len(x_resids)-1].SetTitle(';x_{F};(Data-MC)/#sigma'); y_resids[len(x_resids)-1].SetFillColor(kMagenta+4)
 			z_resids.append(self.dists[0].all_templates[0].histo_z.Clone())
-			z_resids[len(x_resids)-1].SetTitle(';M (GeV);Data/MC')
+			z_resids[len(x_resids)-1].SetTitle(';M (GeV);(Data-MC)/#sigma'); z_resids[len(x_resids)-1].SetFillColor(kMagenta+4)
 			#Canvases
 			x_canvs.append(TCanvas(channame+'_x_canvas',channame+'_x_canvas',900,900))
 			y_canvs.append(TCanvas(channame+'_y_canvas',channame+'_y_canvas',900,900))
 			z_canvs.append(TCanvas(channame+'_z_canvas',channame+'_z_canvas',900,900))
 		#Set plot directories
 		for i in range(len(channel_names)) :
+			x_err_hs[i].SetDirectory(0); y_err_hs[i].SetDirectory(0); z_err_hs[i].SetDirectory(0)
 			x_resids[i].SetDirectory(0); y_resids[i].SetDirectory(0); z_resids[i].SetDirectory(0)
-		#build histogram stacks
+		nxbins = x_resids[0].GetNbinsX(); nybins = y_resids[0].GetNbinsX(); nzbins = z_resids[0].GetNbinsX()
+		#build 3D histograms out of 1D post-fit histograms from theta; add to histogram stacks and MC uncertainty graphs
+		postfithistofile = TFile(self.postfit_histo_file)
+		disttypes = []
+		for dist in self.dists :
+			disttype = dist.name.split('__')[1]
+			if not disttype in disttypes :
+				disttypes.append(disttype)
+		for disttype in disttypes :
+			for i in range(len(channel_names)) :
+				channame = channel_names[i]
+				if channame == 'allchannels' :
+					continue
+				#Get histogram from post-fit file and make a new template
+				newname = channame+'__'+disttype
+				newtemp = template(newname+'__POSTFIT',newname+'__POSTFIT')
+				new1Dhisto = postfithistofile.Get(newname)
+				newtemp.make_from_1D_histo(new1Dhisto)
+				#Set attributes and add to histogram stack
+				x_histo = newtemp.histo_x
+				x_histo.SetFillColor(dist.color); x_histo.SetLineColor(dist.color); x_histo.SetMarkerStyle(21); x_histo.SetMarkerColor(dist.color)
+				x_stacks[i].Add(x_histo,'hist')
+				x_stacks[0].Add(x_histo,'hist')
+				#increment error values
+				for j in range(x_histo.GetSize()) :
+					if not x_histo.IsBinOverflow(j) and not x_histo.IsBinUnderflow(j) :
+						x_err_hs[i].SetBinContent(j,x_err_hs[i].GetBinContent(j)+x_histo.GetBinContent(j))
+						x_err_hs[i].SetBinError(j,x_err_hs[i].GetBinError(j)+x_histo.GetBinError(j)**2)
+						x_err_hs[0].SetBinContent(j,x_err_hs[0].GetBinContent(j)+x_histo.GetBinContent(j))
+						x_err_hs[0].SetBinError(j,x_err_hs[0].GetBinError(j)+x_histo.GetBinError(j)**2)
+				#Repeat all of the above for y
+				y_histo = newtemp.histo_y
+				y_histo.SetFillColor(dist.color); y_histo.SetLineColor(dist.color); y_histo.SetMarkerStyle(21); y_histo.SetMarkerColor(dist.color)
+				y_stacks[i].Add(y_histo,'hist')
+				y_stacks[0].Add(y_histo,'hist')
+				#increment error values
+				for j in range(y_histo.GetSize()) :
+					if not y_histo.IsBinOverflow(j) and not y_histo.IsBinUnderflow(j) :
+						y_err_hs[i].SetBinContent(j,y_err_hs[i].GetBinContent(j)+y_histo.GetBinContent(j))
+						y_err_hs[i].SetBinError(j,y_err_hs[i].GetBinError(j)+y_histo.GetBinError(j)**2)
+						y_err_hs[0].SetBinContent(j,y_err_hs[0].GetBinContent(j)+y_histo.GetBinContent(j))
+						y_err_hs[0].SetBinError(j,y_err_hs[0].GetBinError(j)+y_histo.GetBinError(j)**2)
+				#Repeat all of the above for z
+				z_histo = newtemp.histo_z
+				z_histo.SetFillColor(dist.color); z_histo.SetLineColor(dist.color); z_histo.SetMarkerStyle(21); z_histo.SetMarkerColor(dist.color)
+				z_stacks[i].Add(z_histo,'hist')
+				z_stacks[0].Add(z_histo,'hist')
+				#increment error values
+				for j in range(z_histo.GetSize()) :
+					if not z_histo.IsBinOverflow(j) and not z_histo.IsBinUnderflow(j) :
+						z_err_hs[i].SetBinContent(j,z_err_hs[i].GetBinContent(j)+z_histo.GetBinContent(j))
+						z_err_hs[i].SetBinError(j,z_err_hs[i].GetBinError(j)+z_histo.GetBinError(j)**2)
+						z_err_hs[0].SetBinContent(j,z_err_hs[0].GetBinContent(j)+z_histo.GetBinContent(j))
+						z_err_hs[0].SetBinError(j,z_err_hs[0].GetBinError(j)+z_histo.GetBinError(j)**2)
+		#Take the root of all of the final MC uncertainties
 		for i in range(len(channel_names)) :
-			channame = channel_names[i]
-			for dist in self.dists :
-				if dist.name.startswith(channame) and not dist.name.endswith('DATA') :
-					for j in range(len(dist.all_templates)) :
-						temp = dist.all_templates[j]
-						endofname = temp.name.split('__')[len(temp.name.split('__'))-1]
-						if endofname.find('up')==-1 and endofname.find('down')==-1 :
-							x_histo = temp.histo_x
-							x_histo.SetMarkerStyle(21); x_histo.SetFillColor(dist.color); x_histo.SetMarkerColor(dist.color)
-							x_stacks[i].Add(x_histo)
-							y_histo = temp.histo_y
-							y_histo.SetMarkerStyle(21); y_histo.SetFillColor(dist.color); y_histo.SetMarkerColor(dist.color)
-							y_stacks[i].Add(y_histo)
-							z_histo = temp.histo_z
-							z_histo.SetMarkerStyle(21); z_histo.SetFillColor(dist.color); z_histo.SetMarkerColor(dist.color)
-							z_stacks[i].Add(z_histo)
+			for j in range(nxbins) :
+				x_err_hs[i].SetBinError(j,sqrt(x_err_hs[i].GetBinError(j)))
+			for j in range(nybins) :
+				y_err_hs[i].SetBinError(j,sqrt(y_err_hs[i].GetBinError(j)))
+			for j in range(nzbins) :
+				z_err_hs[i].SetBinError(j,sqrt(z_err_hs[i].GetBinError(j)))
 		#build residuals plots
 		maxxdeviations = []; maxydeviations = []; maxzdeviations = []
-		nxbins = x_resids[0].GetNbinsX(); nybins = y_resids[0].GetNbinsX(); nzbins = z_resids[0].GetNbinsX()
 		for i in range(len(channel_names)) :
 			channame = channel_names[i]
 			maxxdeviations.append(0.0); maxydeviations.append(0.0); maxzdeviations.append(0.0)
 			for dist in self.dists :
 				if dist.name.startswith(channame) and dist.name.endswith('DATA') :
-					temp = dist.all_templates[0]
-					for j in range(1,nxbins+1) :
-						if x_stacks[i].GetStack().Last().GetBinContent(j) != 0 :
-							content = temp.histo_x.GetBinContent(j)/x_stacks[i].GetStack().Last().GetBinContent(j)
-							x_resids[i].SetBinContent(j,content)
-							if temp.histo_x.GetBinContent(j) != 0 :
-								error = content*sqrt(1./temp.histo_x.GetBinContent(j) + 1./x_stacks[i].GetStack().Last().GetBinContent(j))
-								x_resids[i].SetBinError(j,error)
-								maxxdeviations[i] = max(maxxdeviations[i],max(abs(content+error-1.0),abs(content-error-1.0)))
-					for j in range(1,nybins+1) :
-						if y_stacks[i].GetStack().Last().GetBinContent(j) != 0 :
-							content = temp.histo_y.GetBinContent(j)/y_stacks[i].GetStack().Last().GetBinContent(j)
-							y_resids[i].SetBinContent(j,content)
-							if temp.histo_y.GetBinContent(j) != 0 :
-								error = content*sqrt(1./temp.histo_y.GetBinContent(j) + 1./y_stacks[i].GetStack().Last().GetBinContent(j))
-								y_resids[i].SetBinError(j,error)
-								maxydeviations[i] = max(maxydeviations[i],max(abs(content+error-1.0),abs(content-error-1.0)))
-					for j in range(1,nzbins+1) :
-						if z_stacks[i].GetStack().Last().GetBinContent(j) != 0 :
-							content = temp.histo_z.GetBinContent(j)/z_stacks[i].GetStack().Last().GetBinContent(j)
-							z_resids[i].SetBinContent(j,content)
-							if temp.histo_z.GetBinContent(j) != 0 and z_stacks[i].GetStack().Last().GetBinContent(j) != 0 :
-								error = content*sqrt(1./temp.histo_z.GetBinContent(j) + 1./z_stacks[i].GetStack().Last().GetBinContent(j))
-								z_resids[i].SetBinError(j,error)
-								maxzdeviations[i] = max(maxzdeviations[i],max(abs(content+error-1.0),abs(content-error-1.0)))
+					for temp in dist.all_templates :
+						if len(temp.name.split('__'))>2 :
+							continue
+						for j in range(temp.histo_x.GetSize()) :
+							if temp.histo_x.IsBinUnderflow(j) or temp.histo_x.IsBinOverflow(j) :
+								continue
+							if x_err_hs[i].GetBinContent(j)!=0. and temp.histo_x.GetBinContent(j)!=0. :
+								delta = temp.histo_x.GetBinContent(j) - x_err_hs[i].GetBinContent(j)
+								sigma = sqrt(temp.histo_x.GetBinError(j)**2 + x_err_hs[i].GetBinError(j)**2)
+								content = delta/sigma
+								print '		%s XHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_x.GetBinContent(j),x_err_hs[i].GetBinContent(j),temp.histo_x.GetBinError(j),x_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
+								x_resids[i].SetBinContent(j,content)
+								maxxdeviations[i] = max(maxxdeviations[i],abs(content))
+						for j in range(temp.histo_y.GetSize()) :
+							if temp.histo_y.IsBinUnderflow(j) or temp.histo_y.IsBinOverflow(j) :
+								continue
+							if y_err_hs[i].GetBinContent(j)!=0. and temp.histo_y.GetBinContent(j)!=0. :
+								delta = temp.histo_y.GetBinContent(j) - y_err_hs[i].GetBinContent(j)
+								sigma = sqrt(temp.histo_y.GetBinError(j)**2 + y_err_hs[i].GetBinError(j)**2)
+								content = delta/sigma
+								print '		%s YHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_y.GetBinContent(j),y_err_hs[i].GetBinContent(j),temp.histo_y.GetBinError(j),y_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
+								y_resids[i].SetBinContent(j,content)
+								maxydeviations[i] = max(maxydeviations[i],abs(content))
+						for j in range(temp.histo_z.GetSize()) :
+							if temp.histo_z.IsBinUnderflow(j) or temp.histo_z.IsBinOverflow(j) :
+								continue
+							if z_err_hs[i].GetBinContent(j)!=0. and temp.histo_z.GetBinContent(j)!=0. :
+								delta = temp.histo_z.GetBinContent(j) - z_err_hs[i].GetBinContent(j)
+								sigma = sqrt(temp.histo_z.GetBinError(j)**2 + z_err_hs[i].GetBinError(j)**2)
+								content = delta/sigma
+								print '		%s ZHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_z.GetBinContent(j),z_err_hs[i].GetBinContent(j),temp.histo_z.GetBinError(j),z_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
+								z_resids[i].SetBinContent(j,content)
+								maxzdeviations[i] = max(maxzdeviations[i],abs(content))
 		#reset stack maxima
 		for i in range(len(channel_names)) :
 			for dist in self.dists :
 				if dist.name.startswith(channel_names[i]) and dist.name.endswith('DATA') :
-					temp = dist.all_templates[0]
-					xmaxdata = temp.histo_x.GetMaximum() 
-					ymaxdata = temp.histo_y.GetMaximum() 
-					zmaxdata = temp.histo_z.GetMaximum()
-					x_stacks[i].SetMaximum(1.02*max(x_stacks[i].GetMaximum(),xmaxdata+sqrt(xmaxdata)))
-					y_stacks[i].SetMaximum(1.02*max(y_stacks[i].GetMaximum(),ymaxdata+sqrt(ymaxdata)))
-					z_stacks[i].SetMaximum(1.02*max(z_stacks[i].GetMaximum(),zmaxdata+sqrt(zmaxdata)))
-		#Set histogram and residual plot properties
+					for temp in dist.all_templates :
+						if len(temp.name.split('__'))>2 :
+							continue
+						xmaxdata = temp.histo_x.GetMaximum() 
+						ymaxdata = temp.histo_y.GetMaximum() 
+						zmaxdata = temp.histo_z.GetMaximum()
+						x_stacks[i].SetMaximum(1.02*max(x_stacks[i].GetMaximum(),xmaxdata+sqrt(xmaxdata)))
+						y_stacks[i].SetMaximum(1.02*max(y_stacks[i].GetMaximum(),ymaxdata+sqrt(ymaxdata)))
+						z_stacks[i].SetMaximum(1.02*max(z_stacks[i].GetMaximum(),zmaxdata+sqrt(zmaxdata)))
+		#Set histogram, MC error graph, and residual plot properties
 		for i in range(len(channel_names)) :
 			x_resids[i].SetStats(0)
 			x_resids[i].GetXaxis().SetLabelSize((0.05*0.72)/0.28); x_resids[i].GetXaxis().SetTitleOffset(0.8)
 			x_resids[i].GetYaxis().SetLabelSize((0.05*0.72)/0.28); x_resids[i].GetYaxis().SetTitleOffset(0.4)
 			x_resids[i].GetXaxis().SetTitleSize((0.72/0.28)*x_resids[i].GetXaxis().GetTitleSize())
 			x_resids[i].GetYaxis().SetTitleSize((0.72/0.28)*x_resids[i].GetYaxis().GetTitleSize())
-			maxx = 1.0+1.1*maxxdeviations[i]
-			minx = 1.0-1.1*maxxdeviations[i]
+			maxx = 0.1+ceil(maxxdeviations[i])
+			minx = -0.1-ceil(maxxdeviations[i])
 			x_resids[i].GetYaxis().SetRangeUser(minx,maxx)
 			x_resids[i].GetYaxis().SetNdivisions(503)
 			x_resids[i].SetMarkerStyle(20)
+			x_err_hs[i].SetFillStyle(3005)
 			y_resids[i].SetStats(0)
 			y_resids[i].GetXaxis().SetLabelSize((0.05*0.72)/0.28); y_resids[i].GetXaxis().SetTitleOffset(0.8)
 			y_resids[i].GetYaxis().SetLabelSize((0.05*0.72)/0.28); y_resids[i].GetYaxis().SetTitleOffset(0.4)
 			y_resids[i].GetXaxis().SetTitleSize((0.72/0.28)*y_resids[i].GetXaxis().GetTitleSize())
 			y_resids[i].GetYaxis().SetTitleSize((0.72/0.28)*y_resids[i].GetYaxis().GetTitleSize())
-			maxy = 1.0+1.1*maxydeviations[i]
-			miny = 1.0-1.1*maxydeviations[i]
+			maxy = 0.1+ceil(maxydeviations[i])
+			miny = -0.1-ceil(maxydeviations[i])
 			y_resids[i].GetYaxis().SetRangeUser(miny,maxy)
 			y_resids[i].GetYaxis().SetNdivisions(503)
 			y_resids[i].SetMarkerStyle(20)
+			y_err_hs[i].SetFillStyle(3005)
 			z_resids[i].SetStats(0)
 			z_resids[i].GetXaxis().SetLabelSize((0.05*0.72)/0.28); z_resids[i].GetXaxis().SetTitleOffset(0.8)
 			z_resids[i].GetYaxis().SetLabelSize((0.05*0.72)/0.28); z_resids[i].GetYaxis().SetTitleOffset(0.4)
 			z_resids[i].GetXaxis().SetTitleSize((0.72/0.28)*z_resids[i].GetXaxis().GetTitleSize())
 			z_resids[i].GetYaxis().SetTitleSize((0.72/0.28)*z_resids[i].GetYaxis().GetTitleSize())
-			maxz = 1.0+1.1*maxzdeviations[i]
-			minz = 1.0-1.1*maxzdeviations[i]
+			maxz = 0.1+ceil(maxzdeviations[i])
+			minz = -0.1-ceil(maxzdeviations[i])
 			z_resids[i].GetYaxis().SetRangeUser(minz,maxz)
 			z_resids[i].GetYaxis().SetNdivisions(503)
 			z_resids[i].SetMarkerStyle(20)
+			z_err_hs[i].SetFillStyle(3005)
 		#Build a legend
 		leg = TLegend(0.62,0.67,0.9,0.9)
 		for dist in self.dists :
 			if dist.name.startswith(channel_names[0]) and dist.name.find('__up')==-1 and dist.name.find('__down')==-1 and not dist.name.endswith('DATA') :
+				dist.all_templates[0].histo_x.SetFillColor(dist.color)
 				leg.AddEntry(dist.all_templates[0].histo_x,dist.name.lstrip(channel_names[0]+'__'),'F')
 			elif dist.name.startswith(channel_names[0]) and dist.name.endswith('DATA') :
 				leg.AddEntry(dist.all_templates[0].histo_x,dist.name.lstrip(channel_names[0]+'__'),'PE')
-		#Build the lines that go at 1 on the residuals plots
-		XMIN = self.dists[0].all_templates[0].histo_3D.GetXaxis().GetXmin()
-		XMAX = self.dists[0].all_templates[0].histo_3D.GetXaxis().GetXmax()
-		YMIN = self.dists[0].all_templates[0].histo_3D.GetYaxis().GetXmin()
-		YMAX = self.dists[0].all_templates[0].histo_3D.GetYaxis().GetXmax()
-		ZMIN = self.dists[0].all_templates[0].histo_3D.GetZaxis().GetXmin()
-		ZMAX = self.dists[0].all_templates[0].histo_3D.GetZaxis().GetXmax()
-		xline = TLine(XMIN,1.0,XMAX,1.0); xline.SetLineWidth(2); xline.SetLineStyle(2)
-		yline = TLine(YMIN,1.0,YMAX,1.0); yline.SetLineWidth(2); yline.SetLineStyle(2)
-		zline = TLine(ZMIN,1.0,ZMAX,1.0); zline.SetLineWidth(2); zline.SetLineStyle(2)
 		#plot stacks with data overlaid and residuals
-		plotfile = TFile('NEW_PLOTS.root','recreate')
+		plotfile = TFile('comparison_plots_'+self.step+'_step.root','recreate')
 		for i in range(len(channel_names)) :
 			channame = channel_names[i]
 			for dist in self.dists :
 				if dist.name.startswith(channame) and dist.name.endswith('DATA') :
-					x_canvs[i].cd() 
-					x_histo_pad=TPad(channame+'_x_histo_pad',channame+'_x_histo_pad',0,0.25,1,1)
-					x_resid_pad=TPad(channame+'_x_residuals_pad',channame+'_x_residuals_pad',0,0,1.,0.25)
-					x_histo_pad.SetCanvas(x_canvs[i]); x_resid_pad.SetCanvas(x_canvs[i])
-					x_histo_pad.SetLeftMargin(0.16); x_histo_pad.SetRightMargin(0.05) 
-					x_histo_pad.SetTopMargin(0.11);	 x_histo_pad.SetBottomMargin(0.02)
-					x_histo_pad.SetBorderMode(0)
-					x_resid_pad.SetLeftMargin(0.16); x_resid_pad.SetRightMargin(0.05)
-					x_resid_pad.SetTopMargin(0.0);   x_resid_pad.SetBottomMargin(0.3)
-					x_resid_pad.SetBorderMode(0)
-					x_resid_pad.Draw(); x_histo_pad.Draw()
-					x_histo_pad.cd(); 
-					dist.all_templates[0].histo_x.SetMarkerStyle(20)
-					x_stacks[i].Draw(); dist.all_templates[0].histo_x.Draw('SAME PE1X0'); x_stacks[i].GetXaxis().SetLabelOffset(999)
-					leg.Draw()
-					x_resid_pad.cd(); 
-					x_resids[i].Draw('PE1X0'); xline.Draw()
-					x_canvs[i].Update()
-					plotfile.cd()
-					x_canvs[i].Write()
-					
-					y_canvs[i].cd() 
-					y_histo_pad=TPad(channame+'_y_histo_pad',channame+'_y_histo_pad',0,0.3,1,1)
-					y_resid_pad=TPad(channame+'_y_residuals_pad',channame+'_y_residuals_pad',0,0,1.,0.3)
-					y_histo_pad.SetCanvas(y_canvs[i]); y_resid_pad.SetCanvas(y_canvs[i])
-					y_histo_pad.SetLeftMargin(0.16); y_histo_pad.SetRightMargin(0.05) 
-					y_histo_pad.SetTopMargin(0.11);	 y_histo_pad.SetBottomMargin(0.02)
-					y_histo_pad.SetBorderMode(0)
-					y_resid_pad.SetLeftMargin(0.16); y_resid_pad.SetRightMargin(0.05)
-					y_resid_pad.SetTopMargin(0.0);   y_resid_pad.SetBottomMargin(0.3)
-					y_resid_pad.SetBorderMode(0)
-					y_resid_pad.Draw(); y_histo_pad.Draw()
-					y_histo_pad.cd(); 
-					dist.all_templates[0].histo_y.SetMarkerStyle(20)
-					y_stacks[i].Draw(); dist.all_templates[0].histo_y.Draw('SAME PE1X0'); y_stacks[i].GetXaxis().SetLabelOffset(999)
-					leg.Draw()
-					y_resid_pad.cd(); 
-					y_resids[i].Draw('PE1X0'); yline.Draw()
-					y_canvs[i].Update()
-					plotfile.cd()
-					y_canvs[i].Write()
-					
-					z_canvs[i].cd() 
-					z_histo_pad=TPad(channame+'_z_histo_pad',channame+'_z_histo_pad',0,0.3,1,1)
-					z_resid_pad=TPad(channame+'_z_residuals_pad',channame+'_z_residuals_pad',0,0,1.,0.3)
-					z_histo_pad.SetCanvas(z_canvs[i]); z_resid_pad.SetCanvas(z_canvs[i])
-					z_histo_pad.SetLeftMargin(0.16); z_histo_pad.SetRightMargin(0.05) 
-					z_histo_pad.SetTopMargin(0.11);	 z_histo_pad.SetBottomMargin(0.02)
-					z_histo_pad.SetBorderMode(0)
-					z_resid_pad.SetLeftMargin(0.16); z_resid_pad.SetRightMargin(0.05)
-					z_resid_pad.SetTopMargin(0.0);   z_resid_pad.SetBottomMargin(0.3)
-					z_resid_pad.SetBorderMode(0)
-					z_resid_pad.Draw(); z_histo_pad.Draw()
-					z_histo_pad.cd(); 
-					dist.all_templates[0].histo_z.SetMarkerStyle(20)
-					z_stacks[i].Draw(); dist.all_templates[0].histo_z.Draw('SAME PE1X0'); z_stacks[i].GetXaxis().SetLabelOffset(999)
-					leg.Draw()
-					z_resid_pad.cd(); 
-					z_resids[i].Draw('PE1X0'); zline.Draw()
-					z_canvs[i].Update()
-					plotfile.cd()
-					z_canvs[i].Write()
+					for temp in dist.all_templates :
+						if len(temp.name.split('__'))>2 :
+							continue
+						x_canvs[i].cd() 
+						x_histo_pad=TPad(channame+'_x_histo_pad',channame+'_x_histo_pad',0,0.25,1,1)
+						x_resid_pad=TPad(channame+'_x_residuals_pad',channame+'_x_residuals_pad',0,0,1.,0.25)
+						x_histo_pad.SetCanvas(x_canvs[i]); x_resid_pad.SetCanvas(x_canvs[i])
+						x_histo_pad.SetLeftMargin(0.16); x_histo_pad.SetRightMargin(0.05) 
+						x_histo_pad.SetTopMargin(0.11);	 x_histo_pad.SetBottomMargin(0.02)
+						x_histo_pad.SetBorderMode(0)
+						x_resid_pad.SetLeftMargin(0.16); x_resid_pad.SetRightMargin(0.05)
+						x_resid_pad.SetTopMargin(0.0);   x_resid_pad.SetBottomMargin(0.3)
+						x_resid_pad.SetBorderMode(0)
+						x_resid_pad.Draw(); x_histo_pad.Draw()
+						x_histo_pad.cd(); 
+						temp.histo_x.SetMarkerStyle(20)
+						x_stacks[i].Draw(); temp.histo_x.Draw('SAME PE1X0'); x_err_hs[i].Draw('SAME E2'); x_stacks[i].GetXaxis().SetLabelOffset(999)
+						leg.Draw()
+						x_resid_pad.cd(); 
+						x_resids[i].Draw('B')
+						x_canvs[i].Update()
+						plotfile.cd()
+						x_canvs[i].Write()
+						
+						y_canvs[i].cd() 
+						y_histo_pad=TPad(channame+'_y_histo_pad',channame+'_y_histo_pad',0,0.3,1,1)
+						y_resid_pad=TPad(channame+'_y_residuals_pad',channame+'_y_residuals_pad',0,0,1.,0.3)
+						y_histo_pad.SetCanvas(y_canvs[i]); y_resid_pad.SetCanvas(y_canvs[i])
+						y_histo_pad.SetLeftMargin(0.16); y_histo_pad.SetRightMargin(0.05) 
+						y_histo_pad.SetTopMargin(0.11);	 y_histo_pad.SetBottomMargin(0.02)
+						y_histo_pad.SetBorderMode(0)
+						y_resid_pad.SetLeftMargin(0.16); y_resid_pad.SetRightMargin(0.05)
+						y_resid_pad.SetTopMargin(0.0);   y_resid_pad.SetBottomMargin(0.3)
+						y_resid_pad.SetBorderMode(0)
+						y_resid_pad.Draw(); y_histo_pad.Draw()
+						y_histo_pad.cd(); 
+						temp.histo_y.SetMarkerStyle(20)
+						y_stacks[i].Draw(); temp.histo_y.Draw('SAME PE1X0'); y_err_hs[i].Draw('SAME E2'); y_stacks[i].GetXaxis().SetLabelOffset(999)
+						leg.Draw()
+						y_resid_pad.cd(); 
+						y_resids[i].Draw('B')
+						y_canvs[i].Update()
+						plotfile.cd()
+						y_canvs[i].Write()
+						
+						z_canvs[i].cd() 
+						z_histo_pad=TPad(channame+'_z_histo_pad',channame+'_z_histo_pad',0,0.3,1,1)
+						z_resid_pad=TPad(channame+'_z_residuals_pad',channame+'_z_residuals_pad',0,0,1.,0.3)
+						z_histo_pad.SetCanvas(z_canvs[i]); z_resid_pad.SetCanvas(z_canvs[i])
+						z_histo_pad.SetLeftMargin(0.16); z_histo_pad.SetRightMargin(0.05) 
+						z_histo_pad.SetTopMargin(0.11);	 z_histo_pad.SetBottomMargin(0.02)
+						z_histo_pad.SetBorderMode(0)
+						z_resid_pad.SetLeftMargin(0.16); z_resid_pad.SetRightMargin(0.05)
+						z_resid_pad.SetTopMargin(0.0);   z_resid_pad.SetBottomMargin(0.3)
+						z_resid_pad.SetBorderMode(0)
+						z_resid_pad.Draw(); z_histo_pad.Draw()
+						z_histo_pad.cd(); 
+						temp.histo_z.SetMarkerStyle(20)
+						z_stacks[i].Draw(); temp.histo_z.Draw('SAME PE1X0'); z_err_hs[i].Draw('SAME E2'); z_stacks[i].GetXaxis().SetLabelOffset(999)
+						leg.Draw()
+						z_resid_pad.cd(); 
+						z_resids[i].Draw('B')
+						z_canvs[i].Update()
+						plotfile.cd()
+						z_canvs[i].Write()
 
 	#__addAllDistributions__ sets up all of the final distributions depending on whether we want the charges summed
 	#also handles the JEC corrections
 	def __addAllDistributions__(self) :
 		PREFAC_1 = '(#NTOT#-#NBCK#*#Rbck#-#NNTMJ#*#Rntmj#)*(1./#NTTBAR#)'
 		PREFAC_2 = '(#NTTBAR#-#NQQBAR#*#Rqqbar#)*(1./(#NTTBAR#-#NQQBAR#))'
-		FGG  = '1. + #mu#*(1.-#mu#)*(#NG1#/(#NTTBAR#-#NQQBAR#))'
+		FGG  = '(1. + #mu#*(1.-#mu#)*(#NG1#/(#NTTBAR#-#NQQBAR#))'
 		FGG += '+ (#mu#*#mu#+#d#*#d#)*(1.+#mu#)*(#NG2#/(#NTTBAR#-#NQQBAR#))'
 		FGG += '+ (#mu#*#mu#+#d#*#d#)*(1.-5.*#mu#)*(#NG3#/(#NTTBAR#-#NQQBAR#))'
-		FGG += '+ (#mu#*#mu#+#d#*#d#)*(#mu#*#mu#+#d#*#d#)*(#NG4#/(#NTTBAR#-#NQQBAR#))'
-		FQQ  = '1. + (2.*#mu#+#mu#*#mu#-#d#*#d#)*(#NQ1#/#NQQBAR#) + (#mu#*#mu#+#d#*#d#)*(#NQ2#/#NQQBAR#)'
+		FGG += '+ (#mu#*#mu#+#d#*#d#)*(#mu#*#mu#+#d#*#d#)*(#NG4#/(#NTTBAR#-#NQQBAR#)))'
+		FQQ  = '(1. + (2.*#mu#+#mu#*#mu#-#d#*#d#)*(#NQ1#/#NQQBAR#) + (#mu#*#mu#+#d#*#d#)*(#NQ2#/#NQQBAR#))'
 		fbck_func  = '#scale#*#Rbck#'
-		fntmj_func = '#scale#*#Rntmj#'
+		fntmj_func = '(1.)*#scale#*#Rntmj#'
 		fgg_func   = '#scale#*'+PREFAC_1+'*'+PREFAC_2+'*(1./'+FGG+')*(1.+ #mu#*(1.-#mu#)*#wg1#'
 		fgg_func  += '+ (#mu#*#mu#+#d#*#d#)*(1.+#mu#)*#wg2# + (#mu#*#mu#+#d#*#d#)*(1.-5.*#mu#)*#wg3#'
 		fgg_func  += '+ (#mu#*#mu#+#d#*#d#)*(#mu#*#mu#+#d#*#d#)*#wg4#)'
 		fqq_func   = '#scale#*'+PREFAC_1+'*(1./'+FQQ+')*#Rqqbar#*(1.+#Afb#*#wqa0# + (2.*#mu#+#mu#*#mu#-#d#*#d#)*(#wqs1#+#Afb#*#wqa1#)'
 		fqq_func  += '+ (#mu#*#mu#+#d#*#d#)*(#wqs2#+#Afb#*#wqa2#))'
-		lepprefixes = ['allchannels','mu','el']
-#		lepprefixes = ['mu']
-#		lepprefixes = ['el']
-		for lepprefix in lepprefixes :
+		fntmj_func = '#scale#*#Rntmj#*(1.+0.*(#mu#+#d#+#Rbck#+#Rqqbar#+#Afb#))'
+#		self.lepprefixes = ['allchannels','mu','el']
+		self.lepprefixes = ['mu','el']
+#		self.lepprefixes = ['mu']
+#		self.lepprefixes = ['el']
+		for lepprefix in self.lepprefixes :
 			chargeseps = ['']
 			if not self.sum_charge and lepprefix != 'allchannels' :
 				chargeseps = ['plus','minus']
