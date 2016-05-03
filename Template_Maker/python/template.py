@@ -61,18 +61,15 @@ class template :
 				binx = array('i',[0]); biny = array('i',[0]); binz = array('i',[0])
 				self.histo_3D.GetBinXYZ(k,binx,biny,binz)
 				print '			bin = %d (%d,%d,%d), content = %.3f'%(k,binx[0],biny[0],binz[0],content)
-#				self.histo_x.SetBinContent(binx[0],self.histo_x.GetBinContent(binx[0])+content)
-#				self.histo_y.SetBinContent(biny[0],self.histo_y.GetBinContent(biny[0])+content)
-#				self.histo_z.SetBinContent(binz[0],self.histo_z.GetBinContent(binz[0])+content)
-#				self.histo_x.SetBinError(binx[0],self.histo_x.GetBinError(binx[0])+error*error)
-#				self.histo_y.SetBinError(biny[0],self.histo_y.GetBinError(biny[0])+error*error)
-#				self.histo_z.SetBinError(binz[0],self.histo_z.GetBinError(binz[0])+error*error)
+				self.histo_x.SetBinContent(binx[0],self.histo_x.GetBinContent(binx[0])+content)
+				self.histo_y.SetBinContent(biny[0],self.histo_y.GetBinContent(biny[0])+content)
+				self.histo_z.SetBinContent(binz[0],self.histo_z.GetBinContent(binz[0])+content)
+				self.histo_x.SetBinError(binx[0],self.histo_x.GetBinError(binx[0])+error*error)
+				self.histo_y.SetBinError(biny[0],self.histo_y.GetBinError(biny[0])+error*error)
+				self.histo_z.SetBinError(binz[0],self.histo_z.GetBinError(binz[0])+error*error)
 				global1Dbincounter+=1
-#		hs = [self.histo_x,self.histo_y,self.histo_z]
-#		for h in hs :
-#			for k in range(h.GetSize()) :
-#				if not h.IsBinUnderflow(k) and not h.IsBinOverflow(k) :
-#					h.SetBinError(k,sqrt(h.GetBinError(k)))
-		self.histo_x = self.histo_3D.ProjectionX().Clone()
-		self.histo_y = self.histo_3D.ProjectionY().Clone()
-		self.histo_z = self.histo_3D.ProjectionZ().Clone()
+		hs = [self.histo_x,self.histo_y,self.histo_z]
+		for h in hs :
+			for k in range(h.GetSize()) :
+				if not h.IsBinUnderflow(k) and not h.IsBinOverflow(k) :
+					h.SetBinError(k,sqrt(h.GetBinError(k)))
