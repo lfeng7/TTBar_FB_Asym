@@ -7,22 +7,22 @@ from template import template
 const_reweights_trees = ['weight']
 const_reweights_dists = ['cs_weight']
 #list of systematic reweights
-simple_systematics_trees = ['sf_pileup']#,     'sf_top_pT',     'sf_lep_ID',     'sf_trig_eff', 	  'luminosity']
-simple_systematics_dists = ['pileup_weight']#, 'top_pT_weight', 'lep_ID_weight', 'trig_eff_weight', 'luminosity']
+simple_systematics_trees = ['sf_pileup',     'sf_top_pT',     'sf_lep_ID',     'sf_trig_eff', 	  'luminosity']
+simple_systematics_dists = ['pileup_weight', 'top_pT_weight', 'lep_ID_weight', 'trig_eff_weight', 'luminosity']
 #PDF reweight
 pdf_reweight_vector_trees = 'CT10_weights'
 pdf_reweight_vector_dists = 'CT10_weights'
 #Luminosity min bias
 LUMI_MIN_BIAS = 0.026
 #Cuts for conversion function calculation
-LM1_LOW = 50.
-LM1_HI  = 95.
-LM2_LOW = 95.
+LM1_LOW = 60.
+LM1_HI  = 100.
+LM2_LOW = 100.
 LM2_HI  = 140.
 SM_LOW  = 140.
 SM_HI   = 250.
 HM_LOW  = 250.
-HM_HI   = 350.
+HM_HI   = 300.
 SUBS_CUT = 0.55
 
 

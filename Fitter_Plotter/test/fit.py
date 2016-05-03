@@ -5,7 +5,7 @@ import os
 #All the input options
 TEMPLATE_FILE_NAME = 'templates'
 SUM_CHARGES = False
-INCLUDE_PDF = False
+INCLUDE_PDF = True
 INCLUDE_JEC = True
 INITIAL_PARAMETERS_FILE = 'initial_parameters.txt'
 REFINED_PARAMETERS_FILE = 'refined_parameters.txt'
@@ -68,7 +68,8 @@ def run_fit(templatefilename) :
 	model.fill_histogram_zerobins(0.00001)	
 	#expand the available range of the parameters to 5 sigma
 	for p in model.distribution.get_parameters():
-	    model.distribution.set_distribution_parameters(p, range = [-5.0, 5.0])
+		if p != 'par_Afb' and p != 'par_d' and p != 'par_mu' :
+			model.distribution.set_distribution_parameters(p, range = [-5.0, 5.0])
 	#Set some options
 	options = Options()
 	options.set('global','debug','True')
@@ -76,7 +77,21 @@ def run_fit(templatefilename) :
 	options.set('minimizer','minuit_tolerance_factor','10')
 	#run the fit
 	signal_process_groups = {'': []}
-	parVals = mle(model, input = 'data', n=1, signal_process_groups = signal_process_groups)
+	parVals = mle(model, input = 'data', n=1, with_covariance = True, signal_process_groups = signal_process_groups)
+#	parVals = mle(model, input = 'toys:0.0', n=1000, with_covariance = False, signal_process_groups = signal_process_groups)
+	print 'PARVALS returned from mle = '+str(parVals)
+	#if there was more than one run, save the Afb values
+	afb_values = []
+	for i in range(len(parVals['']['par_Afb'])) :
+		sigma = parameters[3][1]-parameters[3][2]
+		v     = parameters[3][1]+parVals['']['par_Afb'][i][0]*sigma
+		print '	Found Afb value '+str(v)
+		afb_values.append(v)
+	if len(afb_values)>1 :
+		afb_values.sort()
+		afb_values_file = open('afb_values.txt','w')
+		for v in afb_values :
+			afb_values_file.write(str(v)+'\n')
 	parameter_values = {}
 	#get back the results
 	newpars = []
@@ -93,6 +108,7 @@ def run_fit(templatefilename) :
 		print 'true sigma from theta = '+str(parVals[''][p][0][1])
 		newpars[len(newpars)-1].append(parVals[''][p][0][1])
 	print '-------------------------------------------------------'
+	print 'length of parameter array = '+str(len(parVals['']['par_Afb']))
 	#Save fit histograms
 	histos = evaluate_prediction(model,parameter_values,include_signal = False)
 	write_histograms_to_rootfile(histos,'histos_'+thetafeedname)
@@ -130,26 +146,26 @@ def make_comparison_plots() :
 initial_templates_filename = TEMPLATE_FILE_NAME+'_initial'
 refined_templates_filename = TEMPLATE_FILE_NAME+'_refined'
 
-#Build the initial parameters file
-print 'Building initial parameters file. . .'
-build_parameter_file(INITIAL_PARAMETERS_FILE)
-#Build the command, run the initial templates, and figure out the name of the file they're in
-cmd = 'python '
-if ON_GRID :
-	cmd+='./tardir/'
-else :
-	cmd+='../../../Template_Maker/python/'
-cmd  += 'run_templates.py --parameters '+INITIAL_PARAMETERS_FILE +' '
-cmd += '--out_name '+initial_templates_filename+' --sum_charges '+sum_charges+' --include_PDF '+include_PDF+' --include_JEC '+include_JEC+''
-if ON_GRID :
-	cmd+=' --on_grid yes'
-os.system(cmd)
+##Build the initial parameters file
+#print 'Building initial parameters file. . .'
+#build_parameter_file(INITIAL_PARAMETERS_FILE)
+##Build the command, run the initial templates, and figure out the name of the file they're in
+#cmd = 'python '
+#if ON_GRID :
+#	cmd+='./tardir/'
+#else :
+#	cmd+='../../../Template_Maker/python/'
+#cmd  += 'run_templates.py --parameters '+INITIAL_PARAMETERS_FILE +' '
+#cmd += '--out_name '+initial_templates_filename+' --sum_charges '+sum_charges+' --include_PDF '+include_PDF+' --include_JEC '+include_JEC+''
+#if ON_GRID :
+#	cmd+=' --on_grid yes'
+#os.system(cmd)
 
 ##Run the fit the first time with the initial parameter guesses
 #run_fit(initial_templates_filename)
 ##Build another input parameter file with the new parameter values
 #build_parameter_file(REFINED_PARAMETERS_FILE)
-#
+
 ##Build new templates
 #cmd = 'python '
 #if ON_GRID :
@@ -161,11 +177,11 @@ os.system(cmd)
 #if ON_GRID :
 #	cmd+=' --on_grid yes'
 #os.system(cmd)
-#
+
 ##Run the fit again
 #run_fit(refined_templates_filename)
 ##Calculate the final parameter values and put them in a file
 #build_parameter_file(FINAL_PARAMETERS_FILE)
-#
-##Make comparison plots
-#make_comparison_plots()
+
+#Make comparison plots
+make_comparison_plots()

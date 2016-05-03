@@ -3,6 +3,7 @@ import glob
 from array import array
 from math import *
 from distribution import distribution
+from distribution import LM1_LOW, HM_HI
 from template import template
 
 #luminosity
@@ -183,7 +184,7 @@ class template_group :
 				print '			NUMBERS OF EVENTS: ' #DEBUG
 				for j in range(len(all_event_counts[ltype][ttype])) : #DEBUG
 					if all_event_counts[ltype][ttype][j] <= 0. :
-						all_event_counts[ltype][ttype][j] = 1.
+						all_event_counts[ltype][ttype][j] = 0.01
 					print '				'+str(all_event_counts[ltype][ttype][j]) #DEBUG
 				#Find the y values and errors for the points on the graph
 				l1y = all_event_counts[ltype][ttype][0]/all_event_counts[ltype][ttype][3]
@@ -200,28 +201,28 @@ class template_group :
 				print '		hye = '+str(hye) #DEBUG
 				#Build the TGraph to fit with the conversion function
 				n=3
-				xs  = array('d',[87.5,122.5,275.])
-				xes = array('d',[17.5,17.5,25.])
+				xs  = array('d',[80.,120.,275.])
+				xes = array('d',[20.,20.,25.])
 				ys  = array('d',[l1y,l2y,hy])
 				yes = array('d',[l1ye,l2ye,hye])
 				gr = TGraphErrors(n,xs,ys,xes,yes)
 				#Define the conversion function
-				conv_func = TF1('conv_func','[0]*x+[1]',70.,300.)
+				conv_func = TF1('conv_func','[0]*x+[1]',LM1_LOW,HM_HI)
 				#Fit the graph
 				gr.Fit('conv_func')
 				#get the fitter
 				fitter = TVirtualFitter.GetFitter()
 				#Build the nominal, slope up/down, and intercept up/down functions
-				nom_func = TF1('nom_func','[0]*x+[1]',70.,300.) 
+				nom_func = TF1('nom_func','[0]*x+[1]',LM1_LOW,HM_HI) 
 				nom_func.SetParameter(0,conv_func.GetParameter(0)) 
 				nom_func.SetParameter(1,conv_func.GetParameter(1))
-				fit_up_func = TF1('fit_up_func','[0]*x+[1]+sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',70.,300.) 
+				fit_up_func = TF1('fit_up_func','[0]*x+[1]+sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',LM1_LOW,HM_HI) 
 				fit_up_func.SetParameter(0,conv_func.GetParameter(0)) 
 				fit_up_func.SetParameter(1,conv_func.GetParameter(1))
 				fit_up_func.SetParameter(2,conv_func.GetParError(1))
 				fit_up_func.SetParameter(3,fitter.GetCovarianceMatrixElement(0,1))
 				fit_up_func.SetParameter(4,conv_func.GetParError(0))
-				fit_down_func = TF1('fit_down_func','[0]*x+[1]-sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',70.,300.) 
+				fit_down_func = TF1('fit_down_func','[0]*x+[1]-sqrt([2]*[2]+2*x*[3]*[3]+x*x*[4]*[4])',LM1_LOW,HM_HI) 
 				fit_down_func.SetParameter(0,conv_func.GetParameter(0)) 
 				fit_down_func.SetParameter(1,conv_func.GetParameter(1))
 				fit_down_func.SetParameter(2,conv_func.GetParError(1))
@@ -233,7 +234,7 @@ class template_group :
 				gr.SetTitle(ltype+' '+ttype+' conversion function fit')
 				gr.GetXaxis().SetTitle('hadronic top candidate mass (GeV)')
 				gr.GetYaxis().SetTitle('conversion rate (N_{passed}/N_{failed})')
-				gr.GetXaxis().SetRangeUser(50.,320.)
+				gr.GetXaxis().SetRangeUser(LM1_LOW-20.,HM_HI+20.)
 				gr.GetYaxis().SetRangeUser(0.,1.1*fit_up_func.Eval(300.))
 				gr.SetMarkerStyle(21)
 				gr.Draw('AP')
@@ -350,23 +351,34 @@ class template_group :
 		#build 3D histograms out of 1D post-fit histograms from theta; add to histogram stacks and MC uncertainty graphs
 		postfithistofile = TFile(self.postfit_histo_file)
 		disttypes = []
+		disttypecolors = []
 		for dist in self.dists :
 			disttype = dist.name.split('__')[1]
-			if not disttype in disttypes :
+			if not disttype.endswith('DATA') and not disttype in disttypes :
 				disttypes.append(disttype)
-		for disttype in disttypes :
+				disttypecolors.append(dist.color)
+		for k in range(len(disttypes)) :
 			for i in range(len(channel_names)) :
 				channame = channel_names[i]
 				if channame == 'allchannels' :
 					continue
 				#Get histogram from post-fit file and make a new template
-				newname = channame+'__'+disttype
+				newname = channame+'__'+disttypes[k]
 				newtemp = template(newname+'__POSTFIT',newname+'__POSTFIT')
 				new1Dhisto = postfithistofile.Get(newname)
 				newtemp.make_from_1D_histo(new1Dhisto)
+#				#DO THE THING WHERE YOU ACTUALLY DON'T USE THE POST-FIT HISTOGRAMS
+#				for dist in self.dists :
+#					if dist.name.startswith(channame) and dist.name.endswith(disttypes[k]) :
+#						for temp in dist.all_templates :
+#							if len(temp.name.split('__')) == 2 :
+#								thistemp = temp
+#								break
+#						break
 				#Set attributes and add to histogram stack
 				x_histo = newtemp.histo_x
-				x_histo.SetFillColor(dist.color); x_histo.SetLineColor(dist.color); x_histo.SetMarkerStyle(21); x_histo.SetMarkerColor(dist.color)
+#				x_histo = thistemp.histo_x
+				x_histo.SetFillColor(disttypecolors[k]); x_histo.SetLineColor(disttypecolors[k]); x_histo.SetMarkerStyle(21); x_histo.SetMarkerColor(disttypecolors[k])
 				x_stacks[i].Add(x_histo,'hist')
 				x_stacks[0].Add(x_histo,'hist')
 				#increment error values
@@ -378,7 +390,8 @@ class template_group :
 						x_err_hs[0].SetBinError(j,x_err_hs[0].GetBinError(j)+x_histo.GetBinError(j)**2)
 				#Repeat all of the above for y
 				y_histo = newtemp.histo_y
-				y_histo.SetFillColor(dist.color); y_histo.SetLineColor(dist.color); y_histo.SetMarkerStyle(21); y_histo.SetMarkerColor(dist.color)
+#				y_histo = thistemp.histo_y
+				y_histo.SetFillColor(disttypecolors[k]); y_histo.SetLineColor(disttypecolors[k]); y_histo.SetMarkerStyle(21); y_histo.SetMarkerColor(disttypecolors[k])
 				y_stacks[i].Add(y_histo,'hist')
 				y_stacks[0].Add(y_histo,'hist')
 				#increment error values
@@ -390,7 +403,8 @@ class template_group :
 						y_err_hs[0].SetBinError(j,y_err_hs[0].GetBinError(j)+y_histo.GetBinError(j)**2)
 				#Repeat all of the above for z
 				z_histo = newtemp.histo_z
-				z_histo.SetFillColor(dist.color); z_histo.SetLineColor(dist.color); z_histo.SetMarkerStyle(21); z_histo.SetMarkerColor(dist.color)
+#				z_histo = thistemp.histo_z
+				z_histo.SetFillColor(disttypecolors[k]); z_histo.SetLineColor(disttypecolors[k]); z_histo.SetMarkerStyle(21); z_histo.SetMarkerColor(disttypecolors[k])
 				z_stacks[i].Add(z_histo,'hist')
 				z_stacks[0].Add(z_histo,'hist')
 				#increment error values
@@ -425,7 +439,7 @@ class template_group :
 								delta = temp.histo_x.GetBinContent(j) - x_err_hs[i].GetBinContent(j)
 								sigma = sqrt(temp.histo_x.GetBinError(j)**2 + x_err_hs[i].GetBinError(j)**2)
 								content = delta/sigma
-								print '		%s XHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_x.GetBinContent(j),x_err_hs[i].GetBinContent(j),temp.histo_x.GetBinError(j),x_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
+#								print '		%s XHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_x.GetBinContent(j),x_err_hs[i].GetBinContent(j),temp.histo_x.GetBinError(j),x_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
 								x_resids[i].SetBinContent(j,content)
 								maxxdeviations[i] = max(maxxdeviations[i],abs(content))
 						for j in range(temp.histo_y.GetSize()) :
@@ -435,7 +449,7 @@ class template_group :
 								delta = temp.histo_y.GetBinContent(j) - y_err_hs[i].GetBinContent(j)
 								sigma = sqrt(temp.histo_y.GetBinError(j)**2 + y_err_hs[i].GetBinError(j)**2)
 								content = delta/sigma
-								print '		%s YHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_y.GetBinContent(j),y_err_hs[i].GetBinContent(j),temp.histo_y.GetBinError(j),y_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
+#								print '		%s YHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_y.GetBinContent(j),y_err_hs[i].GetBinContent(j),temp.histo_y.GetBinError(j),y_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
 								y_resids[i].SetBinContent(j,content)
 								maxydeviations[i] = max(maxydeviations[i],abs(content))
 						for j in range(temp.histo_z.GetSize()) :
@@ -445,7 +459,7 @@ class template_group :
 								delta = temp.histo_z.GetBinContent(j) - z_err_hs[i].GetBinContent(j)
 								sigma = sqrt(temp.histo_z.GetBinError(j)**2 + z_err_hs[i].GetBinError(j)**2)
 								content = delta/sigma
-								print '		%s ZHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_z.GetBinContent(j),z_err_hs[i].GetBinContent(j),temp.histo_z.GetBinError(j),z_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
+#								print '		%s ZHISTO BIN %d = (%.2f - %.2f)/sqrt(%.2f^2 + %.2f^2) = %.2f/%.2f = %.2f'%(channame,j,temp.histo_z.GetBinContent(j),z_err_hs[i].GetBinContent(j),temp.histo_z.GetBinError(j),z_err_hs[i].GetBinError(j),delta,sigma,content) #DEBUG
 								z_resids[i].SetBinContent(j,content)
 								maxzdeviations[i] = max(maxzdeviations[i],abs(content))
 		#reset stack maxima
@@ -594,8 +608,7 @@ class template_group :
 		fqq_func   = '#scale#*'+PREFAC_1+'*(1./'+FQQ+')*#Rqqbar#*(1.+#Afb#*#wqa0# + (2.*#mu#+#mu#*#mu#-#d#*#d#)*(#wqs1#+#Afb#*#wqa1#)'
 		fqq_func  += '+ (#mu#*#mu#+#d#*#d#)*(#wqs2#+#Afb#*#wqa2#))'
 		fntmj_func = '#scale#*#Rntmj#*(1.+0.*(#mu#+#d#+#Rbck#+#Rqqbar#+#Afb#))'
-#		self.lepprefixes = ['allchannels','mu','el']
-		self.lepprefixes = ['mu','el']
+		self.lepprefixes = ['allchannels','mu','el']
 #		self.lepprefixes = ['mu']
 #		self.lepprefixes = ['el']
 		for lepprefix in self.lepprefixes :
