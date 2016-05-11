@@ -22,17 +22,11 @@ class template_group :
 	def __init__(self,outputname,parfilename,sumcharges,includepdf,includejec) :
 		#set the input variables
 		self.step = parfilename.split('_')[0]
-		self.f_fit_parameters  = TFile(outputname+'fit_parameters.root','recreate')
-		self.f_NTMJ = TFile(outputname+'NTMJ.root','recreate')
-		self.f_aux = TFile(outputname+'aux.root','recreate')
-		if self.step == 'initial' or self.step == 'final' :
-			self.f_nominal  = TFile(outputname+'nominal.root','recreate')
-			if self.step == 'initial' :
-				self.f_simple_systematics = TFile(outputname+'simple_systematics.root','recreate')
-				self.f_PDF_systematics = TFile(outputname+'PDF_systematics.root','recreate')
-				self.f_JEC = TFile(outputname+'JEC.root','recreate')
+		self.outputname = outputname
+		self.f = TFile(outputname+'.root','recreate')
+		self.f_aux = TFile(outputname+'_aux.root','recreate')
 		self.parfile = parfilename
-		self.postfit_histo_file = 'histos_theta_feed_'
+		self.postfit_histo_file = 'postfit_histos_'+outputname.split('_')[0]+'_'
 		if self.step == 'refined' :
 			self.postfit_histo_file+='initial.root'
 		if self.step == 'final' :
@@ -184,7 +178,7 @@ class template_group :
 				print '			NUMBERS OF EVENTS: ' #DEBUG
 				for j in range(len(all_event_counts[ltype][ttype])) : #DEBUG
 					if all_event_counts[ltype][ttype][j] <= 0. :
-						all_event_counts[ltype][ttype][j] = 0.01
+						all_event_counts[ltype][ttype][j] = 0.5
 					print '				'+str(all_event_counts[ltype][ttype][j]) #DEBUG
 				#Find the y values and errors for the points on the graph
 				l1y = all_event_counts[ltype][ttype][0]/all_event_counts[ltype][ttype][3]
@@ -265,6 +259,7 @@ class template_group :
 		print '	Done'
 
 	def write_to_files(self) :
+		#save all the new stuff in the auxiliary file
 		self.f_aux.cd()
 		for dist in self.dists :
 			if not dist.name.startswith('allchannels') :
@@ -276,37 +271,46 @@ class template_group :
 				temp.histo_x.Write()
 				temp.histo_y.Write()
 				temp.histo_z.Write()
-		for dist in self.dists :
-			distfile = self.f_NTMJ
-			if dist.name.startswith('allchannels') :
-				continue
-			if dist.name.find('ntmj') != -1 :
-				distfile = self.f_NTMJ 
-			elif self.step == 'initial' :
-				if dist.name.find('JER')!=-1 or dist.name.find('JES')!=-1 :
-					distfile = self.f_JEC
-				else :	
-					distfile = self.f_simple_systematics
-			for temp in dist.all_templates :
-				tempfile = distfile
-				if dist.name.find('ntmj')==-1 and self.step == 'initial' :
-					if temp.name.find('__up')==-1 and temp.name.find('__down')==-1 :
-						tempfile = self.f_nominal
-					elif temp.name.find('pdf_lambda')!=-1 :
-						tempfile = self.f_PDF_systematics	
-				if temp.name.find('par_')!=-1 :
-					tempfile = self.f_fit_parameters
-				tempfile.cd()
-				new1Dtemp = temp.convertTo1D()
-				new1Dtemp.Write()
-		self.f_fit_parameters.Close()
 		self.f_aux.Close()
-		self.f_NTMJ.Close()
-		if self.step == 'initial' :
-			self.f_nominal.Close()
-			self.f_simple_systematics.Close()
-			self.f_PDF_systematics.Close()
-			self.f_JEC.Close()
+		#if it's the first or last run just write everything we have to the output file
+		if self.step == 'initial' or self.step == 'final' :
+			self.f.cd()
+			for dist in self.dists :
+				if dist.name.startswith('allchannels') :
+					continue
+				for temp in dist.all_templates :
+					print '	Adding newly created template '+temp.name
+					new1Dtemp = temp.convertTo1D()
+					new1Dtemp.Write()
+			self.f.Close()
+		#otherwise copy the templates from the original file, replacing with new ones where necessary
+		else :
+			self.f.cd()
+			#make a list of all the new template names
+			new_template_names = []
+			for dist in self.dists :
+				if dist.name.startswith('allchannels') :
+					continue
+				for temp in dist.all_templates :
+					new_template_names.append(temp.name)
+					#save the template to the new file
+					print '	Adding newly created template '+temp.name
+					new1Dtemp = temp.convertTo1D()
+					new1Dtemp.Write()
+			#open the file from the initial step and get its list of keys
+			inifile = TFile(self.outputname.rstrip('_refined.root')+'_initial.root')
+			inifilekeys = inifile.GetListOfKeys()
+			self.f.cd()
+			#for each key
+			for key in inifilekeys :
+				keyname = key.GetName()
+				#if its name is reproduced in this run, skip it
+				if keyname in new_template_names :
+					continue
+				#otherwise get its histogram and write it to this output file
+				print '	Copying over previously created template '+keyname
+				(inifile.Get(keyname)).Write()
+
 		
 	def make_plots(self) :
 		#First make a list of all the channels in the file
@@ -367,17 +371,8 @@ class template_group :
 				newtemp = template(newname+'__POSTFIT',newname+'__POSTFIT')
 				new1Dhisto = postfithistofile.Get(newname)
 				newtemp.make_from_1D_histo(new1Dhisto)
-#				#DO THE THING WHERE YOU ACTUALLY DON'T USE THE POST-FIT HISTOGRAMS
-#				for dist in self.dists :
-#					if dist.name.startswith(channame) and dist.name.endswith(disttypes[k]) :
-#						for temp in dist.all_templates :
-#							if len(temp.name.split('__')) == 2 :
-#								thistemp = temp
-#								break
-#						break
 				#Set attributes and add to histogram stack
 				x_histo = newtemp.histo_x
-#				x_histo = thistemp.histo_x
 				x_histo.SetFillColor(disttypecolors[k]); x_histo.SetLineColor(disttypecolors[k]); x_histo.SetMarkerStyle(21); x_histo.SetMarkerColor(disttypecolors[k])
 				x_stacks[i].Add(x_histo,'hist')
 				x_stacks[0].Add(x_histo,'hist')
@@ -390,7 +385,6 @@ class template_group :
 						x_err_hs[0].SetBinError(j,x_err_hs[0].GetBinError(j)+x_histo.GetBinError(j)**2)
 				#Repeat all of the above for y
 				y_histo = newtemp.histo_y
-#				y_histo = thistemp.histo_y
 				y_histo.SetFillColor(disttypecolors[k]); y_histo.SetLineColor(disttypecolors[k]); y_histo.SetMarkerStyle(21); y_histo.SetMarkerColor(disttypecolors[k])
 				y_stacks[i].Add(y_histo,'hist')
 				y_stacks[0].Add(y_histo,'hist')
@@ -403,7 +397,6 @@ class template_group :
 						y_err_hs[0].SetBinError(j,y_err_hs[0].GetBinError(j)+y_histo.GetBinError(j)**2)
 				#Repeat all of the above for z
 				z_histo = newtemp.histo_z
-#				z_histo = thistemp.histo_z
 				z_histo.SetFillColor(disttypecolors[k]); z_histo.SetLineColor(disttypecolors[k]); z_histo.SetMarkerStyle(21); z_histo.SetMarkerColor(disttypecolors[k])
 				z_stacks[i].Add(z_histo,'hist')
 				z_stacks[0].Add(z_histo,'hist')
@@ -607,10 +600,12 @@ class template_group :
 		fgg_func  += '+ (#mu#*#mu#+#d#*#d#)*(#mu#*#mu#+#d#*#d#)*#wg4#)'
 		fqq_func   = '#scale#*'+PREFAC_1+'*(1./'+FQQ+')*#Rqqbar#*(1.+#Afb#*#wqa0# + (2.*#mu#+#mu#*#mu#-#d#*#d#)*(#wqs1#+#Afb#*#wqa1#)'
 		fqq_func  += '+ (#mu#*#mu#+#d#*#d#)*(#wqs2#+#Afb#*#wqa2#))'
-		fntmj_func = '#scale#*#Rntmj#*(1.+0.*(#mu#+#d#+#Rbck#+#Rqqbar#+#Afb#))'
-		self.lepprefixes = ['allchannels','mu','el']
-#		self.lepprefixes = ['mu']
-#		self.lepprefixes = ['el']
+		fntmj_func = '#scale#*#Rntmj#*(1.+0.*(#Rbck#+#Rqqbar#+#Afb#))'
+		self.lepprefixes = []
+		if self.step == 'final' :
+			self.lepprefixes.append('allchannels')
+		self.lepprefixes.append('mu')
+		self.lepprefixes.append('el')
 		for lepprefix in self.lepprefixes :
 			chargeseps = ['']
 			if not self.sum_charge and lepprefix != 'allchannels' :

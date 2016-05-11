@@ -30,7 +30,7 @@ if options.include_JEC.lower() == 'yes' :
 	INCLUDE_JEC = True
 
 #Start up the output file
-output_name = options.out_name+'_'
+output_name = options.out_name
 parfilename = options.parameters
 if '.txt' not in parfilename :
 	parfilename+='.txt'
@@ -67,25 +67,8 @@ templates.build_templates()
 print 'Done'
 if options.parameters.find('final') == -1 :
 	#Save all the templates for this group
-	print 'Writing templates to files'
+	print 'Writing templates to file'
 	templates.write_to_files()
-	print 'Done'
-	#Make and save the theta feed file
-	print 'Making theta feed file from separate template files'
-	step = options.parameters.split('_')[0]
-	if step == 'initial' or step == 'final' :
-		separate_files = ['nominal','simple_systematics','fit_parameters','JEC','PDF_systematics','NTMJ']
-		for i in range(len(separate_files)) :
-			tmp = output_name+separate_files[i]
-			separate_files[i] = tmp
-	else : 
-		iname = output_name.split('_refined')[0]+'_initial'+output_name.split('_refined')[1]
-		separate_files = [iname+'nominal',iname+'simple_systematics',output_name+'fit_parameters',iname+'JEC',iname+'PDF_systematics',output_name+'NTMJ']
-	cmd = 'hadd -f theta_feed'+output_name.split('templates')[1].rstrip('_')+'.root'
-	for separate_file in separate_files :
-		cmd += ' '+separate_file+'.root'
-	print '	'+cmd
-	os.system(cmd)
 	print 'Done'
 #Make and save comparison plots if necessary
 if options.parameters.find('final') != -1 or options.parameters.find('refined') != -1 :
